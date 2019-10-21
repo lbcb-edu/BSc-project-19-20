@@ -15,6 +15,8 @@ addons:
       - cmake
 
 script:
+
+  -which clang-8
   
   - export CC=clang-8
   - export CXX=clang++-8
