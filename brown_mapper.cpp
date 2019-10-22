@@ -1,23 +1,84 @@
-#include "MapperConfig.h"
-#include "bioparser/include/bioparser/bioparser.hpp"
 #include <cstring>
 #include <iostream>
 #include <memory>
 #include <vector>
+#include "MapperConfig.h"
+#include "bioparser/include/bioparser/bioparser.hpp"
+#define MAX 1000
+
 using namespace std;
 
-class Example1 {
-public:
-  Example1(const char *name, std::uint32_t name_length, const char *sequence,
-           std::uint32_t sequence_length) {}
+class FASTAfile {
+ public:
+  string name;
+  string sequence;
+
+  FASTAfile(const char *name, std::uint32_t name_length, const char *sequence,
+            std::uint32_t sequence_length)
+      : name(name, name_length), sequence(sequence, sequence_length) {}
 };
 
-class Example2 {
-public:
-  Example2(const char *name, std::uint32_t name_length, const char *sequence,
-           std::uint32_t sequence_length, const char *quality,
-           std::uint32_t quality_length) {}
+class FASTQfile {
+ public:
+  string name;
+  string sequence;
+  string quality;
+
+  FASTQfile(const char *name, std::uint32_t name_length, const char *sequence,
+            std::uint32_t sequence_length, const char *quality,
+            std::uint32_t quality_length)
+      : name(name, name_length),
+        sequence(sequence, sequence_length),
+        quality(quality, quality_length) {}
 };
+
+void print_fasta_stats(vector<unique_ptr<FASTAfile>> &objects) {
+  long min = MAX;
+  long max = 0;
+  long double avg = 0;
+  long sum = 0;
+
+  for (auto &a : objects) {
+    auto len = (a->sequence).length();
+    sum += len;
+
+    if (len > max) max = len;
+
+    if (len < min) min = len;
+  }
+
+  avg = sum / objects.size();
+
+  cout << "Number of sequnces in file: " << objects.size() << "\n";
+  cout << "Average sequence length: " << avg << "\n";
+  cout << "Minimun sequence length: " << min << "\n";
+  cout << "Maximum sequence length: " << max << "\n";
+}
+
+void print_fastq_stats(vector<unique_ptr<FASTQfile>> &objects) {
+  long min = MAX;
+  long max = 0;
+  long double avg = 0;
+  long sum = 0;
+
+  for (auto &a : objects) {
+    auto len = (a->sequence).length();
+    sum += len;
+
+    if (len > max) max = len;
+
+    if (len < min) min = len;
+
+    cout << "Quality: " << a->quality << "\n";
+  }
+
+  avg = sum / objects.size();
+
+  cout << "Number of sequnces in file: " << objects.size() << "\n";
+  cout << "Average sequence length: " << avg << "\n";
+  cout << "Minimun sequence length: " << min << "\n";
+  cout << "Maximum sequence length: " << max << "\n";
+}
 
 // check for given sufix
 bool has_suffix(const string &str, const string &suffix) {
@@ -36,7 +97,6 @@ string convertToString(char *a, int size) {
 }
 
 int main(int argc, char **argv) {
-
   // check for command line args
   if (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0) {
     fprintf(stdout, "-v (--version)  Project version\n");
@@ -75,44 +135,38 @@ int main(int argc, char **argv) {
         has_suffix(convertToString(argv[1], strlen(argv[1])), ".fa") ||
         has_suffix(convertToString(argv[1], strlen(argv[1])), ".fasta.gz") ||
         has_suffix(convertToString(argv[1], strlen(argv[1])), ".fa.gz")) {
-
-      vector<unique_ptr<Example1>> fasta_objects;
+      vector<unique_ptr<FASTAfile>> fasta_objects;
       string str = convertToString(argv[1], strlen(argv[1]));
       string path = "/home/filip/git/Project/" + str;
       auto fasta_parser =
-          bioparser::createParser<bioparser::FastaParser, Example1>(path);
+          bioparser::createParser<bioparser::FastaParser, FASTAfile>(path);
       fasta_parser->parse(fasta_objects, -1);
-
-      cout << "kul1"
-           << "\n";
+      print_fasta_stats(fasta_objects);
     }
     // parse 2. file as FASTA
     if (has_suffix(convertToString(argv[2], strlen(argv[2])), ".fasta") ||
         has_suffix(convertToString(argv[2], strlen(argv[2])), ".fa") ||
         has_suffix(convertToString(argv[2], strlen(argv[2])), ".fasta.gz") ||
         has_suffix(convertToString(argv[2], strlen(argv[2])), ".fa.gz")) {
-
-      vector<unique_ptr<Example1>> fasta_objects;
+      vector<unique_ptr<FASTAfile>> fasta_objects;
       string str = convertToString(argv[1], strlen(argv[1]));
       string path = "/home/filip/git/Project/" + str;
       auto fasta_parser =
-          bioparser::createParser<bioparser::FastaParser, Example1>(path);
+          bioparser::createParser<bioparser::FastaParser, FASTAfile>(path);
       fasta_parser->parse(fasta_objects, -1);
 
-      cout << "kul2"
-           << "\n";
+      print_fasta_stats(fasta_objects);
     }
-    // parse 1st file as FASTA
+    // parse 1st file as FASTQ
     if (has_suffix(convertToString(argv[1], strlen(argv[1])), ".fastq") ||
         has_suffix(convertToString(argv[1], strlen(argv[1])), ".fq") ||
         has_suffix(convertToString(argv[1], strlen(argv[1])), ".fastq.gz") ||
         has_suffix(convertToString(argv[1], strlen(argv[1])), ".fq.gz")) {
-
-      std::vector<std::unique_ptr<Example2>> fastq_objects;
+      std::vector<std::unique_ptr<FASTQfile>> fastq_objects;
       string str = convertToString(argv[1], strlen(argv[1]));
       string path = "/home/filip/git/Project/" + str;
       auto fastq_parser =
-          bioparser::createParser<bioparser::FastqParser, Example2>(path);
+          bioparser::createParser<bioparser::FastqParser, FASTQfile>(path);
       std::uint64_t size_in_bytes = 500 * 1024 * 1024;
       while (true) {
         auto status = fastq_parser->parse(fastq_objects, size_in_bytes);
@@ -121,20 +175,18 @@ int main(int argc, char **argv) {
         }
       }
 
-      cout << "kul3"
-           << "\n";
+      print_fastq_stats(fastq_objects);
     }
     // parse 2nd file as FASTQ
     if (has_suffix(convertToString(argv[2], strlen(argv[2])), ".fastq") ||
         has_suffix(convertToString(argv[2], strlen(argv[2])), ".fq") ||
         has_suffix(convertToString(argv[2], strlen(argv[2])), ".fastq.gz") ||
         has_suffix(convertToString(argv[2], strlen(argv[2])), ".fq.gz")) {
-
-      std::vector<std::unique_ptr<Example2>> fastq_objects;
+      std::vector<std::unique_ptr<FASTQfile>> fastq_objects;
       string str = convertToString(argv[2], strlen(argv[2]));
       string path = "/home/filip/git/Project/" + str;
       auto fastq_parser =
-          bioparser::createParser<bioparser::FastqParser, Example2>(path);
+          bioparser::createParser<bioparser::FastqParser, FASTQfile>(path);
       std::uint64_t size_in_bytes = 500 * 1024 * 1024;
       while (true) {
         auto status = fastq_parser->parse(fastq_objects, size_in_bytes);
@@ -143,8 +195,7 @@ int main(int argc, char **argv) {
         }
       }
 
-      cout << "kul4"
-           << "\n";
+      print_fastq_stats(fastq_objects);
     }
   } else {
     fprintf(stderr, "2 files needed of format FASTA/FASTQ\n");
