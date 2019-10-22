@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
                          ".fastq.gz") ||
               has_suffix(convertToString(argv[2], strlen(argv[2])),
                          ".fq.gz"))) {
-    // parse 1. file as FASTA
+    // parse 1st file as FASTA
     if (has_suffix(convertToString(argv[1], strlen(argv[1])), ".fasta") ||
         has_suffix(convertToString(argv[1], strlen(argv[1])), ".fa") ||
         has_suffix(convertToString(argv[1], strlen(argv[1])), ".fasta.gz") ||
@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
       cout << "kul2"
            << "\n";
     }
-    // parse 2. file as FASTA
+    // parse 1st file as FASTA
     if (has_suffix(convertToString(argv[1], strlen(argv[1])), ".fastq") ||
         has_suffix(convertToString(argv[1], strlen(argv[1])), ".fq") ||
         has_suffix(convertToString(argv[1], strlen(argv[1])), ".fastq.gz") ||
@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
       cout << "kul3"
            << "\n";
     }
-    // parse 2. file as FASTQ
+    // parse 2nd file as FASTQ
     if (has_suffix(convertToString(argv[2], strlen(argv[2])), ".fastq") ||
         has_suffix(convertToString(argv[2], strlen(argv[2])), ".fq") ||
         has_suffix(convertToString(argv[2], strlen(argv[2])), ".fastq.gz") ||
