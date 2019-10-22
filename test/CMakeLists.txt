@@ -8,7 +8,7 @@ add_executable(
 target_link_libraries(
     orange_mapper_tests
         Threads::Threads
-        gtest
+        gtest_main
 )
 
 gtest_add_tests(
