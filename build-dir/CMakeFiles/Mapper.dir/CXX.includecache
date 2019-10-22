@@ -27,10 +27,6 @@ zlib.h
 /home/filip/git/Project/BSc-project-19-20/bioparser/include/bioparser/zlib.h
 
 /home/filip/git/Project/BSc-project-19-20/brown_mapper.cpp
-MapperConfig.h
-/home/filip/git/Project/BSc-project-19-20/MapperConfig.h
-bioparser/include/bioparser/bioparser.hpp
-/home/filip/git/Project/BSc-project-19-20/bioparser/include/bioparser/bioparser.hpp
 cstring
 -
 iostream
@@ -39,6 +35,10 @@ memory
 -
 vector
 -
+MapperConfig.h
+/home/filip/git/Project/BSc-project-19-20/MapperConfig.h
+bioparser/include/bioparser/bioparser.hpp
+/home/filip/git/Project/BSc-project-19-20/bioparser/include/bioparser/bioparser.hpp
 
 MapperConfig.h
 

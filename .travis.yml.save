@@ -1,0 +1,6 @@
+dist: 
+
+language: cpp
+
+
+compiler: gcc
