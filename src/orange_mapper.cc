@@ -33,9 +33,9 @@ struct option long_options[] = {
  * @return void
  */
 auto printVersion() {
-    std::cerr << ORANGE_MAPPER_VERSION_MAJOR << '.' << 
-        ORANGE_MAPPER_VERSION_MINOR << '.' << 
-        ORANGE_MAPPER_VERSION_PATCH << '\n';
+    std::cerr << orange_mapper_VERSION_MAJOR << '.' << 
+        orange_mapper_VERSION_MINOR << '.' << 
+        orange_mapper_VERSION_PATCH << '\n';
 }
 
 /**
@@ -61,7 +61,7 @@ auto printHelp() {
  * @param argc number of command line arguments
  * @param argv commane line arguments 
  * 
- * @return int index of first non-option element in argv array
+ * @return int index of first non-option element in argv 
  */
 auto parseOptions(int argc, char* argv[]) {
     auto opt = int{};
