@@ -11,6 +11,8 @@ target_link_libraries(
         gtest_main
 )
 
+enable_testing()
+
 gtest_add_tests(
     TARGET orange_mapper_tests
     TEST_SUFFIX .noArgs

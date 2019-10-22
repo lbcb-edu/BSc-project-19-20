@@ -1,0 +1,12 @@
+#ifndef ORANGE_MAPPER_H_
+#define ORANGE_MAPPER_H_
+
+namespace orange {
+
+#define ORANGE_MAPPER_VERSION_MAJOR @orange_mapper_VERSION_MAJOR@
+#define ORANGE_MAPPER_VERSION_MINOR @orange_mapper_VERSION_MINOR@
+#define ORANGE_MAPPER_VERSION_PATCH @orange_mapper_VERSION_PATCH@
+
+}
+
+#endif /* ORANGE_MAPPER_H_ */
