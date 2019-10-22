@@ -4,3 +4,5 @@ BasedOnStyle:  Google
 IndentWidth: 4
 SortIncludes: false
 AccessModifierOffset: -4 
+
+AllowAllParametersOfDeclarationOnNextLine: true

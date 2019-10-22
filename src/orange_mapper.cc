@@ -1,16 +1,16 @@
-#include <getopt.h>
-#include <unistd.h>
-#include <algorithm>
-#include <array>
-#include <cstdio>
-#include <cstdlib>
 #include <functional>
+#include <algorithm>
 #include <iostream>
+#include <unistd.h>
+#include <getopt.h>
+#include <cstdlib>
+#include <cstdio>
 #include <memory>
 #include <string>
-#include <string_view>
 #include <thread>
 #include <vector>
+#include <memory>
+#include <array>
 
 #include <bioparser/bioparser.hpp>
 
@@ -83,21 +83,56 @@ auto parseOptions(int argc, char* argv[]) {
 }
 
 /**
- * @brief Holds FASTA/FASTQ reads
+ * @brief Holds FASTA/FASTQ sequecnes
  */
-class FastAQ {
-   public:
-    FastAQ(char const* name, std::uint32_t name_len, 
-        char const* seq, std::uint32_t seq_len)
-        : name_{name}, name_len_{name_len}, seq_{seq}, seq_len_{seq_len_} {}
+struct Sequence {
+    /**
+     * @brief Construct a new FastAQ object
+     *
+     * @param name sequence name
+     * @param name_len sequence name length
+     *
+     * @param seq geneom sequence
+     * @param seq_len genom sequence length
+     */
+    Sequence(char const* name, std::uint32_t name_len, char const* seq,
+             std::uint32_t seq_len)
+        : name_{name}, name_len_{name_len}, seq_{seq}, seq_len_{seq_len} {}
 
-   private:
-    char const* name_;
-    std::uint32_t const name_len_;
+    char const* name_;              //<<< sequence name
+    std::uint32_t const name_len_;  //<<< sequence name length
 
-    char const* seq_;
-    std::uint32_t const seq_len_;
+    char const* seq_;              //<<< genome sequence
+    std::uint32_t const seq_len_;  //<<< genome sequence
 };
+
+/**
+ * @brief Doable since FASTA doesn't contain quality information
+ */
+using FastA = Sequence;
+
+/**
+ * @brief FASTQ genome sequences.
+ * 
+ * @details Extends @ref orange::mapper::Sequence
+ *      with cigar string quiality information
+ */
+struct FastQ : public Sequence {
+    FastQ(char const* name, std::uint32_t name_len, char const* seq,
+          std::uint32_t seq_len, char const* quality_str,
+          std::uint32_t quality_str_len)
+        : Sequence(name, name_len, seq, seq_len),
+          quality_str_{quality_str},
+          quality_str_len_{quality_str_len} {}
+
+    char const* quality_str_;
+    std::uint32_t const quality_str_len_;
+};
+
+template <typename Format, typename ParserType>
+auto parse_fastaq(char const* path_to_file) {
+    
+}
 
 }  // namespace mapper
 }  // namespace orange
@@ -119,11 +154,11 @@ int main(int argc, char* argv[]) {
         // Check number of passed arguments
         if (argc - file_index < 2) {
             std::cerr << "Invalid number of arguments.\n"
-                      << "\tRequired two input files:\n"
+                         "\tRequired two input files:\n"
                          "\t\t1. Set of fragments (FASTA/FASTQ)\n"
-                      << "\t\t2. Reference genom (FASTA)\n\n"
-                      << "\tEg. orange_mapper escherichia_coli_r7_reads.fastq "
-                      << "escherichia_coli_reference.fasta\n";
+                         "\t\t2. Reference genom (FASTA)\n\n"
+                         "\tEg. orange_mapper escherichia_coli_r7_reads.fastq "
+                         "escherichia_coli_reference.fasta\n";
         }
 
     } catch (std::exception const& e) {
