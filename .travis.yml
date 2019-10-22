@@ -9,3 +9,11 @@ addons:
     packages:
       - g++-7
       - cmake
+
+script:
+  - mkdir build
+  - cd build
+
+  - cmake ..
+  - make
+  
