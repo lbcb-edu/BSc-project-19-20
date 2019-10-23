@@ -136,8 +136,7 @@ int main(int argc, char **argv) {
         has_suffix(convertToString(argv[1], strlen(argv[1])), ".fasta.gz") ||
         has_suffix(convertToString(argv[1], strlen(argv[1])), ".fa.gz")) {
       vector<unique_ptr<FASTAfile>> fasta_objects;
-      string str = convertToString(argv[1], strlen(argv[1]));
-      string path = "/home/filip/git/Project/" + str;
+      string path = convertToString(argv[1], strlen(argv[1]));
       auto fasta_parser =
           bioparser::createParser<bioparser::FastaParser, FASTAfile>(path);
       fasta_parser->parse(fasta_objects, -1);
@@ -149,8 +148,7 @@ int main(int argc, char **argv) {
         has_suffix(convertToString(argv[2], strlen(argv[2])), ".fasta.gz") ||
         has_suffix(convertToString(argv[2], strlen(argv[2])), ".fa.gz")) {
       vector<unique_ptr<FASTAfile>> fasta_objects;
-      string str = convertToString(argv[1], strlen(argv[1]));
-      string path = "/home/filip/git/Project/" + str;
+      string path = convertToString(argv[1], strlen(argv[1]));
       auto fasta_parser =
           bioparser::createParser<bioparser::FastaParser, FASTAfile>(path);
       fasta_parser->parse(fasta_objects, -1);
@@ -163,8 +161,7 @@ int main(int argc, char **argv) {
         has_suffix(convertToString(argv[1], strlen(argv[1])), ".fastq.gz") ||
         has_suffix(convertToString(argv[1], strlen(argv[1])), ".fq.gz")) {
       std::vector<std::unique_ptr<FASTQfile>> fastq_objects;
-      string str = convertToString(argv[1], strlen(argv[1]));
-      string path = "/home/filip/git/Project/" + str;
+      string path = convertToString(argv[1], strlen(argv[1]));
       auto fastq_parser =
           bioparser::createParser<bioparser::FastqParser, FASTQfile>(path);
       std::uint64_t size_in_bytes = 500 * 1024 * 1024;
@@ -183,8 +180,7 @@ int main(int argc, char **argv) {
         has_suffix(convertToString(argv[2], strlen(argv[2])), ".fastq.gz") ||
         has_suffix(convertToString(argv[2], strlen(argv[2])), ".fq.gz")) {
       std::vector<std::unique_ptr<FASTQfile>> fastq_objects;
-      string str = convertToString(argv[2], strlen(argv[2]));
-      string path = "/home/filip/git/Project/" + str;
+      string path = convertToString(argv[2], strlen(argv[2]));
       auto fastq_parser =
           bioparser::createParser<bioparser::FastqParser, FASTQfile>(path);
       std::uint64_t size_in_bytes = 500 * 1024 * 1024;
