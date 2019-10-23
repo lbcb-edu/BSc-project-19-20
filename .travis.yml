@@ -16,7 +16,7 @@ addons:
 
 script:
 
-  -which clang-8
+  - which clang-8
   
   - export CC=clang-8
   - export CXX=clang++-8
@@ -27,5 +27,4 @@ script:
   - cmake .. 
   - cmake --build . --target all -- -j ..
 
-  # Run tests
   - ctest
