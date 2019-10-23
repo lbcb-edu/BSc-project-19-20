@@ -277,7 +277,7 @@ int main(int argc, char* argv[]) {
             ref_type == mapper::FileType::kUnsupported) {
             std::cerr << "Unsuppored file format!\n"
                          "\t Supported: FASTA (reads and reference), FASTQ "
-                         "(reference)\n";
+                         "(reads)\n";
 
             return EXIT_FAILURE;
         }
