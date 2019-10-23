@@ -27,4 +27,6 @@ script:
   - cmake .. 
   - cmake --build . --target all -- -j .. 
 
+  # Run tests
+  - cd test
   - ctest
