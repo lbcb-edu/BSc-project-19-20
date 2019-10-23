@@ -13,8 +13,7 @@ template <typename T>
 using Sequences = ::std::vector<::std::unique_ptr<T>>;
 
 template <typename DataFormat>
-::std::vector<::std::unique_ptr<Sequence>> parse(
-    const ::std::string& input_file) {
+Sequences<Sequence> parse(const ::std::string& input_file) {
   constexpr bool is_fasta = std::is_same_v<DataFormat, Sequence>;
 
   Sequences<DataFormat> sequences;
@@ -32,8 +31,7 @@ template <typename DataFormat>
             .release());
   }
 
-  while (parser->parse(sequences, 500 * 1024 * 1024))
-    ;
+  parser->parse(sequences, -1);
 
   if constexpr (is_fasta) {
     return sequences;
