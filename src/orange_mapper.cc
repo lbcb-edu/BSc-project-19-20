@@ -176,7 +176,10 @@ auto parseFileType(std::string_view file) {
     else if (file == ".fastq" || file == ".fq")
         return FileType::kFastq;
 
-    return FileType::kUnsupported;
+    throw std::invalid_argument(
+        "Unsuppored file format!\n"
+        "\t Supported: FASTA (reads and reference), FASTQ "
+        "(reads)\n");
 }
 
 /**
@@ -271,16 +274,6 @@ int main(int argc, char* argv[]) {
         // Determine scan formats
         auto reads_type = mapper::parseFileType(path_to_reads);
         auto ref_type = mapper::parseFileType(path_to_ref);
-
-        // Check if formats are supported
-        if (reads_type == mapper::FileType::kUnsupported ||
-            ref_type == mapper::FileType::kUnsupported) {
-            std::cerr << "Unsuppored file format!\n"
-                         "\t Supported: FASTA (reads and reference), FASTQ "
-                         "(reads)\n";
-
-            return EXIT_FAILURE;
-        }
 
         // Report start of file loading
         std::cout << "Started loading files\n";
