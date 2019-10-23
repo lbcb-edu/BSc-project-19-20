@@ -1,6 +1,11 @@
 # custom
 
 blue_mapper
+*.fasta
+*.fa
+*.fastq
+*.fq
+*.gz
 
 
 # Created by https://www.gitignore.io/api/c++,cmake,visualstudio,visualstudiocode
