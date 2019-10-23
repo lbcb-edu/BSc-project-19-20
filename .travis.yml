@@ -25,6 +25,6 @@ script:
   - cd build
 
   - cmake .. 
-  - cmake --build . --target all -- -j ..
+  - cmake --build . --target all -- -j .. 
 
   - ctest
