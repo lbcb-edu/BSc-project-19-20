@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.9)
 
 project(orange_mapper LANGUAGES CXX)
 
-set(orange_mapper_VERSION_MAJOR 1)
-set(orange_mapper_VERSION_MINOR 0)
+set(orange_mapper_VERSION_MAJOR 0)
+set(orange_mapper_VERSION_MINOR 1)
 set(orange_mapper_VERSION_PATCH 0)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
