@@ -86,7 +86,7 @@ int main(int argc, char** argv, char** env) {
     fastq_ext{".fastq", ".fastq.gz", ".fq", ".fq.gz"};
   // clang-format on
 
-  ::std::string src{argv[1]}, dest{argv[2]};
+  const ::std::string src{argv[1]}, dest{argv[2]};
 
   int using_fasta = -1;
 
