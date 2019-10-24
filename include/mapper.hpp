@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <bioparser/bioparser.hpp>
+#include <iterator>
 #include <memory>
 #include <type_traits>
 #include <vector>
@@ -32,13 +33,11 @@ Sequences<Sequence> Parse(const ::std::string& input_file) {
   Sequences<DataFormat> sequences;
   detail::GetParser<DataFormat>(input_file)->parse(sequences, -1);
 
-  if constexpr (std::is_same_v<DataFormat, Sequence>) {
+  if constexpr (std::is_same_v<DataFormat, Sequence>)
     return sequences;
-  } else {
-    Sequences<Sequence> retval(sequences.size());
-    ::std::move(sequences.begin(), sequences.end(), retval.begin());
-    return retval;
-  }
+  else
+    return Sequences<Sequence>{::std::make_move_iterator(sequences.begin()),
+                               ::std::make_move_iterator(sequences.end())};
 }
 
 }  // namespace mapper
