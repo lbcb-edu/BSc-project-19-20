@@ -85,6 +85,12 @@ struct FastQ : public Sequence {
 using VecSeqPtr = std::vector<std::unique_ptr<Sequence>>;
 
 /**
+ * @brief Vector of pointers to parsed @ref orange::mapper::FastQ
+ *
+ */
+using VecFastQPtr = std::vector<std::unique_ptr<FastQ>>;
+
+/**
  * @brief Simple intarface for creating @ref bioparser FASTA parser
  */
 auto createFastaParser =
@@ -190,15 +196,20 @@ auto parseFileType(std::string_view file) {
  * @return @ref orange::mapper::VecSeqPtr
  */
 auto loadFile(std::string const& path_to_file, FileType const& type) {
-    auto objects = VecSeqPtr{};
-    auto parse = [&objects](auto parser) { parser->parse(objects, -1); };
+    auto parse = [](auto parser, auto& objects) { parser->parse(objects, -1); };
 
-    if (type == FileType::kFasta)
-        parse(createFastaParser(path_to_file));
-    else
-        parse(createFastaParser(path_to_file));
+    if (type == FileType::kFasta) {
+        auto objects = VecSeqPtr{};
+        parse(createFastaParser(path_to_file), objects);
 
-    return objects;
+        return objects;
+    } else {
+        auto objects = VecFastQPtr{};
+        parse(createFastqParser(path_to_file), objects);
+
+        return VecSeqPtr{std::make_move_iterator(objects.begin()),
+                         std::make_move_iterator(objects.end())};
+    }
 }
 
 /**
