@@ -11,5 +11,6 @@ addons:
       - g++-9
 
 script:
+  - g++ --version
   - cmake .
   - make
