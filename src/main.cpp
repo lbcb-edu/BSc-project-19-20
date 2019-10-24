@@ -13,12 +13,12 @@
 
 namespace util {
 
-::std::string to_lower(::std::string s) noexcept {
+::std::string ToLower(::std::string s) noexcept {
   for (auto&& c : s) c = ::std::tolower(c);
   return s;
 }
 
-::std::ostream& display_help(::std::ostream& out) noexcept {
+::std::ostream& DisplayHelp(::std::ostream& out) noexcept {
   out << "Mapper that displays input genome statistics." << ::std::endl
       << "Arguments: [fragments] [reference]." << ::std::endl
       << " - fragments: input file in a FASTA or FASTQ format" << ::std::endl
@@ -27,7 +27,7 @@ namespace util {
   return out;
 }
 
-::std::string version() noexcept {
+::std::string Version() noexcept {
   ::std::ostringstream ss;
   ss << BLUE_MAPPER_VERSION_MAJOR << "." << BLUE_MAPPER_VERSION_MINOR << "."
      << BLUE_MAPPER_VERSION_PATCH;
@@ -35,13 +35,14 @@ namespace util {
   return ss.str();
 }
 
-bool ends_with(const ::std::string& str, const ::std::string& ext) noexcept {
+bool EndsWith(const ::std::string& str, const ::std::string& ext) noexcept {
   return str.find(ext) == str.length() - ext.length();
 }
 
-::std::ostream& operator<<(
-    ::std::ostream& out,
-    const ::mapper::Sequences<::mapper::Sequence>& sequences) noexcept {
+using namespace ::mapper;
+
+::std::ostream& operator<<(::std::ostream& out,
+                           const Sequences<Sequence>& sequences) noexcept {
   ::std::size_t min = ::std::numeric_limits<::std::size_t>::max(), max = 0,
                 total = 0, temp;
 
@@ -66,12 +67,12 @@ bool ends_with(const ::std::string& str, const ::std::string& ext) noexcept {
 int main(int argc, char** argv, char** env) {
   ::std::string arg1;
 
-  if (argc == 1 || "-h" == (arg1 = ::util::to_lower(argv[1])) ||
+  if (argc == 1 || "-h" == (arg1 = ::util::ToLower(argv[1])) ||
       "--help" == arg1) {
-    ::util::display_help(::std::cerr) << ::std::endl;
+    ::util::DisplayHelp(::std::cerr) << ::std::endl;
     ::std::exit(EXIT_SUCCESS);
-  } else if ("-v" == arg1 || "--version" == arg1) {
-    ::std::cerr << ::util::version() << ::std::endl;
+  } else if ("-v" == arg1 || "--Version" == arg1) {
+    ::std::cerr << ::util::Version() << ::std::endl;
     ::std::exit(EXIT_SUCCESS);
   } else if (argc != 3) {
     ::std::cerr << "This program requires 2 arguments. See --help."
@@ -90,14 +91,14 @@ int main(int argc, char** argv, char** env) {
   int using_fasta = -1;
 
   for (auto&& ext : fasta_ext)
-    if (::util::ends_with(src, ext)) {
+    if (::util::EndsWith(src, ext)) {
       using_fasta = 1;
       break;
     }
 
   if (-1 == using_fasta) {
     for (auto&& ext : fastq_ext)
-      if (::util::ends_with(src, ext)) {
+      if (::util::EndsWith(src, ext)) {
         using_fasta = 0;
         break;
       }
@@ -112,7 +113,7 @@ int main(int argc, char** argv, char** env) {
   bool destination_valid = false;
 
   for (auto&& ext : fasta_ext)
-    if (::util::ends_with(dest, ext)) {
+    if (::util::EndsWith(dest, ext)) {
       destination_valid = true;
       break;
     }
@@ -122,12 +123,12 @@ int main(int argc, char** argv, char** env) {
     ::std::exit(EXIT_FAILURE);
   }
 
-  auto fragments = using_fasta ? ::mapper::parse<::mapper::Sequence>(src)
-                               : ::mapper::parse<::mapper::QSequence>(src);
+  auto fragments = using_fasta ? ::mapper::Parse<::mapper::Sequence>(src)
+                               : ::mapper::Parse<::mapper::QSequence>(src);
 
   ::std::cerr << "Loaded fragments." << ::std::endl;
 
-  auto reference = ::mapper::parse<::mapper::Sequence>(dest);
+  auto reference = ::mapper::Parse<::mapper::Sequence>(dest);
 
   ::std::cerr << "Loaded reference." << ::std::endl;
 
