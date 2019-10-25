@@ -1,0 +1,10 @@
+dist: bionic
+
+language: cpp
+
+script:
+   - mkdir build
+   - cd build
+
+   - cmake ..
+   - make
