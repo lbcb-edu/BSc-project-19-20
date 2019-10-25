@@ -1,0 +1,13 @@
+*.fasta
+*.fa
+*.fasta.gz
+*.fa.gz
+*.fna.gz
+*.fna
+
+*.fastq
+*.fq
+*.fastq.gz
+*fq.gz
+
+.vscode/
