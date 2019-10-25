@@ -12,5 +12,3 @@
 
 .vscode/
 build/
-
-vendor/bioparser/
