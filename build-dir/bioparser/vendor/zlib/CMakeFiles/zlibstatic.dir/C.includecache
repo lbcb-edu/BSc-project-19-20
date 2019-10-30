@@ -122,33 +122,9 @@ inftrees.h
 
 /home/filip/git/Project/BSc-project-19-20/bioparser/vendor/zlib/inftrees.h
 
-/home/filip/git/Project/BSc-project-19-20/bioparser/vendor/zlib/trees.c
-deflate.h
-/home/filip/git/Project/BSc-project-19-20/bioparser/vendor/zlib/deflate.h
-ctype.h
--
-trees.h
-/home/filip/git/Project/BSc-project-19-20/bioparser/vendor/zlib/trees.h
-stdio.h
--
-
-/home/filip/git/Project/BSc-project-19-20/bioparser/vendor/zlib/trees.h
-
-/home/filip/git/Project/BSc-project-19-20/bioparser/vendor/zlib/uncompr.c
-zlib.h
-/home/filip/git/Project/BSc-project-19-20/bioparser/vendor/zlib/zlib.h
-
 /home/filip/git/Project/BSc-project-19-20/bioparser/vendor/zlib/zlib.h
 zconf.h
 /home/filip/git/Project/BSc-project-19-20/bioparser/vendor/zlib/zconf.h
-
-/home/filip/git/Project/BSc-project-19-20/bioparser/vendor/zlib/zutil.c
-zutil.h
-/home/filip/git/Project/BSc-project-19-20/bioparser/vendor/zlib/zutil.h
-gzguts.h
-/home/filip/git/Project/BSc-project-19-20/bioparser/vendor/zlib/gzguts.h
-stdlib.h
--
 
 /home/filip/git/Project/BSc-project-19-20/bioparser/vendor/zlib/zutil.h
 zlib.h
