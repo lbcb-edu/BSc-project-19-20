@@ -97,6 +97,9 @@ string convertToString(char *a, int size) {
 }
 
 int main(int argc, char **argv) {
+
+  bool flag = false;
+
   // check for command line args
   if (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0) {
     fprintf(stdout, "-v (--version)  Project version\n");
@@ -140,20 +143,27 @@ int main(int argc, char **argv) {
       auto fasta_parser =
           bioparser::createParser<bioparser::FastaParser, FASTAfile>(path);
       fasta_parser->parse(fasta_objects, -1);
+
       print_fasta_stats(fasta_objects);
+
+      if (strcmp(argv[1], argv[2]) == 0) flag = true;
     }
     // parse 2. file as FASTA
     if (has_suffix(convertToString(argv[2], strlen(argv[2])), ".fasta") ||
         has_suffix(convertToString(argv[2], strlen(argv[2])), ".fa") ||
         has_suffix(convertToString(argv[2], strlen(argv[2])), ".fasta.gz") ||
         has_suffix(convertToString(argv[2], strlen(argv[2])), ".fa.gz")) {
-      vector<unique_ptr<FASTAfile>> fasta_objects;
-      string path = convertToString(argv[1], strlen(argv[1]));
-      auto fasta_parser =
-          bioparser::createParser<bioparser::FastaParser, FASTAfile>(path);
-      fasta_parser->parse(fasta_objects, -1);
 
-      print_fasta_stats(fasta_objects);
+      if (flag == false) {
+        vector<unique_ptr<FASTAfile>> fasta_objects;
+        string path = convertToString(argv[1], strlen(argv[1]));
+        auto fasta_parser =
+            bioparser::createParser<bioparser::FastaParser, FASTAfile>(path);
+        fasta_parser->parse(fasta_objects, -1);
+
+        print_fasta_stats(fasta_objects);
+      }
+
     }
     // parse 1st file as FASTQ
     if (has_suffix(convertToString(argv[1], strlen(argv[1])), ".fastq") ||
@@ -173,25 +183,30 @@ int main(int argc, char **argv) {
       }
 
       print_fastq_stats(fastq_objects);
+
+      if (argv[1] == argv[2]) flag = true;
     }
     // parse 2nd file as FASTQ
     if (has_suffix(convertToString(argv[2], strlen(argv[2])), ".fastq") ||
         has_suffix(convertToString(argv[2], strlen(argv[2])), ".fq") ||
         has_suffix(convertToString(argv[2], strlen(argv[2])), ".fastq.gz") ||
         has_suffix(convertToString(argv[2], strlen(argv[2])), ".fq.gz")) {
-      std::vector<std::unique_ptr<FASTQfile>> fastq_objects;
-      string path = convertToString(argv[2], strlen(argv[2]));
-      auto fastq_parser =
-          bioparser::createParser<bioparser::FastqParser, FASTQfile>(path);
-      std::uint64_t size_in_bytes = 500 * 1024 * 1024;
-      while (true) {
-        auto status = fastq_parser->parse(fastq_objects, size_in_bytes);
-        if (status == false) {
-          break;
-        }
-      }
 
-      print_fastq_stats(fastq_objects);
+      if (flag == false) {
+        std::vector<std::unique_ptr<FASTQfile>> fastq_objects;
+        string path = convertToString(argv[2], strlen(argv[2]));
+        auto fastq_parser =
+            bioparser::createParser<bioparser::FastqParser, FASTQfile>(path);
+        std::uint64_t size_in_bytes = 500 * 1024 * 1024;
+        while (true) {
+          auto status = fastq_parser->parse(fastq_objects, size_in_bytes);
+          if (status == false) {
+            break;
+          }
+        }
+
+        print_fastq_stats(fastq_objects);
+      }
     }
   } else {
     fprintf(stderr, "2 files needed of format FASTA/FASTQ\n");
