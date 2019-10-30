@@ -181,7 +181,6 @@ int main(int argc, char **argv) {
           break;
         }
       }
-
       print_fastq_stats(fastq_objects);
 
       if (argv[1] == argv[2]) flag = true;
