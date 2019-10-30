@@ -204,7 +204,6 @@ int main(int argc, char **argv) {
             break;
           }
         }
-
         print_fastq_stats(fastq_objects);
       }
     }
