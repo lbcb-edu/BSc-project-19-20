@@ -1,5 +1,5 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/Mapper.dir/brown_mapper.cpp.o"
+  "CMakeFiles/Mapper.dir/src/brown_mapper.cpp.o"
   "Mapper"
   "Mapper.pdb"
 )

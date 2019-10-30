@@ -57,29 +57,29 @@ include CMakeFiles/Mapper.dir/progress.make
 # Include the compile flags for this target's objects.
 include CMakeFiles/Mapper.dir/flags.make
 
-CMakeFiles/Mapper.dir/brown_mapper.cpp.o: CMakeFiles/Mapper.dir/flags.make
-CMakeFiles/Mapper.dir/brown_mapper.cpp.o: ../brown_mapper.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/filip/git/Project/BSc-project-19-20/build-dir/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/Mapper.dir/brown_mapper.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Mapper.dir/brown_mapper.cpp.o -c /home/filip/git/Project/BSc-project-19-20/brown_mapper.cpp
+CMakeFiles/Mapper.dir/src/brown_mapper.cpp.o: CMakeFiles/Mapper.dir/flags.make
+CMakeFiles/Mapper.dir/src/brown_mapper.cpp.o: ../src/brown_mapper.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/filip/git/Project/BSc-project-19-20/build-dir/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/Mapper.dir/src/brown_mapper.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Mapper.dir/src/brown_mapper.cpp.o -c /home/filip/git/Project/BSc-project-19-20/src/brown_mapper.cpp
 
-CMakeFiles/Mapper.dir/brown_mapper.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Mapper.dir/brown_mapper.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/filip/git/Project/BSc-project-19-20/brown_mapper.cpp > CMakeFiles/Mapper.dir/brown_mapper.cpp.i
+CMakeFiles/Mapper.dir/src/brown_mapper.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Mapper.dir/src/brown_mapper.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/filip/git/Project/BSc-project-19-20/src/brown_mapper.cpp > CMakeFiles/Mapper.dir/src/brown_mapper.cpp.i
 
-CMakeFiles/Mapper.dir/brown_mapper.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Mapper.dir/brown_mapper.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/filip/git/Project/BSc-project-19-20/brown_mapper.cpp -o CMakeFiles/Mapper.dir/brown_mapper.cpp.s
+CMakeFiles/Mapper.dir/src/brown_mapper.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Mapper.dir/src/brown_mapper.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/filip/git/Project/BSc-project-19-20/src/brown_mapper.cpp -o CMakeFiles/Mapper.dir/src/brown_mapper.cpp.s
 
 # Object files for target Mapper
 Mapper_OBJECTS = \
-"CMakeFiles/Mapper.dir/brown_mapper.cpp.o"
+"CMakeFiles/Mapper.dir/src/brown_mapper.cpp.o"
 
 # External object files for target Mapper
 Mapper_EXTERNAL_OBJECTS =
 
-Mapper: CMakeFiles/Mapper.dir/brown_mapper.cpp.o
+Mapper: CMakeFiles/Mapper.dir/src/brown_mapper.cpp.o
 Mapper: CMakeFiles/Mapper.dir/build.make
-Mapper: bioparser/lib/libz.a
+Mapper: vendor/bioparser/lib/libz.a
 Mapper: CMakeFiles/Mapper.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/filip/git/Project/BSc-project-19-20/build-dir/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable Mapper"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/Mapper.dir/link.txt --verbose=$(VERBOSE)

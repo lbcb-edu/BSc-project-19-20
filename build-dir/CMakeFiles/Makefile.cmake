@@ -9,13 +9,13 @@ set(CMAKE_MAKEFILE_DEPENDS
   "CMakeCache.txt"
   "../CMakeLists.txt"
   "../MapperConfig.h.in"
-  "../bioparser/CMakeLists.txt"
-  "../bioparser/vendor/zlib/CMakeLists.txt"
-  "../bioparser/vendor/zlib/zconf.h.cmakein"
-  "../bioparser/vendor/zlib/zlib.pc.cmakein"
   "CMakeFiles/3.16.0-rc1/CMakeCCompiler.cmake"
   "CMakeFiles/3.16.0-rc1/CMakeCXXCompiler.cmake"
   "CMakeFiles/3.16.0-rc1/CMakeSystem.cmake"
+  "../vendor/bioparser/CMakeLists.txt"
+  "../vendor/bioparser/vendor/zlib/CMakeLists.txt"
+  "../vendor/bioparser/vendor/zlib/zconf.h.cmakein"
+  "../vendor/bioparser/vendor/zlib/zlib.pc.cmakein"
   "/usr/local/share/cmake-3.16/Modules/CMakeCInformation.cmake"
   "/usr/local/share/cmake-3.16/Modules/CMakeCXXInformation.cmake"
   "/usr/local/share/cmake-3.16/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake"
@@ -50,19 +50,19 @@ set(CMAKE_MAKEFILE_OUTPUTS
 
 # Byproducts of CMake generate step:
 set(CMAKE_MAKEFILE_PRODUCTS
-  "MapperConfig.h"
+  "src/MapperConfig.h"
   "CMakeFiles/CMakeDirectoryInformation.cmake"
-  "bioparser/CMakeFiles/CMakeDirectoryInformation.cmake"
-  "bioparser/vendor/zlib/CMakeFiles/CMakeDirectoryInformation.cmake"
+  "vendor/bioparser/CMakeFiles/CMakeDirectoryInformation.cmake"
+  "vendor/bioparser/vendor/zlib/CMakeFiles/CMakeDirectoryInformation.cmake"
   )
 
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/Mapper.dir/DependInfo.cmake"
-  "bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/DependInfo.cmake"
-  "bioparser/vendor/zlib/CMakeFiles/zlib.dir/DependInfo.cmake"
-  "bioparser/vendor/zlib/CMakeFiles/example.dir/DependInfo.cmake"
-  "bioparser/vendor/zlib/CMakeFiles/minigzip.dir/DependInfo.cmake"
-  "bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/DependInfo.cmake"
-  "bioparser/vendor/zlib/CMakeFiles/example64.dir/DependInfo.cmake"
+  "vendor/bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/DependInfo.cmake"
+  "vendor/bioparser/vendor/zlib/CMakeFiles/zlib.dir/DependInfo.cmake"
+  "vendor/bioparser/vendor/zlib/CMakeFiles/example.dir/DependInfo.cmake"
+  "vendor/bioparser/vendor/zlib/CMakeFiles/minigzip.dir/DependInfo.cmake"
+  "vendor/bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/DependInfo.cmake"
+  "vendor/bioparser/vendor/zlib/CMakeFiles/example64.dir/DependInfo.cmake"
   )

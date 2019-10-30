@@ -3,7 +3,7 @@
 #include <memory>
 #include <vector>
 #include "MapperConfig.h"
-#include "bioparser/include/bioparser/bioparser.hpp"
+#include "../vendor/bioparser/include/bioparser/bioparser.hpp"
 #define MAX 1000
 
 using namespace std;

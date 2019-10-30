@@ -64,61 +64,61 @@ preinstall:
 
 # The main recursive "clean" target.
 clean: CMakeFiles/Mapper.dir/clean
-clean: bioparser/clean
+clean: vendor/bioparser/clean
 
 .PHONY : clean
 
 #=============================================================================
-# Directory level rules for directory bioparser
+# Directory level rules for directory vendor/bioparser
 
 # Recursive "all" directory target.
-bioparser/all:
+vendor/bioparser/all:
 
-.PHONY : bioparser/all
+.PHONY : vendor/bioparser/all
 
 # Recursive "preinstall" directory target.
-bioparser/preinstall:
+vendor/bioparser/preinstall:
 
-.PHONY : bioparser/preinstall
+.PHONY : vendor/bioparser/preinstall
 
 # Recursive "clean" directory target.
-bioparser/clean: bioparser/vendor/zlib/clean
+vendor/bioparser/clean: vendor/bioparser/vendor/zlib/clean
 
-.PHONY : bioparser/clean
+.PHONY : vendor/bioparser/clean
 
 #=============================================================================
-# Directory level rules for directory bioparser/vendor/zlib
+# Directory level rules for directory vendor/bioparser/vendor/zlib
 
 # Recursive "all" directory target.
-bioparser/vendor/zlib/all: bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/all
-bioparser/vendor/zlib/all: bioparser/vendor/zlib/CMakeFiles/zlib.dir/all
-bioparser/vendor/zlib/all: bioparser/vendor/zlib/CMakeFiles/example.dir/all
-bioparser/vendor/zlib/all: bioparser/vendor/zlib/CMakeFiles/minigzip.dir/all
-bioparser/vendor/zlib/all: bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/all
-bioparser/vendor/zlib/all: bioparser/vendor/zlib/CMakeFiles/example64.dir/all
+vendor/bioparser/vendor/zlib/all: vendor/bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/all
+vendor/bioparser/vendor/zlib/all: vendor/bioparser/vendor/zlib/CMakeFiles/zlib.dir/all
+vendor/bioparser/vendor/zlib/all: vendor/bioparser/vendor/zlib/CMakeFiles/example.dir/all
+vendor/bioparser/vendor/zlib/all: vendor/bioparser/vendor/zlib/CMakeFiles/minigzip.dir/all
+vendor/bioparser/vendor/zlib/all: vendor/bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/all
+vendor/bioparser/vendor/zlib/all: vendor/bioparser/vendor/zlib/CMakeFiles/example64.dir/all
 
-.PHONY : bioparser/vendor/zlib/all
+.PHONY : vendor/bioparser/vendor/zlib/all
 
 # Recursive "preinstall" directory target.
-bioparser/vendor/zlib/preinstall:
+vendor/bioparser/vendor/zlib/preinstall:
 
-.PHONY : bioparser/vendor/zlib/preinstall
+.PHONY : vendor/bioparser/vendor/zlib/preinstall
 
 # Recursive "clean" directory target.
-bioparser/vendor/zlib/clean: bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/clean
-bioparser/vendor/zlib/clean: bioparser/vendor/zlib/CMakeFiles/zlib.dir/clean
-bioparser/vendor/zlib/clean: bioparser/vendor/zlib/CMakeFiles/example.dir/clean
-bioparser/vendor/zlib/clean: bioparser/vendor/zlib/CMakeFiles/minigzip.dir/clean
-bioparser/vendor/zlib/clean: bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/clean
-bioparser/vendor/zlib/clean: bioparser/vendor/zlib/CMakeFiles/example64.dir/clean
+vendor/bioparser/vendor/zlib/clean: vendor/bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/clean
+vendor/bioparser/vendor/zlib/clean: vendor/bioparser/vendor/zlib/CMakeFiles/zlib.dir/clean
+vendor/bioparser/vendor/zlib/clean: vendor/bioparser/vendor/zlib/CMakeFiles/example.dir/clean
+vendor/bioparser/vendor/zlib/clean: vendor/bioparser/vendor/zlib/CMakeFiles/minigzip.dir/clean
+vendor/bioparser/vendor/zlib/clean: vendor/bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/clean
+vendor/bioparser/vendor/zlib/clean: vendor/bioparser/vendor/zlib/CMakeFiles/example64.dir/clean
 
-.PHONY : bioparser/vendor/zlib/clean
+.PHONY : vendor/bioparser/vendor/zlib/clean
 
 #=============================================================================
 # Target rules for target CMakeFiles/Mapper.dir
 
 # All Build rule for target.
-CMakeFiles/Mapper.dir/all: bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/all
+CMakeFiles/Mapper.dir/all: vendor/bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/all
 	$(MAKE) -f CMakeFiles/Mapper.dir/build.make CMakeFiles/Mapper.dir/depend
 	$(MAKE) -f CMakeFiles/Mapper.dir/build.make CMakeFiles/Mapper.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/filip/git/Project/BSc-project-19-20/build-dir/CMakeFiles --progress-num=1,2 "Built target Mapper"
@@ -142,166 +142,166 @@ CMakeFiles/Mapper.dir/clean:
 .PHONY : CMakeFiles/Mapper.dir/clean
 
 #=============================================================================
-# Target rules for target bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir
+# Target rules for target vendor/bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir
 
 # All Build rule for target.
-bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/all:
-	$(MAKE) -f bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/build.make bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/depend
-	$(MAKE) -f bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/build.make bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/build
+vendor/bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/all:
+	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/depend
+	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/filip/git/Project/BSc-project-19-20/build-dir/CMakeFiles --progress-num=27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42 "Built target zlibstatic"
-.PHONY : bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/all
+.PHONY : vendor/bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/all
 
 # Build rule for subdir invocation for target.
-bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/rule: cmake_check_build_system
+vendor/bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/filip/git/Project/BSc-project-19-20/build-dir/CMakeFiles 16
-	$(MAKE) -f CMakeFiles/Makefile2 bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/all
+	$(MAKE) -f CMakeFiles/Makefile2 vendor/bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/filip/git/Project/BSc-project-19-20/build-dir/CMakeFiles 0
-.PHONY : bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/rule
+.PHONY : vendor/bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/rule
 
 # Convenience name for target.
-zlibstatic: bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/rule
+zlibstatic: vendor/bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/rule
 
 .PHONY : zlibstatic
 
 # clean rule for target.
-bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/clean:
-	$(MAKE) -f bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/build.make bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/clean
-.PHONY : bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/clean
+vendor/bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/clean:
+	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/clean
+.PHONY : vendor/bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/clean
 
 #=============================================================================
-# Target rules for target bioparser/vendor/zlib/CMakeFiles/zlib.dir
+# Target rules for target vendor/bioparser/vendor/zlib/CMakeFiles/zlib.dir
 
 # All Build rule for target.
-bioparser/vendor/zlib/CMakeFiles/zlib.dir/all:
-	$(MAKE) -f bioparser/vendor/zlib/CMakeFiles/zlib.dir/build.make bioparser/vendor/zlib/CMakeFiles/zlib.dir/depend
-	$(MAKE) -f bioparser/vendor/zlib/CMakeFiles/zlib.dir/build.make bioparser/vendor/zlib/CMakeFiles/zlib.dir/build
+vendor/bioparser/vendor/zlib/CMakeFiles/zlib.dir/all:
+	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/zlib.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/zlib.dir/depend
+	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/zlib.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/zlib.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/filip/git/Project/BSc-project-19-20/build-dir/CMakeFiles --progress-num=11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26 "Built target zlib"
-.PHONY : bioparser/vendor/zlib/CMakeFiles/zlib.dir/all
+.PHONY : vendor/bioparser/vendor/zlib/CMakeFiles/zlib.dir/all
 
 # Build rule for subdir invocation for target.
-bioparser/vendor/zlib/CMakeFiles/zlib.dir/rule: cmake_check_build_system
+vendor/bioparser/vendor/zlib/CMakeFiles/zlib.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/filip/git/Project/BSc-project-19-20/build-dir/CMakeFiles 16
-	$(MAKE) -f CMakeFiles/Makefile2 bioparser/vendor/zlib/CMakeFiles/zlib.dir/all
+	$(MAKE) -f CMakeFiles/Makefile2 vendor/bioparser/vendor/zlib/CMakeFiles/zlib.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/filip/git/Project/BSc-project-19-20/build-dir/CMakeFiles 0
-.PHONY : bioparser/vendor/zlib/CMakeFiles/zlib.dir/rule
+.PHONY : vendor/bioparser/vendor/zlib/CMakeFiles/zlib.dir/rule
 
 # Convenience name for target.
-zlib: bioparser/vendor/zlib/CMakeFiles/zlib.dir/rule
+zlib: vendor/bioparser/vendor/zlib/CMakeFiles/zlib.dir/rule
 
 .PHONY : zlib
 
 # clean rule for target.
-bioparser/vendor/zlib/CMakeFiles/zlib.dir/clean:
-	$(MAKE) -f bioparser/vendor/zlib/CMakeFiles/zlib.dir/build.make bioparser/vendor/zlib/CMakeFiles/zlib.dir/clean
-.PHONY : bioparser/vendor/zlib/CMakeFiles/zlib.dir/clean
+vendor/bioparser/vendor/zlib/CMakeFiles/zlib.dir/clean:
+	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/zlib.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/zlib.dir/clean
+.PHONY : vendor/bioparser/vendor/zlib/CMakeFiles/zlib.dir/clean
 
 #=============================================================================
-# Target rules for target bioparser/vendor/zlib/CMakeFiles/example.dir
+# Target rules for target vendor/bioparser/vendor/zlib/CMakeFiles/example.dir
 
 # All Build rule for target.
-bioparser/vendor/zlib/CMakeFiles/example.dir/all: bioparser/vendor/zlib/CMakeFiles/zlib.dir/all
-	$(MAKE) -f bioparser/vendor/zlib/CMakeFiles/example.dir/build.make bioparser/vendor/zlib/CMakeFiles/example.dir/depend
-	$(MAKE) -f bioparser/vendor/zlib/CMakeFiles/example.dir/build.make bioparser/vendor/zlib/CMakeFiles/example.dir/build
+vendor/bioparser/vendor/zlib/CMakeFiles/example.dir/all: vendor/bioparser/vendor/zlib/CMakeFiles/zlib.dir/all
+	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/example.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/example.dir/depend
+	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/example.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/example.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/filip/git/Project/BSc-project-19-20/build-dir/CMakeFiles --progress-num=3,4 "Built target example"
-.PHONY : bioparser/vendor/zlib/CMakeFiles/example.dir/all
+.PHONY : vendor/bioparser/vendor/zlib/CMakeFiles/example.dir/all
 
 # Build rule for subdir invocation for target.
-bioparser/vendor/zlib/CMakeFiles/example.dir/rule: cmake_check_build_system
+vendor/bioparser/vendor/zlib/CMakeFiles/example.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/filip/git/Project/BSc-project-19-20/build-dir/CMakeFiles 18
-	$(MAKE) -f CMakeFiles/Makefile2 bioparser/vendor/zlib/CMakeFiles/example.dir/all
+	$(MAKE) -f CMakeFiles/Makefile2 vendor/bioparser/vendor/zlib/CMakeFiles/example.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/filip/git/Project/BSc-project-19-20/build-dir/CMakeFiles 0
-.PHONY : bioparser/vendor/zlib/CMakeFiles/example.dir/rule
+.PHONY : vendor/bioparser/vendor/zlib/CMakeFiles/example.dir/rule
 
 # Convenience name for target.
-example: bioparser/vendor/zlib/CMakeFiles/example.dir/rule
+example: vendor/bioparser/vendor/zlib/CMakeFiles/example.dir/rule
 
 .PHONY : example
 
 # clean rule for target.
-bioparser/vendor/zlib/CMakeFiles/example.dir/clean:
-	$(MAKE) -f bioparser/vendor/zlib/CMakeFiles/example.dir/build.make bioparser/vendor/zlib/CMakeFiles/example.dir/clean
-.PHONY : bioparser/vendor/zlib/CMakeFiles/example.dir/clean
+vendor/bioparser/vendor/zlib/CMakeFiles/example.dir/clean:
+	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/example.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/example.dir/clean
+.PHONY : vendor/bioparser/vendor/zlib/CMakeFiles/example.dir/clean
 
 #=============================================================================
-# Target rules for target bioparser/vendor/zlib/CMakeFiles/minigzip.dir
+# Target rules for target vendor/bioparser/vendor/zlib/CMakeFiles/minigzip.dir
 
 # All Build rule for target.
-bioparser/vendor/zlib/CMakeFiles/minigzip.dir/all: bioparser/vendor/zlib/CMakeFiles/zlib.dir/all
-	$(MAKE) -f bioparser/vendor/zlib/CMakeFiles/minigzip.dir/build.make bioparser/vendor/zlib/CMakeFiles/minigzip.dir/depend
-	$(MAKE) -f bioparser/vendor/zlib/CMakeFiles/minigzip.dir/build.make bioparser/vendor/zlib/CMakeFiles/minigzip.dir/build
+vendor/bioparser/vendor/zlib/CMakeFiles/minigzip.dir/all: vendor/bioparser/vendor/zlib/CMakeFiles/zlib.dir/all
+	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/minigzip.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/minigzip.dir/depend
+	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/minigzip.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/minigzip.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/filip/git/Project/BSc-project-19-20/build-dir/CMakeFiles --progress-num=7,8 "Built target minigzip"
-.PHONY : bioparser/vendor/zlib/CMakeFiles/minigzip.dir/all
+.PHONY : vendor/bioparser/vendor/zlib/CMakeFiles/minigzip.dir/all
 
 # Build rule for subdir invocation for target.
-bioparser/vendor/zlib/CMakeFiles/minigzip.dir/rule: cmake_check_build_system
+vendor/bioparser/vendor/zlib/CMakeFiles/minigzip.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/filip/git/Project/BSc-project-19-20/build-dir/CMakeFiles 18
-	$(MAKE) -f CMakeFiles/Makefile2 bioparser/vendor/zlib/CMakeFiles/minigzip.dir/all
+	$(MAKE) -f CMakeFiles/Makefile2 vendor/bioparser/vendor/zlib/CMakeFiles/minigzip.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/filip/git/Project/BSc-project-19-20/build-dir/CMakeFiles 0
-.PHONY : bioparser/vendor/zlib/CMakeFiles/minigzip.dir/rule
+.PHONY : vendor/bioparser/vendor/zlib/CMakeFiles/minigzip.dir/rule
 
 # Convenience name for target.
-minigzip: bioparser/vendor/zlib/CMakeFiles/minigzip.dir/rule
+minigzip: vendor/bioparser/vendor/zlib/CMakeFiles/minigzip.dir/rule
 
 .PHONY : minigzip
 
 # clean rule for target.
-bioparser/vendor/zlib/CMakeFiles/minigzip.dir/clean:
-	$(MAKE) -f bioparser/vendor/zlib/CMakeFiles/minigzip.dir/build.make bioparser/vendor/zlib/CMakeFiles/minigzip.dir/clean
-.PHONY : bioparser/vendor/zlib/CMakeFiles/minigzip.dir/clean
+vendor/bioparser/vendor/zlib/CMakeFiles/minigzip.dir/clean:
+	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/minigzip.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/minigzip.dir/clean
+.PHONY : vendor/bioparser/vendor/zlib/CMakeFiles/minigzip.dir/clean
 
 #=============================================================================
-# Target rules for target bioparser/vendor/zlib/CMakeFiles/minigzip64.dir
+# Target rules for target vendor/bioparser/vendor/zlib/CMakeFiles/minigzip64.dir
 
 # All Build rule for target.
-bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/all: bioparser/vendor/zlib/CMakeFiles/zlib.dir/all
-	$(MAKE) -f bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/build.make bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/depend
-	$(MAKE) -f bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/build.make bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/build
+vendor/bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/all: vendor/bioparser/vendor/zlib/CMakeFiles/zlib.dir/all
+	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/depend
+	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/filip/git/Project/BSc-project-19-20/build-dir/CMakeFiles --progress-num=9,10 "Built target minigzip64"
-.PHONY : bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/all
+.PHONY : vendor/bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/all
 
 # Build rule for subdir invocation for target.
-bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/rule: cmake_check_build_system
+vendor/bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/filip/git/Project/BSc-project-19-20/build-dir/CMakeFiles 18
-	$(MAKE) -f CMakeFiles/Makefile2 bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/all
+	$(MAKE) -f CMakeFiles/Makefile2 vendor/bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/filip/git/Project/BSc-project-19-20/build-dir/CMakeFiles 0
-.PHONY : bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/rule
+.PHONY : vendor/bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/rule
 
 # Convenience name for target.
-minigzip64: bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/rule
+minigzip64: vendor/bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/rule
 
 .PHONY : minigzip64
 
 # clean rule for target.
-bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/clean:
-	$(MAKE) -f bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/build.make bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/clean
-.PHONY : bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/clean
+vendor/bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/clean:
+	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/clean
+.PHONY : vendor/bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/clean
 
 #=============================================================================
-# Target rules for target bioparser/vendor/zlib/CMakeFiles/example64.dir
+# Target rules for target vendor/bioparser/vendor/zlib/CMakeFiles/example64.dir
 
 # All Build rule for target.
-bioparser/vendor/zlib/CMakeFiles/example64.dir/all: bioparser/vendor/zlib/CMakeFiles/zlib.dir/all
-	$(MAKE) -f bioparser/vendor/zlib/CMakeFiles/example64.dir/build.make bioparser/vendor/zlib/CMakeFiles/example64.dir/depend
-	$(MAKE) -f bioparser/vendor/zlib/CMakeFiles/example64.dir/build.make bioparser/vendor/zlib/CMakeFiles/example64.dir/build
+vendor/bioparser/vendor/zlib/CMakeFiles/example64.dir/all: vendor/bioparser/vendor/zlib/CMakeFiles/zlib.dir/all
+	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/example64.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/example64.dir/depend
+	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/example64.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/example64.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/filip/git/Project/BSc-project-19-20/build-dir/CMakeFiles --progress-num=5,6 "Built target example64"
-.PHONY : bioparser/vendor/zlib/CMakeFiles/example64.dir/all
+.PHONY : vendor/bioparser/vendor/zlib/CMakeFiles/example64.dir/all
 
 # Build rule for subdir invocation for target.
-bioparser/vendor/zlib/CMakeFiles/example64.dir/rule: cmake_check_build_system
+vendor/bioparser/vendor/zlib/CMakeFiles/example64.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/filip/git/Project/BSc-project-19-20/build-dir/CMakeFiles 18
-	$(MAKE) -f CMakeFiles/Makefile2 bioparser/vendor/zlib/CMakeFiles/example64.dir/all
+	$(MAKE) -f CMakeFiles/Makefile2 vendor/bioparser/vendor/zlib/CMakeFiles/example64.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/filip/git/Project/BSc-project-19-20/build-dir/CMakeFiles 0
-.PHONY : bioparser/vendor/zlib/CMakeFiles/example64.dir/rule
+.PHONY : vendor/bioparser/vendor/zlib/CMakeFiles/example64.dir/rule
 
 # Convenience name for target.
-example64: bioparser/vendor/zlib/CMakeFiles/example64.dir/rule
+example64: vendor/bioparser/vendor/zlib/CMakeFiles/example64.dir/rule
 
 .PHONY : example64
 
 # clean rule for target.
-bioparser/vendor/zlib/CMakeFiles/example64.dir/clean:
-	$(MAKE) -f bioparser/vendor/zlib/CMakeFiles/example64.dir/build.make bioparser/vendor/zlib/CMakeFiles/example64.dir/clean
-.PHONY : bioparser/vendor/zlib/CMakeFiles/example64.dir/clean
+vendor/bioparser/vendor/zlib/CMakeFiles/example64.dir/clean:
+	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/example64.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/example64.dir/clean
+.PHONY : vendor/bioparser/vendor/zlib/CMakeFiles/example64.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

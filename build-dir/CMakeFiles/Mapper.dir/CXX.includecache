@@ -6,11 +6,27 @@
 
 #IncludeRegexTransform: 
 
-../bioparser/vendor/zlib/zlib.h
+../vendor/bioparser/vendor/zlib/zlib.h
 zconf.h
-../bioparser/vendor/zlib/zconf.h
+../vendor/bioparser/vendor/zlib/zconf.h
 
-/home/filip/git/Project/BSc-project-19-20/bioparser/include/bioparser/bioparser.hpp
+/home/filip/git/Project/BSc-project-19-20/src/MapperConfig.h
+
+/home/filip/git/Project/BSc-project-19-20/src/brown_mapper.cpp
+cstring
+-
+iostream
+-
+memory
+-
+vector
+-
+MapperConfig.h
+/home/filip/git/Project/BSc-project-19-20/src/MapperConfig.h
+../vendor/bioparser/include/bioparser/bioparser.hpp
+/home/filip/git/Project/BSc-project-19-20/vendor/bioparser/include/bioparser/bioparser.hpp
+
+/home/filip/git/Project/BSc-project-19-20/vendor/bioparser/include/bioparser/bioparser.hpp
 cstdint
 -
 cstring
@@ -24,25 +40,9 @@ string
 vector
 -
 zlib.h
-/home/filip/git/Project/BSc-project-19-20/bioparser/include/bioparser/zlib.h
+/home/filip/git/Project/BSc-project-19-20/vendor/bioparser/include/bioparser/zlib.h
 
-/home/filip/git/Project/BSc-project-19-20/brown_mapper.cpp
-cstring
--
-iostream
--
-memory
--
-vector
--
-MapperConfig.h
-/home/filip/git/Project/BSc-project-19-20/MapperConfig.h
-bioparser/include/bioparser/bioparser.hpp
-/home/filip/git/Project/BSc-project-19-20/bioparser/include/bioparser/bioparser.hpp
-
-MapperConfig.h
-
-bioparser/vendor/zlib/zconf.h
+vendor/bioparser/vendor/zlib/zconf.h
 stddef.h
 -
 windows.h

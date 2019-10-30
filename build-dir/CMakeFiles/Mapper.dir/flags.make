@@ -6,5 +6,5 @@ CXX_FLAGS =   -std=gnu++11
 
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/filip/git/Project/BSc-project-19-20/build-dir -I/home/filip/git/Project/BSc-project-19-20/bioparser/include -I/home/filip/git/Project/BSc-project-19-20/bioparser/vendor/zlib -I/home/filip/git/Project/BSc-project-19-20/build-dir/bioparser/vendor/zlib 
+CXX_INCLUDES = -I/home/filip/git/Project/BSc-project-19-20/build-dir/vendor/bioparser/include -I/home/filip/git/Project/BSc-project-19-20/vendor/bioparser/include -I/home/filip/git/Project/BSc-project-19-20/vendor/bioparser/vendor/zlib -I/home/filip/git/Project/BSc-project-19-20/build-dir/vendor/bioparser/vendor/zlib 
 

@@ -1,1 +1,1 @@
-/usr/bin/c++    -rdynamic CMakeFiles/Mapper.dir/brown_mapper.cpp.o  -o Mapper  bioparser/lib/libz.a 
+/usr/bin/c++    -rdynamic CMakeFiles/Mapper.dir/src/brown_mapper.cpp.o  -o Mapper  vendor/bioparser/lib/libz.a 

@@ -179,7 +179,7 @@ zlibstatic: cmake_check_build_system
 
 # fast build rule for target.
 zlibstatic/fast:
-	$(MAKE) -f bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/build.make bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/build
+	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/zlibstatic.dir/build
 .PHONY : zlibstatic/fast
 
 #=============================================================================
@@ -192,7 +192,7 @@ zlib: cmake_check_build_system
 
 # fast build rule for target.
 zlib/fast:
-	$(MAKE) -f bioparser/vendor/zlib/CMakeFiles/zlib.dir/build.make bioparser/vendor/zlib/CMakeFiles/zlib.dir/build
+	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/zlib.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/zlib.dir/build
 .PHONY : zlib/fast
 
 #=============================================================================
@@ -205,7 +205,7 @@ example: cmake_check_build_system
 
 # fast build rule for target.
 example/fast:
-	$(MAKE) -f bioparser/vendor/zlib/CMakeFiles/example.dir/build.make bioparser/vendor/zlib/CMakeFiles/example.dir/build
+	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/example.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/example.dir/build
 .PHONY : example/fast
 
 #=============================================================================
@@ -218,7 +218,7 @@ minigzip: cmake_check_build_system
 
 # fast build rule for target.
 minigzip/fast:
-	$(MAKE) -f bioparser/vendor/zlib/CMakeFiles/minigzip.dir/build.make bioparser/vendor/zlib/CMakeFiles/minigzip.dir/build
+	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/minigzip.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/minigzip.dir/build
 .PHONY : minigzip/fast
 
 #=============================================================================
@@ -231,7 +231,7 @@ minigzip64: cmake_check_build_system
 
 # fast build rule for target.
 minigzip64/fast:
-	$(MAKE) -f bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/build.make bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/build
+	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/minigzip64.dir/build
 .PHONY : minigzip64/fast
 
 #=============================================================================
@@ -244,35 +244,35 @@ example64: cmake_check_build_system
 
 # fast build rule for target.
 example64/fast:
-	$(MAKE) -f bioparser/vendor/zlib/CMakeFiles/example64.dir/build.make bioparser/vendor/zlib/CMakeFiles/example64.dir/build
+	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/example64.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/example64.dir/build
 .PHONY : example64/fast
 
-brown_mapper.o: brown_mapper.cpp.o
+src/brown_mapper.o: src/brown_mapper.cpp.o
 
-.PHONY : brown_mapper.o
+.PHONY : src/brown_mapper.o
 
 # target to build an object file
-brown_mapper.cpp.o:
-	$(MAKE) -f CMakeFiles/Mapper.dir/build.make CMakeFiles/Mapper.dir/brown_mapper.cpp.o
-.PHONY : brown_mapper.cpp.o
+src/brown_mapper.cpp.o:
+	$(MAKE) -f CMakeFiles/Mapper.dir/build.make CMakeFiles/Mapper.dir/src/brown_mapper.cpp.o
+.PHONY : src/brown_mapper.cpp.o
 
-brown_mapper.i: brown_mapper.cpp.i
+src/brown_mapper.i: src/brown_mapper.cpp.i
 
-.PHONY : brown_mapper.i
+.PHONY : src/brown_mapper.i
 
 # target to preprocess a source file
-brown_mapper.cpp.i:
-	$(MAKE) -f CMakeFiles/Mapper.dir/build.make CMakeFiles/Mapper.dir/brown_mapper.cpp.i
-.PHONY : brown_mapper.cpp.i
+src/brown_mapper.cpp.i:
+	$(MAKE) -f CMakeFiles/Mapper.dir/build.make CMakeFiles/Mapper.dir/src/brown_mapper.cpp.i
+.PHONY : src/brown_mapper.cpp.i
 
-brown_mapper.s: brown_mapper.cpp.s
+src/brown_mapper.s: src/brown_mapper.cpp.s
 
-.PHONY : brown_mapper.s
+.PHONY : src/brown_mapper.s
 
 # target to generate assembly for a file
-brown_mapper.cpp.s:
-	$(MAKE) -f CMakeFiles/Mapper.dir/build.make CMakeFiles/Mapper.dir/brown_mapper.cpp.s
-.PHONY : brown_mapper.cpp.s
+src/brown_mapper.cpp.s:
+	$(MAKE) -f CMakeFiles/Mapper.dir/build.make CMakeFiles/Mapper.dir/src/brown_mapper.cpp.s
+.PHONY : src/brown_mapper.cpp.s
 
 # Help Target
 help:
@@ -293,9 +293,9 @@ help:
 	@echo "... minigzip"
 	@echo "... minigzip64"
 	@echo "... example64"
-	@echo "... brown_mapper.o"
-	@echo "... brown_mapper.i"
-	@echo "... brown_mapper.s"
+	@echo "... src/brown_mapper.o"
+	@echo "... src/brown_mapper.i"
+	@echo "... src/brown_mapper.s"
 .PHONY : help
 
 

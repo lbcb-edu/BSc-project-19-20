@@ -247,19 +247,19 @@ Mapper_BINARY_DIR:STATIC=/home/filip/git/Project/BSc-project-19-20/build-dir
 Mapper_SOURCE_DIR:STATIC=/home/filip/git/Project/BSc-project-19-20
 
 //Value Computed by CMake
-bioparser_BINARY_DIR:STATIC=/home/filip/git/Project/BSc-project-19-20/build-dir/bioparser
+bioparser_BINARY_DIR:STATIC=/home/filip/git/Project/BSc-project-19-20/build-dir/vendor/bioparser
 
 //Value Computed by CMake
-bioparser_SOURCE_DIR:STATIC=/home/filip/git/Project/BSc-project-19-20/bioparser
+bioparser_SOURCE_DIR:STATIC=/home/filip/git/Project/BSc-project-19-20/vendor/bioparser
 
 //Build bioparser unit tests
 bioparser_build_tests:BOOL=OFF
 
 //Value Computed by CMake
-zlib_BINARY_DIR:STATIC=/home/filip/git/Project/BSc-project-19-20/build-dir/bioparser/vendor/zlib
+zlib_BINARY_DIR:STATIC=/home/filip/git/Project/BSc-project-19-20/build-dir/vendor/bioparser/vendor/zlib
 
 //Value Computed by CMake
-zlib_SOURCE_DIR:STATIC=/home/filip/git/Project/BSc-project-19-20/bioparser/vendor/zlib
+zlib_SOURCE_DIR:STATIC=/home/filip/git/Project/BSc-project-19-20/vendor/bioparser/vendor/zlib
 
 
 ########################
