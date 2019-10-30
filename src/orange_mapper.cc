@@ -57,8 +57,9 @@ struct Sequence {
 };
 
 /**
- * @brief Doable since FASTA doesn't contain quality information
+ * @brief FastA sequence alias.
  */
+// Doable since FASTA doesn't contain quality information
 using FastA = Sequence;
 
 /**
@@ -108,8 +109,6 @@ auto createFastqParser =
 
 /**
  * @brief Prints program version to stderr
- *
- * @return void
  */
 auto printVersion() {
     std::cerr << orange_mapper_VERSION_MAJOR << '.'
@@ -119,12 +118,13 @@ auto printVersion() {
 
 /**
  * @brief Prints program usage information to stderr
- *
- * @return void
  */
 auto printHelp() {
-    // TODO: Implent some serious help
-    std::cerr << "HELP!\n";
+    std::cerr << "Genome sequence mapper.\n"
+              << "Reads are supported in FASTA and FASTQ formats while "
+              << "reference is expected to be FASTA.\n\n"
+              << "Usage:\n\t orange_mapper <reads> <reference>\n\n"
+              << "Options:\n\t-h\thelp\n\t-v\tverions\n";
 }
 
 /**
@@ -169,9 +169,19 @@ auto parseOptions(int argc, char* argv[]) {
  * @return corresponding @ref orange::mapper::FileType
  */
 auto parseFileType(std::string_view file) {
-    // Ignore .gz
+    auto format_ex = std::invalid_argument(
+        "Unsuppored file format/extension!\n"
+        "\t Supported: FASTA (reads and reference), FASTQ "
+        "(reads)\n\nUse -h for help\n");
+
+    // Find furthest extension
     auto dot = file.rfind('.');
-    if (file[dot + 1] == 'g' && file[dot + 2] == 'z') {
+    if (dot == std::string_view::npos)
+        throw std::invalid_argument("Missing file extension.");
+    else if (file.size() - dot < 2)
+        throw format_ex;
+    else if (file[dot + 1] == 'g' && file[dot + 2] == 'z') {
+        // Ignoring .gz
         file.remove_suffix(file.size() - dot);
         dot = file.rfind('.');
     }
@@ -182,14 +192,11 @@ auto parseFileType(std::string_view file) {
     else if (file == ".fastq" || file == ".fq")
         return FileType::kFastq;
 
-    throw std::invalid_argument(
-        "Unsuppored file format!\n"
-        "\t Supported: FASTA (reads and reference), FASTQ "
-        "(reads)\n");
+    throw format_ex;
 }
 
 /**
- * @brief Loads FASTA/FASTQ files into std::vector
+ * @brief Loads FASTA/FASTQ files into 
  *
  * @param path_to_file path to file contaning FASTA/FASTQ sequences
  *
@@ -223,7 +230,7 @@ auto loadFile(std::string const& path_to_file, FileType const& type) {
  *              <li>Maximum sequence length</li>
  *          <\ol>
  *
- * @param vec_seqs
+ * @param vec_seqs reference to loaded set of sequences
  */
 auto printStats(std::string_view const& origin, VecSeqPtr const& vec_seq) {
     auto n_seq = vec_seq.size();
@@ -273,9 +280,10 @@ int main(int argc, char* argv[]) {
             std::cerr << "Invalid number of arguments.\n"
                          "\tRequired two input files:\n"
                          "\t\t1. Set of fragments (FASTA/FASTQ)\n"
-                         "\t\t2. Reference genom (FASTA)\n\n"
+                         "\t\t2. Reference genome (FASTA)\n\n"
                          "\tEg. orange_mapper escherichia_coli_r7_reads.fastq "
                          "escherichia_coli_reference.fasta\n";
+            return EXIT_FAILURE;
         }
 
         // Extracting resource paths
@@ -290,7 +298,6 @@ int main(int argc, char* argv[]) {
         std::cout << "Started loading files\n";
 
         // Load and parse data from files
-        // TODO: Split this process accross multiple threads
         auto reads = mapper::loadFile(path_to_reads, reads_type);
         auto ref = mapper::loadFile(path_to_ref, ref_type);
 
