@@ -14,6 +14,7 @@ std::string extensions_q[] { ".fastq", ".fq", ".fastq.gz", ".fq.gz"};
 
 void help() {
     std::cout << "This is help option." << std::endl
+              << "This program accepts two files as floating arguments - first file (which contains a set of fragments) in FASTA or FASTQ format, and second one (which contains a corresponding reference genome) in FASTA format." << std::endl
               << "This program has following options:\n" << std::endl
               << "    -h   --help\n       prints the help menu\n" << std::endl
               << "    -v   --version\n        prints the version number\n" << std::endl;
