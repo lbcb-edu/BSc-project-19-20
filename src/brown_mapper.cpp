@@ -2,11 +2,18 @@
 #include <iostream>
 #include <memory>
 #include <vector>
+#include <getopt.h>
 #include "MapperConfig.h"
 #include "../vendor/bioparser/include/bioparser/bioparser.hpp"
 #define MAX 1000
 
 using namespace std;
+
+static struct option options[] = {
+    {"version", no_argument, 0, 'v'},
+    {"help", no_argument, 0, 'h'},
+    {0, 0, 0, 0}
+};
 
 class FASTAfile {
  public:
@@ -100,17 +107,28 @@ int main(int argc, char **argv) {
 
   bool flag = false;
 
-  // check for command line args
-  if (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0) {
-    fprintf(stdout, "-v (--version)  Project version\n");
-    fprintf(stdout, "-h (--help)     Help\n\n");
-    fprintf(stdout, "Please provide 2 files in FASTA/FASTQ format\n");
-  } else if (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0) {
-    fprintf(stdout, "v%d.%d\n", Mapper_VERSION_MAJOR, Mapper_VERSION_MINOR);
-  } else if (argc < 3) {
-    fprintf(stderr, "2 files needed\n");
-    exit(EXIT_FAILURE);
-    // check for file validity
+  char opt;
+  while ((opt = getopt_long(argc, argv, "hv", options, NULL)) != -1) {
+        switch (opt) {
+            case 'v':
+                fprintf(stdout, "v%d.%d\n", Mapper_VERSION_MAJOR, Mapper_VERSION_MINOR);               
+                exit(EXIT_SUCCESS);   
+            case 'h':
+                fprintf(stdout, "-v (--version)  Project version\n");
+                fprintf(stdout, "-h (--help)     Help\n\n");
+                fprintf(stdout, "Please provide 2 files in FASTA/FASTQ format\n");
+                exit(EXIT_SUCCESS);   
+
+            default:
+                fprintf(stderr, "Unknown options\n");
+                exit(EXIT_FAILURE);   
+        }
+    }
+
+  if (argc - optind < 2) {
+      fprintf(stderr, "2 files needed\n");
+      exit(EXIT_FAILURE);   
+
   } else if ((has_suffix(convertToString(argv[1], strlen(argv[1])), ".fasta") ||
               has_suffix(convertToString(argv[1], strlen(argv[1])), ".fastq") ||
               has_suffix(convertToString(argv[1], strlen(argv[1])), ".fa") ||
