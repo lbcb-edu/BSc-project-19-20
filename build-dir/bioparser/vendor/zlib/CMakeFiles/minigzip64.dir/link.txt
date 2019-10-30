@@ -1,1 +1,0 @@
-/usr/bin/cc   -rdynamic CMakeFiles/minigzip64.dir/test/minigzip.o  -o ../../bin/minigzip64  -Wl,-rpath,/home/filip/git/Project/BSc-project-19-20/build-dir/bioparser/lib ../../lib/libz.so.1.2.11 
