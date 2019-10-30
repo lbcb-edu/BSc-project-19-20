@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.2)
 
 project(
     pink
@@ -9,6 +9,9 @@ project(
 set(PINK_MAPPER_VERSION_MAJOR 0)
 set(PINK_MAPPER_VERSION_MINOR 1)
 set(PINK_MAPPER_VERSION_PATCH 0)
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_executable(
     pink_mapper
