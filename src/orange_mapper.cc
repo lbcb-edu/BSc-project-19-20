@@ -96,7 +96,7 @@ using VecFastQPtr = std::vector<std::unique_ptr<FastQ>>;
  */
 auto createFastaParser =
     std::function<std::unique_ptr<bioparser::Parser<FastA>>(
-        const std::string& path)>{
+        std::string const& path)>{
         &bioparser::createParser<bioparser::FastaParser, FastA>};
 
 /**
@@ -104,7 +104,7 @@ auto createFastaParser =
  */
 auto createFastqParser =
     std::function<std::unique_ptr<bioparser::Parser<FastQ>>(
-        const std::string& path)>{
+        std::string const& path)>{
         &bioparser::createParser<bioparser::FastqParser, FastQ>};
 
 /**

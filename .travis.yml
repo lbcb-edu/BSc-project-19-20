@@ -1,26 +1,49 @@
-dist: xenial
 sudo: required
 
 language: cpp
 
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-      - llvm-toolchain-xenial-8
-    packages:
-      - clang-8
-      - libc++-8-dev
-      - libc++abi-8-dev
-      - cmake
+
+
+matrix:
+  # GCC 9, linux
+  include: 
+    - os: linux
+      env: 
+        - MATRIX_EVAL="CC=gcc-9 CXX=g++-9"
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-9
+            - cmake
+
+    # clang 8, linux, xenial
+    - os: linux
+      dist: xenial
+      env:
+        - MATRIX_EVAL="CC=clang-8 CXX=clang++-8 CXXSTD=17"
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-xenial-8
+          packages:
+            - clang-8
+            - libc++-8-dev
+            - libc++abi-8-dev
+            - cmake
+
+    # osx
+    - os: osx
+      osx_image: xcode11.2
+      env:
+         - MATRIX_EVAL="CC=clang CXX=clang++ CXXSTD=17"
+
+before_script:
+    - eval "${MATRIX_EVAL}"
 
 script:
-
-  - which clang-8
-  
-  - export CC=clang-8
-  - export CXX=clang++-8
-
   - mkdir build
   - cd build
 
@@ -30,3 +53,7 @@ script:
   # Run tests
   - cd test
   - ctest
+
+notifications:
+  email:
+    false
