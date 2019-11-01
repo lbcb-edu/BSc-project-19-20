@@ -42,6 +42,7 @@ matrix:
 
 before_script:
     - eval "${MATRIX_EVAL}"
+    - if [ "$CXX" == "clang++" ]; then export CXXFLAGS="-std=c++0x -stdlib=libc++"
 
 script:
   - mkdir build
