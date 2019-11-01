@@ -22,7 +22,7 @@ matrix:
     - os: linux
       dist: xenial
       env:
-        - MATRIX_EVAL="CC=clang-8 CXX=clang++-8 CXXSTD=17"
+        - MATRIX_EVAL="CC=clang-8 CXX=clang++-8 CXXSTD=17 CXXFLAGS=\"-std=c++0x -stdlib=libc++\""
       addons:
         apt:
           sources:
@@ -42,7 +42,6 @@ matrix:
 
 before_script:
     - eval "${MATRIX_EVAL}"
-    - if [ "$CXX" == "clang++" ]; then export CXXFLAGS="-std=c++0x -stdlib=libc++"
 
 script:
   - mkdir build
