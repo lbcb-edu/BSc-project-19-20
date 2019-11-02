@@ -99,10 +99,12 @@ int main(int argc, char* argv[]) {
 	}
 =======
 #include <iostream>
+#include "config.h"
 
 int main(void) {
 	std::cout << "Test" << std::endl;
 >>>>>>> 0cc891f... fixed
 
+	std::cout << WHITE_MAPPER_VERSION_MAJOR << "." << WHITE_MAPPER_VERSION_MINOR << std::endl;
 	return 0;
 }
