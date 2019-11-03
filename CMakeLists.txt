@@ -11,7 +11,7 @@ configure_file("${PROJECT_SOURCE_DIR}/config.h.in"
 	       "${PROJECT_BINARY_DIR}/include/config.h")
 
 
-include_directories("${PROJECT_BINARY_DIR}/include")
+include_directories("${PROJECT_SOURCE_DIR}/include")
 include_directories("${PROJECT_BINARY_DIR}/vendor/bioparser/include")
 
 add_subdirectory(vendor/bioparser EXCLUDE_FROM_ALL)
