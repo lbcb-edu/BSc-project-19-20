@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 // TODO: 
 // - write cleaner and simpler command line arguments checker
 // - finish writing file extensions checker
@@ -97,14 +96,7 @@ int main(int argc, char* argv[]) {
 			std::cout << "Maximal length of sequence: " << maxi << std::endl;
 			break;
 	}
-=======
-#include <iostream>
-#include "config.h"
 
-int main(void) {
-	std::cout << "Test" << std::endl;
->>>>>>> 0cc891f... fixed
-
-	std::cout << WHITE_MAPPER_VERSION_MAJOR << "." << WHITE_MAPPER_VERSION_MINOR << std::endl;
 	return 0;
 }
+
