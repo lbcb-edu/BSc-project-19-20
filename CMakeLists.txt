@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.2)
 project (Mapper)
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set (Mapper_VERSION_MAJOR 0)
 set (Mapper_VERSION_MINOR 1)
@@ -10,8 +10,14 @@ configure_file (
   "${PROJECT_BINARY_DIR}/src/MapperConfig.h"
   )
 
-include_directories("${PROJECT_BINARY_DIR}/vendor/bioparser/include")
-add_subdirectory(vendor/bioparser EXCLUDE_FROM_ALL)
+include_directories ("${PROJECT_BINARY_DIR}/vendor/bioparser/include")
+add_subdirectory (vendor/bioparser EXCLUDE_FROM_ALL)
+add_subdirectory (brown_alignment)
 
 add_executable (Mapper src/brown_mapper.cpp)
 target_link_libraries (Mapper bioparser)
+target_link_libraries (Mapper brown_alignment)
+target_include_directories(Mapper PUBLIC
+                          "${PROJECT_BINARY_DIR}"
+                          "${PROJECT_SOURCE_DIR}/brown_alignment"
+                          )

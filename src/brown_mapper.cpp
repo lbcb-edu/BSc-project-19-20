@@ -1,10 +1,11 @@
-#include "../vendor/bioparser/include/bioparser/bioparser.hpp"
-#include "MapperConfig.h"
-#include <cstring>
 #include <getopt.h>
+#include <cstring>
 #include <iostream>
 #include <memory>
 #include <vector>
+#include "../vendor/bioparser/include/bioparser/bioparser.hpp"
+#include "MapperConfig.h"
+#include "brown_alignment.hpp"
 #define MAX 1000
 
 using namespace std;
@@ -14,7 +15,7 @@ static struct option options[] = {{"version", no_argument, 0, 'v'},
                                   {0, 0, 0, 0}};
 
 class FASTAfile {
-public:
+ public:
   string name;
   string sequence;
 
@@ -24,7 +25,7 @@ public:
 };
 
 class FASTQfile {
-public:
+ public:
   string name;
   string sequence;
   string quality;
@@ -32,7 +33,8 @@ public:
   FASTQfile(const char *name, std::uint32_t name_length, const char *sequence,
             std::uint32_t sequence_length, const char *quality,
             std::uint32_t quality_length)
-      : name(name, name_length), sequence(sequence, sequence_length),
+      : name(name, name_length),
+        sequence(sequence, sequence_length),
         quality(quality, quality_length) {}
 };
 
@@ -46,11 +48,9 @@ void print_fasta_stats(vector<unique_ptr<FASTAfile>> &objects) {
     auto len = (a->sequence).length();
     sum += len;
 
-    if (len > max)
-      max = len;
+    if (len > max) max = len;
 
-    if (len < min)
-      min = len;
+    if (len < min) min = len;
   }
 
   avg = sum / objects.size();
@@ -71,11 +71,9 @@ void print_fastq_stats(vector<unique_ptr<FASTQfile>> &objects) {
     auto len = (a->sequence).length();
     sum += len;
 
-    if (len > max)
-      max = len;
+    if (len > max) max = len;
 
-    if (len < min)
-      min = len;
+    if (len < min) min = len;
 
     cout << "Quality: " << a->quality << "\n";
   }
@@ -105,24 +103,23 @@ string convertToString(char *a, int size) {
 }
 
 int main(int argc, char **argv) {
-
   bool flag = false;
 
   char opt;
   while ((opt = getopt_long(argc, argv, "hv", options, NULL)) != -1) {
     switch (opt) {
-    case 'v':
-      fprintf(stdout, "v%d.%d\n", Mapper_VERSION_MAJOR, Mapper_VERSION_MINOR);
-      exit(EXIT_SUCCESS);
-    case 'h':
-      fprintf(stdout, "-v (--version)  Project version\n");
-      fprintf(stdout, "-h (--help)     Help\n\n");
-      fprintf(stdout, "Please provide 2 files in FASTA/FASTQ format\n");
-      exit(EXIT_SUCCESS);
+      case 'v':
+        fprintf(stdout, "v%d.%d\n", Mapper_VERSION_MAJOR, Mapper_VERSION_MINOR);
+        exit(EXIT_SUCCESS);
+      case 'h':
+        fprintf(stdout, "-v (--version)  Project version\n");
+        fprintf(stdout, "-h (--help)     Help\n\n");
+        fprintf(stdout, "Please provide 2 files in FASTA/FASTQ format\n");
+        exit(EXIT_SUCCESS);
 
-    default:
-      fprintf(stderr, "Unknown options\n");
-      exit(EXIT_FAILURE);
+      default:
+        fprintf(stderr, "Unknown options\n");
+        exit(EXIT_FAILURE);
     }
   }
 
@@ -165,15 +162,13 @@ int main(int argc, char **argv) {
 
       print_fasta_stats(fasta_objects);
 
-      if (strcmp(argv[1], argv[2]) == 0)
-        flag = true;
+      if (strcmp(argv[1], argv[2]) == 0) flag = true;
     }
     // parse 2. file as FASTA
     if (has_suffix(convertToString(argv[2], strlen(argv[2])), ".fasta") ||
         has_suffix(convertToString(argv[2], strlen(argv[2])), ".fa") ||
         has_suffix(convertToString(argv[2], strlen(argv[2])), ".fasta.gz") ||
         has_suffix(convertToString(argv[2], strlen(argv[2])), ".fa.gz")) {
-
       if (flag == false) {
         vector<unique_ptr<FASTAfile>> fasta_objects;
         string path = convertToString(argv[1], strlen(argv[1]));
@@ -202,15 +197,13 @@ int main(int argc, char **argv) {
       }
       print_fastq_stats(fastq_objects);
 
-      if (argv[1] == argv[2])
-        flag = true;
+      if (argv[1] == argv[2]) flag = true;
     }
     // parse 2nd file as FASTQ
     if (has_suffix(convertToString(argv[2], strlen(argv[2])), ".fastq") ||
         has_suffix(convertToString(argv[2], strlen(argv[2])), ".fq") ||
         has_suffix(convertToString(argv[2], strlen(argv[2])), ".fastq.gz") ||
         has_suffix(convertToString(argv[2], strlen(argv[2])), ".fq.gz")) {
-
       if (flag == false) {
         std::vector<std::unique_ptr<FASTQfile>> fastq_objects;
         string path = convertToString(argv[2], strlen(argv[2]));
@@ -230,3 +223,4 @@ int main(int argc, char **argv) {
     fprintf(stderr, "2 files needed of format FASTA/FASTQ\n");
     exit(EXIT_FAILURE);
   }
+}
