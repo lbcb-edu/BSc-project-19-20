@@ -1,22 +1,20 @@
+#include "../vendor/bioparser/include/bioparser/bioparser.hpp"
+#include "MapperConfig.h"
 #include <cstring>
+#include <getopt.h>
 #include <iostream>
 #include <memory>
 #include <vector>
-#include <getopt.h>
-#include "MapperConfig.h"
-#include "../vendor/bioparser/include/bioparser/bioparser.hpp"
 #define MAX 1000
 
 using namespace std;
 
-static struct option options[] = {
-    {"version", no_argument, 0, 'v'},
-    {"help", no_argument, 0, 'h'},
-    {0, 0, 0, 0}
-};
+static struct option options[] = {{"version", no_argument, 0, 'v'},
+                                  {"help", no_argument, 0, 'h'},
+                                  {0, 0, 0, 0}};
 
 class FASTAfile {
- public:
+public:
   string name;
   string sequence;
 
@@ -26,7 +24,7 @@ class FASTAfile {
 };
 
 class FASTQfile {
- public:
+public:
   string name;
   string sequence;
   string quality;
@@ -34,8 +32,7 @@ class FASTQfile {
   FASTQfile(const char *name, std::uint32_t name_length, const char *sequence,
             std::uint32_t sequence_length, const char *quality,
             std::uint32_t quality_length)
-      : name(name, name_length),
-        sequence(sequence, sequence_length),
+      : name(name, name_length), sequence(sequence, sequence_length),
         quality(quality, quality_length) {}
 };
 
@@ -49,9 +46,11 @@ void print_fasta_stats(vector<unique_ptr<FASTAfile>> &objects) {
     auto len = (a->sequence).length();
     sum += len;
 
-    if (len > max) max = len;
+    if (len > max)
+      max = len;
 
-    if (len < min) min = len;
+    if (len < min)
+      min = len;
   }
 
   avg = sum / objects.size();
@@ -72,9 +71,11 @@ void print_fastq_stats(vector<unique_ptr<FASTQfile>> &objects) {
     auto len = (a->sequence).length();
     sum += len;
 
-    if (len > max) max = len;
+    if (len > max)
+      max = len;
 
-    if (len < min) min = len;
+    if (len < min)
+      min = len;
 
     cout << "Quality: " << a->quality << "\n";
   }
@@ -109,25 +110,25 @@ int main(int argc, char **argv) {
 
   char opt;
   while ((opt = getopt_long(argc, argv, "hv", options, NULL)) != -1) {
-        switch (opt) {
-            case 'v':
-                fprintf(stdout, "v%d.%d\n", Mapper_VERSION_MAJOR, Mapper_VERSION_MINOR);               
-                exit(EXIT_SUCCESS);   
-            case 'h':
-                fprintf(stdout, "-v (--version)  Project version\n");
-                fprintf(stdout, "-h (--help)     Help\n\n");
-                fprintf(stdout, "Please provide 2 files in FASTA/FASTQ format\n");
-                exit(EXIT_SUCCESS);   
+    switch (opt) {
+    case 'v':
+      fprintf(stdout, "v%d.%d\n", Mapper_VERSION_MAJOR, Mapper_VERSION_MINOR);
+      exit(EXIT_SUCCESS);
+    case 'h':
+      fprintf(stdout, "-v (--version)  Project version\n");
+      fprintf(stdout, "-h (--help)     Help\n\n");
+      fprintf(stdout, "Please provide 2 files in FASTA/FASTQ format\n");
+      exit(EXIT_SUCCESS);
 
-            default:
-                fprintf(stderr, "Unknown options\n");
-                exit(EXIT_FAILURE);   
-        }
+    default:
+      fprintf(stderr, "Unknown options\n");
+      exit(EXIT_FAILURE);
     }
+  }
 
   if (argc - optind < 2) {
-      fprintf(stderr, "2 files needed\n");
-      exit(EXIT_FAILURE);   
+    fprintf(stderr, "2 files needed\n");
+    exit(EXIT_FAILURE);
 
   } else if ((has_suffix(convertToString(argv[1], strlen(argv[1])), ".fasta") ||
               has_suffix(convertToString(argv[1], strlen(argv[1])), ".fastq") ||
@@ -164,7 +165,8 @@ int main(int argc, char **argv) {
 
       print_fasta_stats(fasta_objects);
 
-      if (strcmp(argv[1], argv[2]) == 0) flag = true;
+      if (strcmp(argv[1], argv[2]) == 0)
+        flag = true;
     }
     // parse 2. file as FASTA
     if (has_suffix(convertToString(argv[2], strlen(argv[2])), ".fasta") ||
@@ -181,7 +183,6 @@ int main(int argc, char **argv) {
 
         print_fasta_stats(fasta_objects);
       }
-
     }
     // parse 1st file as FASTQ
     if (has_suffix(convertToString(argv[1], strlen(argv[1])), ".fastq") ||
@@ -201,7 +202,8 @@ int main(int argc, char **argv) {
       }
       print_fastq_stats(fastq_objects);
 
-      if (argv[1] == argv[2]) flag = true;
+      if (argv[1] == argv[2])
+        flag = true;
     }
     // parse 2nd file as FASTQ
     if (has_suffix(convertToString(argv[2], strlen(argv[2])), ".fastq") ||
@@ -228,4 +230,3 @@ int main(int argc, char **argv) {
     fprintf(stderr, "2 files needed of format FASTA/FASTQ\n");
     exit(EXIT_FAILURE);
   }
-}
