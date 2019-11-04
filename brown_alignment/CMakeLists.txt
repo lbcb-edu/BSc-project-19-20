@@ -1,0 +1,1 @@
+add_library(brown_alignment brown_alignment.cpp)
