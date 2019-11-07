@@ -10,12 +10,7 @@ addons:
       - gcc-9
       - g++-9
 
-stages:
- - build
- - test
-
 build:
-  stage: build
   script:
     - export CC=gcc-9
     - export CXX=g++-9
@@ -23,6 +18,5 @@ build:
     - make
 
 test:
-  stage: test
   script
     - ./alignment_tests
