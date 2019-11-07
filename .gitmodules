@@ -1,3 +1,6 @@
 [submodule "bioparser"]
 	path = vendor/bioparser
 	url = https://github.com/rvaser/bioparser
+[submodule "googletest"]
+	path = vendor/googletest
+	url = https://github.com/google/googletest
