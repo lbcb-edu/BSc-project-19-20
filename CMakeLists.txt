@@ -45,9 +45,3 @@ target_link_libraries(
   alignment
   gtest
 )
-
-target_link_directories(
-  alignment_tests PUBLIC
-  "${PROJECT_BINARY_DIR}/alignment/include"
-  "${PROJECT_BINARY_DIR}/vendor/googletest/googletest/include"
-)
