@@ -14,6 +14,7 @@ addons:
 script:
   - export CC=gcc-9
   - export CXX=g++-9
+  - cmake --version
   - cmake .
   - make
   - ./alignment_tests
