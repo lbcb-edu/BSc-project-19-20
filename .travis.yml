@@ -18,5 +18,5 @@ build:
     - make
 
 test:
-  script
+  script:
     - ./alignment_tests
