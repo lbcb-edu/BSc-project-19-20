@@ -1,5 +1,8 @@
 # custom
 
+include/config.hpp
+vendor/googletest
+vendor/bioparser
 blue_mapper
 *.fasta
 *.fa
