@@ -11,10 +11,14 @@ addons:
       - g++-9
 
 
-script:
-  - export CC=gcc-9
-  - export CXX=g++-9
-  - cmake --version
-  - cmake .
-  - make
-  - ./alignment_tests
+build:
+  script:
+    - export CC=gcc-9
+    - export CXX=g++-9
+    - cmake --version
+    - cmake .
+    - make
+
+test:
+  script:
+    - ./alignment_tests
