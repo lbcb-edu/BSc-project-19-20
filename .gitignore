@@ -1,7 +1,9 @@
 .vscode
+.idea
 build
 data
 orange_mapper
+cmake-build-debug
 
 doc/plan_projekta.aux
 doc/plan_projekta.log

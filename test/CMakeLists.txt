@@ -23,6 +23,4 @@ enable_testing()
 
 gtest_add_tests(
     TARGET orange_alignment_test
-    TEST_SUFFIX .noArgs
-    TEST_LIST   noArgsTests
 )

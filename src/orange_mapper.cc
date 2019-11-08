@@ -66,7 +66,7 @@ using FastA = Sequence;
  * @brief FASTQ genome sequences.
  *
  * @details Extends @ref orange::mapper::Sequence
- *      with cigar string quiality information
+ *      with string quiality information
  */
 struct FastQ : public Sequence {
     FastQ(char const* name, std::uint32_t name_len, char const* seq,

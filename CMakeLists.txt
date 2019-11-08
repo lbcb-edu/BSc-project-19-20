@@ -33,4 +33,3 @@ add_subdirectory(vendor/googletest EXCLUDE_FROM_ALL)
 # Project subdirs 
 add_subdirectory(src)
 add_subdirectory(test)
-
