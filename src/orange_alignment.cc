@@ -42,45 +42,55 @@ struct MemCell {
  * @brief References surrounding cells
  *      relevant for updating the score
  */
-template <typename Cell>
 struct CellSurr {
-    Cell& diag_;
-    Cell& left_;
-    Cell& up_;
+    MemCell& diag_;
+    MemCell& left_;
+    MemCell& up_;
 };
 
 template <typename Cell>
 using TRow = std::vector<Cell>;
 
+using Matrix = std::vector<TRow<MemCell>>;
+
 template <typename Row>
-using Matrix = std::vector<Row>;
+auto gapRowFactory(int gap, int sz) {
+    auto row = Row(sz + 1);
+    for (auto i = int{1}; i <= sz; ++i) row[i] = 1 * gap;
+    return row;
+}
 
 int pairwiseAlignment(char const* query, unsigned int query_length,
                       char const* target, unsigned int target_length,
                       AlignmentType type, int match, int mismatch, int gap) {
     using Row = TRow<Score>;
-    using Surr = CellSurr<Score>;
+    using ScoreFn_t = std::function<int(Row&, Row&, const int&, int)>;
 
-    auto scoreFn = [&gap](Surr&& surr, int matched) {
-        return std::max(
-            {surr.diag_ + matched, surr.left_ + gap, surr.up_ + gap});
-    };
-
-    auto gapRowFactory = [&gap, &sz = target_length]() {
-        auto row = Row(sz + 1);
-        for (auto i = int{1}; i <= sz; ++i) row[i] = i * gap;
-        return row;
-    };
-
-    auto rows = [&type, &gapRowFactory, &target_length] {
+    auto mx_val = std::numeric_limits<int>::min();
+    auto rows = [&type, &gap, &target_length] {
         if (type == AlignmentType::kGlobal)
-            return std::array<Row, 2>{gapRowFactory(),
+            return std::array<Row, 2>{gapRowFactory<Row>(gap, target_length),
                                       Row(target_length + 1, {0})};
         return std::array<Row, 2>{Row(target_length + 1, {0}),
                                   Row(target_length + 1, {0})};
     }();
 
-    auto mx_val = std::numeric_limits<int>::min();
+    auto scoreFn = [&type, &mx_val, &gap]() -> ScoreFn_t {
+        if (type == AlignmentType::kLocal)
+            return [&mx_val, &gap](Row& prev, Row& curr, const int& pos,
+                                   int matched) {
+                auto ret = std::max({prev[pos - 1] + matched,
+                                     curr[pos - 1] + gap, prev[pos] + gap, 0});
+                mx_val = std::max(mx_val, ret);
+
+                return ret;
+            };
+
+        return [&gap](Row& prev, Row& curr, const int& pos, int matched) {
+            return std::max({prev[pos - 1] + matched, curr[pos - 1] + gap,
+                             prev[pos] + gap});
+        };
+    }();
 
     for (auto i = int{1}; i <= query_length; ++i) {
         auto& prev = rows[(i - 1) & 1];
@@ -90,14 +100,8 @@ int pairwiseAlignment(char const* query, unsigned int query_length,
             curr[0] = i * gap;
 
         for (auto j = int{1}; j <= target_length; ++j) {
-            curr[j] = scoreFn({prev[j - 1], curr[j - 1], prev[j]},
+            curr[j] = scoreFn(prev, curr, j,
                               (query[i] == target[j]) ? match : mismatch);
-
-            if (type == AlignmentType::kLocal) {
-                if (curr[j] < 0)
-                    curr[j] = 0;
-                mx_val = std::max(mx_val, curr[j]);
-            }
         }
     }
 
@@ -118,6 +122,8 @@ int pairwiseAlignment(char const* query, unsigned int query_length,
                       char const* target, unsigned int target_length,
                       AlignmentType type, int match, int mismatch, int gap,
                       std::string& cigar, unsigned int& target_begin) {
+    using Row = TRow<MemCell>;
+
     return 0;
 }
 
