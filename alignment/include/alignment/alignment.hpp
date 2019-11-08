@@ -1,10 +1,22 @@
 #pragma once
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
 
 namespace algn {
+
+enum AlignmentType { kNeedlemanWunsch, kSmithWaterman, kSuffixPrefix };
+
+int PairwiseAlignment(const char* query, unsigned int query_length,
+                      const char* target, unsigned int target_length,
+                      AlignmentType type, int match, int mismatch, int gap);
+
+int PairwiseAlignment(const char* query, unsigned int query_length,
+                      const char* target, unsigned int target_length,
+                      AlignmentType type, int match, int mismatch, int gap,
+                      ::std::string& cigar, unsigned int& target_begin);
 
 namespace detail {
 
@@ -19,7 +31,7 @@ class Contiguous2DArray {
   const ::std::size_t& cols = dim_.second;
 
   Contiguous2DArray(::std::size_t rows, ::std::size_t cols)
-      : dim_(rows, cols), data_(new T[dim_.first, dim_.second]) {}
+      : dim_(rows, cols), data_(new T[dim_.first * dim_.second]) {}
 
   Contiguous2DArray(const Contiguous2DArray& other) = delete;
   Contiguous2DArray& operator=(const Contiguous2DArray& other) = delete;
@@ -31,24 +43,26 @@ class Contiguous2DArray {
   T* operator[](::std::size_t index) { 
     return &data_[index * dim_.second]; 
   }
-  // clang-format on
 
   const T* operator[](::std::size_t index) const {
     return &data_[index * dim_.second];
   }
+
+  // utility
+  T& last() { 
+    return data_[rows * cols - 1]; 
+  }
+
+  const T& last() const { 
+    return data_[rows * cols - 1]; 
+  }
+  // clang-format on
 };
 
+int NeedlemanWunsch(const char* query, unsigned int query_length,
+                    const char* target, unsigned int target_length,
+                    AlignmentType type, int match, int mismatch, int gap);
+
 }  // namespace detail
-
-enum AlignmentType { kNeedlemanWunsch, kSmithWaterman, kSuffixPrefix };
-
-int PairwiseAlignment(const char* query, unsigned int query_length,
-                      const char* target, unsigned int target_length,
-                      AlignmentType type, int match, int mismatch, int gap);
-
-int PairwiseAlignment(const char* query, unsigned int query_length,
-                      const char* target, unsigned int target_length,
-                      AlignmentType type, int match, int mismatch, int gap,
-                      ::std::string& cigar, unsigned int& target_begin);
 
 }  // namespace algn
