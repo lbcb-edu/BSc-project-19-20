@@ -16,4 +16,4 @@ script:
   - cmake --version
   - cmake .
   - make
-  - ./alignment_test
+  - ./alignment_tests
