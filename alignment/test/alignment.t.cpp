@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <iostream>
+#include <string>
 
 #include "../include/alignment/alignment.hpp"
 
@@ -27,6 +28,21 @@ TEST(ContiguousArrayTest, IndexingTest) {
 
   for (auto i = 0; i < c_arr.rows; ++i)
     for (auto j = 0; j < c_arr.cols; ++j) ASSERT_EQ(i * j, c_arr[i][j]);
+}
+
+TEST(NeedleWunschTest, GeneralTest) {
+  ::std::string cigar;
+  unsigned int target_begin;
+
+  // example taken from
+  // https://www.fer.unizg.hr/_download/repository/bioinformatika_skripta_v1.2.pdf#page=24
+  auto score = PairwiseAlignment("TGCATAT", 7, "ATCCGAT", 7,
+                                 AlignmentType::kNeedlemanWunsch, 2, -1, -1,
+                                 cigar, target_begin);
+
+  ASSERT_EQ(0, target_begin);
+  ASSERT_EQ("D=X=XI==", cigar);
+  ASSERT_EQ(4, score);
 }
 
 }  // namespace
