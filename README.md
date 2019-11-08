@@ -1,5 +1,7 @@
 # BSc project (computer science - 2019/2020)
 
+[![Build Status](https://travis-ci.com/lbcb-edu/BSc-project-19-20.svg?branch=blue)](https://travis-ci.com/lbcb-edu/BSc-project-19-20)
+
 Software Design Project is a course held at University of Zagreb, Faculty of Electrical Engineering and Computing in the fifth semester of the undergraduate study. The main focus is to promote cooperation between students while solving specific problems. Under the supervision of prof. Mile Šikić, students will get familiar with C++, basics of compilation methods, version control, unit tests and continuous integration, and will be introduced to algorithms used in bioinformatics. This project will be executed in several steps, each with defined outcomes which are required for succeeding steps. Instructions and guidelines for the project will be written in this README file which will be updated through the semester.
 
 ## Preliminaries
@@ -40,3 +42,43 @@ v0.1.0
 ## Data
 
 The first version of the mapper will be tested on an Oxford Nanopore Technologies data set obtained by sequencing the Escherichia coli K-12 substr. MG1655 genome. The data set is freely available from Loman Labs [here](https://nanopore.s3.climb.ac.uk/MAP006-1_2D_pass.fasta), while the reference genome is freely available from NCBI [here](https://bit.ly/2PCYHWr).
+
+## Alignment
+
+The objective is to implement a library for pairwise sequence alignment. Sequence alignment is a series of transformations which describe how to obtain one sequence from the other. The main use case for it in bioinformatics is to find similar regions between DNA chains, RNA chains or proteins in order to infer evolutionary and functional relationships. Alignments can be found using dynamic programming algorithms, that simplifiy a complicated problem by breaking it into simpler subproblems in a recursive manner. Results of the subproblems are stored and used to reconstruct the final solution. Dynamic programming algorithms for sequence alignment, use a `(n + 1) * (m + 1)` matrix, where `n` and `m` are lengths of sequences that are being aligned. Each cell of the matrix stores the current best alignment score and can be calculated as the maximal score between the value of the upper cell plus the deletion cost, the value of the upper left cell plus the match or mismatch cost, and the value of the left cell plus the insertion cost. Once the matrix is completely filled, the optimal alignment can be found by backtracking from the best cell of the matrix. A visual example can be seen bellow.
+
+![](misc/sample_alignment.png)
+
+There are several different versions of pairwise alignment algorithms, the Needleman-Wunsch algorithm for global alignment, the Smith-Waterman algorithm for local alignment and semi-global algorithms used for suffix-prefix and prefix-suffix alignments. The main differences between them are in the initialization step and the place from which the backtrack procedure can start.
+
+As stated above, students have to create a library which implements all three alignment algorithms. The library should be named in form of `<team name>_alignment` (e.g. `blue_alignment`) and should have its own namespace called after the team (e.g. `blue`). The library has to be created with the same `CMakeLists.txt` file as the mapper, and eventually be linked to it. The implementation has no requirements (it can be just one function or through a class) but the alignment function should have the following prototype:
+
+```cpp
+int pairwise_alignment(const char* query, unsigned int query_length,
+                       const char* target, unsigned int target_length,
+                       AlignmentType type,
+                       int match,
+                       int mismatch,
+                       int gap);
+```
+
+where the return value is the alignment score, `AlignmentType` is an `enum class` determining the alignment type (i.e. global, local or semi-global), while `match`, `mismatch` and `gap` represent match, mismatch and insertion/deletion cost respectively. There should also be an overloaded function with two additional arguments in which the [CIGAR](https://samtools.github.io/hts-specs/SAMv1.pdf) string of the alignment and the alignment begining position on the target sequence should be stored:
+
+```cpp
+int pairwise_alignment(const char* query, unsigned int query_length,
+                       const char* target, unsigned int target_length,
+                       AlignmentType type,
+                       int match,
+                       int mismatch,
+                       int gap,
+                       std::string& cigar,
+                       unsigned int& target_begin);
+```
+
+Once the library is completed, it has to be used in the mapper which includes adding input arguments for the alignment type and match, mismatch and gap costs. Afterwards, two random sequences from the first input file have to be aligned and the resulting `CIGAR` string printed.
+
+A good read for this part of the project is the second chapter of the Bioinformatics course held at University of Zagreb, Faculty of Electrical Engineering and Computing (located [here](https://www.fer.unizg.hr/_download/repository/bioinformatika_skripta_v1.2.pdf)).
+
+## Unit tests and continuous integration
+
+The alignment library, and all other code components to follow, should have a set of unit tests (using googletest added as a submodule) which are automatically run after each commit to the team branch (via TravisCI). Unit tests must be compiled on Ubuntu and macOS with both gcc and clang compilers. A success/failure badge for the integration should be placed in the README.
