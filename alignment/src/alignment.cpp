@@ -18,7 +18,7 @@ struct Cell {
   Action action = kNone;
 };
 
-inline Cell max(Cell a, Cell b, Cell c) {
+inline Cell Max(Cell a, Cell b, Cell c) {
   return a.score > b.score ? a.score > c.score ? a : c
                            : b.score > c.score ? b : c;
 }
@@ -39,7 +39,7 @@ Contiguous2DArray<Cell> NeedlemanWunsch(const char* query,
     for (int j = 1; j < alignment.cols; ++j) {
       bool is_match = query[i - 1] == target[j - 1];
       alignment[i][j] =
-          max({alignment[i - 1][j - 1].score + (is_match ? match : mismatch),
+          Max({alignment[i - 1][j - 1].score + (is_match ? match : mismatch),
                is_match ? Action::kMatch : Action::kMismatch},
               {alignment[i][j - 1].score + gap, Action::kInsert},
               {alignment[i - 1][j].score + gap, Action::kDelete});
