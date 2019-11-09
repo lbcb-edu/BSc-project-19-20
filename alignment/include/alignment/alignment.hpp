@@ -59,10 +59,5 @@ class Contiguous2DArray {
   // clang-format on
 };
 
-int NeedlemanWunsch(const char* query, unsigned int query_length,
-                    const char* target, unsigned int target_length,
-                    AlignmentType type, int match, int mismatch, int gap);
-
 }  // namespace detail
-
 }  // namespace algn
