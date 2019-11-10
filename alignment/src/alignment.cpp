@@ -63,7 +63,7 @@ MaxCell SmithWaterman(const char* query, unsigned int query_length,
     for (int j = 1; j < alignment.cols; ++j) {
       bool is_match = query[i - 1] == target[j - 1];
       alignment[i][j] = Max(
-          Cell{0, Action::kNone},
+          Cell{},
           Max({alignment[i - 1][j - 1].score + (is_match ? match : mismatch),
                is_match ? Action::kMatch : Action::kMismatch},
               {alignment[i][j - 1].score + gap, Action::kInsert},
