@@ -45,6 +45,20 @@ TEST(NeedleWunschTest, GeneralTest) {
   ASSERT_EQ(4, score);
 }
 
+TEST(SmithWatermanTest, GeneralTest) {
+  ::std::string cigar;
+  unsigned int target_begin;
+
+  auto score = PairwiseAlignment("ACCTAAGG", 8, "GGCTCAATCA", 10,
+                                 AlignmentType::kSmithWaterman, 2, -1, -2,
+                                 cigar, target_begin);
+
+  ASSERT_EQ(2, target_begin);
+  ASSERT_EQ(6, score);
+  // TODO: fix off by one error without duplicating cigar code
+  ASSERT_EQ("==D==", cigar);
+}
+
 }  // namespace
 }  // namespace algn
 

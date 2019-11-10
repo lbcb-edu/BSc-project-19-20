@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <functional>
 #include <memory>
 #include <string>
 #include <utility>
@@ -27,8 +28,8 @@ class Contiguous2DArray {
   ::std::unique_ptr<T[]> data_;
 
  public:
-  const ::std::size_t& rows = dim_.first;
-  const ::std::size_t& cols = dim_.second;
+  const ::std::size_t rows = dim_.first;
+  const ::std::size_t cols = dim_.second;
 
   Contiguous2DArray(::std::size_t rows, ::std::size_t cols)
       : dim_(rows, cols), data_(new T[dim_.first * dim_.second]) {}
