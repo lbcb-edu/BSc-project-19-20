@@ -1,0 +1,1 @@
+add_library(white_alignment white_alignment.cpp)
