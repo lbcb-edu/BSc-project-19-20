@@ -1,8 +1,6 @@
 #include <iostream>
 #include "pink_alignment.h"
 
-#define DEFSTR "noPrint"
-
 namespace pink {
 
     enum ParentEnum { no, up, left, diagonal };
@@ -162,7 +160,7 @@ namespace pink {
                 int w = query[i] == target[j] ? match : mismatch;
                 int mmatch = matrix[i-1][j-1].value + w;
 
-                int val = std::max(insertion, deletion, mmatch);
+                int val = std::max({insertion, deletion, mmatch});
                 if(type == local)
                     if(val < 0)
                         val = 0;

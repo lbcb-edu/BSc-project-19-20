@@ -1,0 +1,1 @@
+/usr/bin/c++    -rdynamic CMakeFiles/pink_mapper.dir/src/pink_mapper.cpp.o  -o pink_mapper libpink_alignment.a vendor/bioparser/lib/libz.a 

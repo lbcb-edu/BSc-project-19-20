@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/ivona/FER/Projekt/pink/src/pink_alignment.cpp
+iostream
+-
+pink_alignment.h
+/home/ivona/FER/Projekt/pink/src/pink_alignment.h
+
+/home/ivona/FER/Projekt/pink/src/pink_alignment.h
+string
+-
+
