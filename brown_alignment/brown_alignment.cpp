@@ -317,4 +317,4 @@ int pairwise_alignment(const char* query, unsigned int query_length,
       break;
   }
 }
-}  // namespace brown
+}  // namespace
