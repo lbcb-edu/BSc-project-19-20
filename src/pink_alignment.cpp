@@ -34,6 +34,15 @@ namespace pink {
         }
     }
 
+    int max(int a, int b, int c){
+        if(a >= b && a >= c)
+            return a;
+        if(b >= a && b >= c)
+            return b;
+        if(c >= a && c >= b)
+            return c;
+    }
+
     void make_cigar(std::string& cigar, unsigned int& target_begin, const char* query, const char* target, cell** matrix, int no_of_rows, int no_of_columns, int index_i, int index_j) {
         cigar = "";
         std::string str = "";
@@ -160,7 +169,7 @@ namespace pink {
                 int w = query[i] == target[j] ? match : mismatch;
                 int mmatch = matrix[i-1][j-1].value + w;
 
-                int val = std::max({insertion, deletion, mmatch});
+                int val = max(insertion, deletion, mmatch);
                 if(type == local)
                     if(val < 0)
                         val = 0;
@@ -230,7 +239,7 @@ namespace pink {
                        int match,
                        int mismatch,
                        int gap) {
-        std::string str = DEFSTR;
+        std::string str = "";
         unsigned a;
         return pairwise_alignment(query, query_length, target, target_length, type, match, mismatch, gap, str, a);
     }
