@@ -102,7 +102,8 @@ inline void UpdatePosition(Action action, Position& pos) {
 
 void ConstructCigar(const detail::Contiguous2DArray<detail::Cell>& alignment,
                     Position pos, ::std::string& cigar,
-                    unsigned int& target_begin) {
+                    unsigned int& target_begin,
+                    ::std::function<void(::std::string&)> cigar_modifier) {
   Cell current = alignment[pos.first][pos.second];
 
   while (current.action != kNone) {
@@ -111,6 +112,9 @@ void ConstructCigar(const detail::Contiguous2DArray<detail::Cell>& alignment,
     UpdatePosition(current.action, pos);
     current = alignment[pos.first][pos.second];
   }
+
+  if (cigar_modifier)
+    cigar_modifier(cigar);
 
   ::std::reverse(::std::begin(cigar), ::std::end(cigar));
 }
@@ -145,7 +149,7 @@ int PairwiseAlignment(const char* query, unsigned int query_length,
         query, query_length, target, target_length, match, mismatch, gap);
 
     detail::ConstructCigar(alignment, {alignment.rows - 1, alignment.cols - 1},
-                           cigar, target_begin);
+                           cigar, target_begin, {});
     return alignment.last().score;
   }
 
@@ -154,7 +158,9 @@ int PairwiseAlignment(const char* query, unsigned int query_length,
                                      match, mismatch, gap);
     auto start = ret.first[ret.second.first][ret.second.second];
 
-    detail::ConstructCigar(ret.first, ret.second, cigar, target_begin);
+    detail::ConstructCigar(
+        ret.first, ret.second, cigar, target_begin,
+        [](::std::string& cigar) { cigar.resize(cigar.length() - 1); });
     return start.score;
   }
 

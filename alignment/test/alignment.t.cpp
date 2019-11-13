@@ -55,8 +55,7 @@ TEST(SmithWatermanTest, GeneralTest) {
 
   ASSERT_EQ(2, target_begin);
   ASSERT_EQ(6, score);
-  // TODO: fix off by one error without duplicating cigar code
-  ASSERT_EQ("==D==", cigar);
+  ASSERT_EQ("=D==", cigar);
 }
 
 }  // namespace
