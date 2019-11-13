@@ -1,3 +1,6 @@
 BasedOnStyle: Google
+
 DerivePointerAlignment: false
 PointerAlignment: Left
+
+AllowShortIfStatementsOnASingleLine: false
