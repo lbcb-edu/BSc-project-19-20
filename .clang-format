@@ -4,3 +4,4 @@ DerivePointerAlignment: false
 PointerAlignment: Left
 
 AllowShortIfStatementsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty

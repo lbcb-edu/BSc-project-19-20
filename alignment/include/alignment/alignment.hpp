@@ -6,17 +6,29 @@
 #include <string>
 #include <utility>
 
+#include "strong_type.hpp"
+
 namespace algn {
 
-enum AlignmentType { kNeedlemanWunsch, kSmithWaterman, kSuffixPrefix };
+enum AlignmentType { kNeedlemanWunsch, kSmithWaterman, kOverlap };
 
-int PairwiseAlignment(const char* query, unsigned int query_length,
-                      const char* target, unsigned int target_length,
-                      AlignmentType type, int match, int mismatch, int gap);
+using Query = StrongType<const char*, struct QueryTag>;
+using QueryLength = StrongType<unsigned int, struct QueryLengthTag>;
 
-int PairwiseAlignment(const char* query, unsigned int query_length,
-                      const char* target, unsigned int target_length,
-                      AlignmentType type, int match, int mismatch, int gap,
+using Target = StrongType<const char*, struct TargetTag>;
+using TargetLength = StrongType<unsigned int, struct QueryLengthTag>;
+
+using Match = StrongType<int, struct MatchTag>;
+using Mismatch = StrongType<int, struct MismatchTag>;
+using Gap = StrongType<int, struct GapTag>;
+
+int PairwiseAlignment(Query query, QueryLength query_length, Target target,
+                      TargetLength target_length, AlignmentType type,
+                      Match match, Mismatch mismatch, Gap gap);
+
+int PairwiseAlignment(Query query, QueryLength query_length, Target target,
+                      TargetLength target_length, AlignmentType type,
+                      Match match, Mismatch mismatch, Gap gap,
                       ::std::string& cigar, unsigned int& target_begin);
 
 namespace detail {
@@ -40,9 +52,8 @@ class Contiguous2DArray {
   Contiguous2DArray(Contiguous2DArray&& other) = default;
   Contiguous2DArray& operator=(Contiguous2DArray&& other) = default;
 
-  // clang-format off
-  T* operator[](::std::size_t index) { 
-    return &data_[index * dim_.second]; 
+  T* operator[](::std::size_t index) {
+    return &data_[index * dim_.second];
   }
 
   const T* operator[](::std::size_t index) const {
@@ -50,14 +61,13 @@ class Contiguous2DArray {
   }
 
   // utility
-  T& last() { 
-    return data_[rows * cols - 1]; 
+  T& last() {
+    return data_[rows * cols - 1];
   }
 
-  const T& last() const { 
-    return data_[rows * cols - 1]; 
+  const T& last() const {
+    return data_[rows * cols - 1];
   }
-  // clang-format on
 };
 
 }  // namespace detail
