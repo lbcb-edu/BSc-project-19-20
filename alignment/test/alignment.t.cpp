@@ -61,6 +61,20 @@ TEST(SmithWatermanTest, GeneralTest) {
   ASSERT_EQ("=D==", cigar);
 }
 
+TEST(OverlapTest, GeneralTest) {
+  ::std::string cigar;
+  unsigned int target_begin;
+
+  auto score =
+      PairwiseAlignment(Query{"TCCG"}, QueryLength{4}, Target{"ACTCCGAT"},
+                        TargetLength{8}, AlignmentType::kOverlap, Match{4},
+                        Mismatch{-1}, Gap{-2}, cigar, target_begin);
+
+  ASSERT_EQ(2, target_begin);
+  ASSERT_EQ(16, score);
+  ASSERT_EQ("====", cigar);
+}
+
 }  // namespace
 }  // namespace algn
 
