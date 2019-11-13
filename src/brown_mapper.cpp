@@ -3,9 +3,9 @@
 #include <iostream>
 #include <memory>
 #include <vector>
+#include "../brown_alignment/brown_alignment.hpp"
 #include "../vendor/bioparser/include/bioparser/bioparser.hpp"
 #include "MapperConfig.h"
-#include "brown_alignment.hpp"
 #define MAX 1000
 
 using namespace std;
@@ -123,104 +123,135 @@ int main(int argc, char **argv) {
     }
   }
 
-  if (argc - optind < 2) {
-    fprintf(stderr, "2 files needed\n");
+  if (argc - optind < 6) {
+    fprintf(stderr,
+            "2 files needed along with the alignment type and match, mismatch "
+            "and gap costs\n");
     exit(EXIT_FAILURE);
+  }
+  // parse 1st file as FASTA
+  if (has_suffix(convertToString(argv[1], strlen(argv[1])), ".fasta") ||
+      has_suffix(convertToString(argv[1], strlen(argv[1])), ".fa") ||
+      has_suffix(convertToString(argv[1], strlen(argv[1])), ".fasta.gz") ||
+      has_suffix(convertToString(argv[1], strlen(argv[1])), ".fa.gz")) {
+    vector<unique_ptr<FASTAfile>> fasta_objects;
+    string path = convertToString(argv[1], strlen(argv[1]));
+    brown::AlignmentType type;
+    if (atoi(argv[3]) == 0) type = brown::AlignmentType::local;
+    if (atoi(argv[3]) == 1) type = brown::AlignmentType::global;
+    if (atoi(argv[3]) == 2) type = brown::AlignmentType::semi_global;
+    int match = atoi(argv[4]);
+    int mismatch = atoi(argv[5]);
+    int gap = atoi(argv[6]);
+    auto fasta_parser =
+        bioparser::createParser<bioparser::FastaParser, FASTAfile>(path);
+    fasta_parser->parse(fasta_objects, -1);
+    print_fasta_stats(fasta_objects);
+    srand(time(NULL));
+    int rand1 = rand() % fasta_objects.size();
+    int rand2 = rand() % fasta_objects.size();
+    string &query = fasta_objects[rand1]->sequence;
+    string &target = fasta_objects[rand2]->sequence;
+    string cigar;
+    unsigned int target_begin;
+    cout << brown::pairwise_alignment(query.c_str(), query.size(),
+                                      target.c_str(), target.size(), type,
+                                      match, mismatch, gap, cigar, target_begin)
+         << '\n';
+    cout << cigar <<  '\n';
 
-  } else if ((has_suffix(convertToString(argv[1], strlen(argv[1])), ".fasta") ||
-              has_suffix(convertToString(argv[1], strlen(argv[1])), ".fastq") ||
-              has_suffix(convertToString(argv[1], strlen(argv[1])), ".fa") ||
-              has_suffix(convertToString(argv[1], strlen(argv[1])), ".fq") ||
-              has_suffix(convertToString(argv[1], strlen(argv[1])),
-                         ".fasta.gz") ||
-              has_suffix(convertToString(argv[1], strlen(argv[1])), ".fa.gz") ||
-              has_suffix(convertToString(argv[1], strlen(argv[1])),
-                         ".fastq.gz") ||
-              has_suffix(convertToString(argv[1], strlen(argv[1])),
-                         ".fq.gz")) &&
-             (has_suffix(convertToString(argv[2], strlen(argv[2])), ".fasta") ||
-              has_suffix(convertToString(argv[2], strlen(argv[2])), ".fastq") ||
-              has_suffix(convertToString(argv[2], strlen(argv[2])), ".fa") ||
-              has_suffix(convertToString(argv[2], strlen(argv[2])), ".fq") ||
-              has_suffix(convertToString(argv[2], strlen(argv[2])),
-                         ".fasta.gz") ||
-              has_suffix(convertToString(argv[2], strlen(argv[2])), ".fa.gz") ||
-              has_suffix(convertToString(argv[2], strlen(argv[2])),
-                         ".fastq.gz") ||
-              has_suffix(convertToString(argv[2], strlen(argv[2])),
-                         ".fq.gz"))) {
-    // parse 1st file as FASTA
-    if (has_suffix(convertToString(argv[1], strlen(argv[1])), ".fasta") ||
-        has_suffix(convertToString(argv[1], strlen(argv[1])), ".fa") ||
-        has_suffix(convertToString(argv[1], strlen(argv[1])), ".fasta.gz") ||
-        has_suffix(convertToString(argv[1], strlen(argv[1])), ".fa.gz")) {
-      vector<unique_ptr<FASTAfile>> fasta_objects;
-      string path = convertToString(argv[1], strlen(argv[1]));
-      auto fasta_parser =
-          bioparser::createParser<bioparser::FastaParser, FASTAfile>(path);
-      fasta_parser->parse(fasta_objects, -1);
+  }
 
-      print_fasta_stats(fasta_objects);
-
-      if (strcmp(argv[1], argv[2]) == 0) flag = true;
-    }
-    // parse 2. file as FASTA
-    if (has_suffix(convertToString(argv[2], strlen(argv[2])), ".fasta") ||
-        has_suffix(convertToString(argv[2], strlen(argv[2])), ".fa") ||
-        has_suffix(convertToString(argv[2], strlen(argv[2])), ".fasta.gz") ||
-        has_suffix(convertToString(argv[2], strlen(argv[2])), ".fa.gz")) {
-      if (flag == false) {
-        vector<unique_ptr<FASTAfile>> fasta_objects;
-        string path = convertToString(argv[1], strlen(argv[1]));
-        auto fasta_parser =
-            bioparser::createParser<bioparser::FastaParser, FASTAfile>(path);
-        fasta_parser->parse(fasta_objects, -1);
-
-        print_fasta_stats(fasta_objects);
+  // parse 1st file as FASTQ
+  else if (has_suffix(convertToString(argv[1], strlen(argv[1])), ".fastq") ||
+           has_suffix(convertToString(argv[1], strlen(argv[1])), ".fq") ||
+           has_suffix(convertToString(argv[1], strlen(argv[1])), ".fastq.gz") ||
+           has_suffix(convertToString(argv[1], strlen(argv[1])), ".fq.gz")) {
+    std::vector<std::unique_ptr<FASTQfile>> fastq_objects;
+    string path = convertToString(argv[1], strlen(argv[1]));
+    brown::AlignmentType type;
+    if (atoi(argv[3]) == 0) type = brown::AlignmentType::local;
+    if (atoi(argv[3]) == 1) type = brown::AlignmentType::global;
+    if (atoi(argv[3]) == 2) type = brown::AlignmentType::semi_global;
+    int match = atoi(argv[4]);
+    int mismatch = atoi(argv[5]);
+    int gap = atoi(argv[6]);
+    auto fastq_parser =
+        bioparser::createParser<bioparser::FastqParser, FASTQfile>(path);
+    std::uint64_t size_in_bytes = 500 * 1024 * 1024;
+    while (true) {
+      auto status = fastq_parser->parse(fastq_objects, size_in_bytes);
+      if (status == false) {
+        break;
       }
     }
-    // parse 1st file as FASTQ
-    if (has_suffix(convertToString(argv[1], strlen(argv[1])), ".fastq") ||
-        has_suffix(convertToString(argv[1], strlen(argv[1])), ".fq") ||
-        has_suffix(convertToString(argv[1], strlen(argv[1])), ".fastq.gz") ||
-        has_suffix(convertToString(argv[1], strlen(argv[1])), ".fq.gz")) {
-      std::vector<std::unique_ptr<FASTQfile>> fastq_objects;
-      string path = convertToString(argv[1], strlen(argv[1]));
-      auto fastq_parser =
-          bioparser::createParser<bioparser::FastqParser, FASTQfile>(path);
-      std::uint64_t size_in_bytes = 500 * 1024 * 1024;
-      while (true) {
-        auto status = fastq_parser->parse(fastq_objects, size_in_bytes);
-        if (status == false) {
-          break;
-        }
-      }
-      print_fastq_stats(fastq_objects);
-
-      if (argv[1] == argv[2]) flag = true;
-    }
-    // parse 2nd file as FASTQ
-    if (has_suffix(convertToString(argv[2], strlen(argv[2])), ".fastq") ||
-        has_suffix(convertToString(argv[2], strlen(argv[2])), ".fq") ||
-        has_suffix(convertToString(argv[2], strlen(argv[2])), ".fastq.gz") ||
-        has_suffix(convertToString(argv[2], strlen(argv[2])), ".fq.gz")) {
-      if (flag == false) {
-        std::vector<std::unique_ptr<FASTQfile>> fastq_objects;
-        string path = convertToString(argv[2], strlen(argv[2]));
-        auto fastq_parser =
-            bioparser::createParser<bioparser::FastqParser, FASTQfile>(path);
-        std::uint64_t size_in_bytes = 500 * 1024 * 1024;
-        while (true) {
-          auto status = fastq_parser->parse(fastq_objects, size_in_bytes);
-          if (status == false) {
-            break;
-          }
-        }
-        print_fastq_stats(fastq_objects);
-      }
-    }
+    print_fastq_stats(fastq_objects);
   } else {
-    fprintf(stderr, "2 files needed of format FASTA/FASTQ\n");
+    fprintf(stderr,
+            "2 files needed along with the alignment type and match, mismatch "
+            "and gap costs\n");
+    exit(EXIT_FAILURE);
+  }
+  // parse 2nd file as FASTA
+  if (has_suffix(convertToString(argv[2], strlen(argv[2])), ".fasta") ||
+      has_suffix(convertToString(argv[2], strlen(argv[2])), ".fa") ||
+      has_suffix(convertToString(argv[2], strlen(argv[2])), ".fasta.gz") ||
+      has_suffix(convertToString(argv[2], strlen(argv[2])), ".fa.gz")) {
+    vector<unique_ptr<FASTAfile>> fasta_objects;
+    string path = convertToString(argv[1], strlen(argv[1]));
+    brown::AlignmentType type;
+    if (atoi(argv[3]) == 0) type = brown::AlignmentType::local;
+    if (atoi(argv[3]) == 1) type = brown::AlignmentType::global;
+    if (atoi(argv[3]) == 2) type = brown::AlignmentType::semi_global;
+    int match = atoi(argv[4]);
+    int mismatch = atoi(argv[5]);
+    int gap = atoi(argv[6]);
+    auto fasta_parser =
+        bioparser::createParser<bioparser::FastaParser, FASTAfile>(path);
+    fasta_parser->parse(fasta_objects, -1);
+    print_fasta_stats(fasta_objects);
+    srand(time(NULL));
+    int rand1 = rand() % fasta_objects.size();
+    int rand2 = rand() % fasta_objects.size();
+    string &query = fasta_objects[rand1]->sequence;
+    string &target = fasta_objects[rand2]->sequence;
+    string cigar;
+    unsigned int target_begin;
+    cout << brown::pairwise_alignment(query.c_str(), query.size(),
+                                      target.c_str(), target.size(), type,
+                                      match, mismatch, gap, cigar, target_begin)
+         << '\n';
+    cout << cigar <<  '\n';
+
+  }
+  // parse 2nd file as FASTQ
+  else if (has_suffix(convertToString(argv[2], strlen(argv[2])), ".fastq") ||
+           has_suffix(convertToString(argv[2], strlen(argv[2])), ".fq") ||
+           has_suffix(convertToString(argv[2], strlen(argv[2])), ".fastq.gz") ||
+           has_suffix(convertToString(argv[2], strlen(argv[2])), ".fq.gz")) {
+    brown::AlignmentType type;
+    if (atoi(argv[3]) == 0) type = brown::AlignmentType::local;
+    if (atoi(argv[3]) == 1) type = brown::AlignmentType::global;
+    if (atoi(argv[3]) == 2) type = brown::AlignmentType::semi_global;
+    int match = atoi(argv[4]);
+    int mismatch = atoi(argv[5]);
+    int gap = atoi(argv[6]);
+    std::vector<std::unique_ptr<FASTQfile>> fastq_objects;
+    string path = convertToString(argv[2], strlen(argv[2]));
+    auto fastq_parser =
+        bioparser::createParser<bioparser::FastqParser, FASTQfile>(path);
+    std::uint64_t size_in_bytes = 500 * 1024 * 1024;
+    while (true) {
+      auto status = fastq_parser->parse(fastq_objects, size_in_bytes);
+      if (status == false) {
+        break;
+      }
+    }
+    print_fastq_stats(fastq_objects);
+  } else {
+    fprintf(stderr,
+            "2 files needed along with the alignment type and match, mismatch "
+            "and gap costs\n");
     exit(EXIT_FAILURE);
   }
 }
