@@ -55,13 +55,13 @@ R Align(const AlignmentContext& ai,
   for (int i = 1; i < alignment.rows; ++i)
     for (int j = 1; j < alignment.cols; ++j) {
       bool is_match = ai.query[i - 1] == ai.target[j - 1];
-      Cell candidate = Max(
-          {alignment[i - 1][j - 1].score + (is_match ? ai.match : ai.mismatch),
-           is_match ? Action::kMatch : Action::kMismatch},
-          {alignment[i][j - 1].score + ai.gap, Action::kInsert},
-          {alignment[i - 1][j].score + ai.gap, Action::kDelete});
-
-      alignment[i][j] = update(candidate, {i, j});
+      alignment[i][j] =
+          update(Max({alignment[i - 1][j - 1].score +
+                          (is_match ? ai.match : ai.mismatch),
+                      is_match ? Action::kMatch : Action::kMismatch},
+                     {alignment[i][j - 1].score + ai.gap, Action::kInsert},
+                     {alignment[i - 1][j].score + ai.gap, Action::kDelete}),
+                 {i, j});
     }
 
   return compute_return(::std::forward<decltype(alignment)>(alignment));
