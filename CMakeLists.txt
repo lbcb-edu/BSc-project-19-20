@@ -4,7 +4,7 @@ set (CMAKE_CXX_STANDARD 11)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set (Mapper_VERSION_MAJOR 0)
-set (Mapper_VERSION_MINOR 1)
+set (Mapper_VERSION_MINOR 2)
 configure_file (
   "${PROJECT_SOURCE_DIR}/MapperConfig.h.in"
   "${PROJECT_BINARY_DIR}/src/MapperConfig.h"

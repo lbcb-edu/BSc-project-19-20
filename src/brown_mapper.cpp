@@ -114,7 +114,10 @@ int main(int argc, char **argv) {
       case 'h':
         fprintf(stdout, "-v (--version)  Project version\n");
         fprintf(stdout, "-h (--help)     Help\n\n");
-        fprintf(stdout, "Please provide 2 files in FASTA/FASTQ format\n");
+        fprintf(stdout,
+                "Please provide 2 files in FASTA/FASTQ format along with "
+                "alignment type and match, mismatch and gap costs\nAlignment "
+                "types: 0 - local, 1 - global, 2 - semi_global\n");
         exit(EXIT_SUCCESS);
 
       default:
@@ -123,10 +126,11 @@ int main(int argc, char **argv) {
     }
   }
 
-  if (argc - optind < 6) {
+  if (argc - optind < 7) {
     fprintf(stderr,
-            "2 files needed along with the alignment type and match, mismatch "
-            "and gap costs\n");
+            "Please provide 2 files in FASTA/FASTQ format along with alignment "
+            "type and match, mismatch and gap costs\nAlignment types: 0 - "
+            "local, 1 - global, 2 - semi_global\n");
     exit(EXIT_FAILURE);
   }
   // parse 1st file as FASTA
@@ -154,11 +158,12 @@ int main(int argc, char **argv) {
     string &target = fasta_objects[rand2]->sequence;
     string cigar;
     unsigned int target_begin;
-    cout << brown::pairwise_alignment(query.c_str(), query.size(),
+    cout << "Alignment score: "
+         << brown::pairwise_alignment(query.c_str(), query.size(),
                                       target.c_str(), target.size(), type,
                                       match, mismatch, gap, cigar, target_begin)
          << '\n';
-    cout << cigar <<  '\n';
+    cout << "CIGAR string: " << cigar << '\n';
 
   }
 
@@ -186,10 +191,24 @@ int main(int argc, char **argv) {
       }
     }
     print_fastq_stats(fastq_objects);
+    srand(time(NULL));
+    int rand1 = rand() % fastq_objects.size();
+    int rand2 = rand() % fastq_objects.size();
+    string &query = fastq_objects[rand1]->sequence;
+    string &target = fastq_objects[rand2]->sequence;
+    string cigar;
+    unsigned int target_begin;
+    cout << "Alignment score: "
+         << brown::pairwise_alignment(query.c_str(), query.size(),
+                                      target.c_str(), target.size(), type,
+                                      match, mismatch, gap, cigar, target_begin)
+         << '\n';
+    cout << "CIGAR string: " << cigar << '\n';
   } else {
     fprintf(stderr,
-            "2 files needed along with the alignment type and match, mismatch "
-            "and gap costs\n");
+            "Please provide 2 files in FASTA/FASTQ format along with alignment "
+            "type and match, mismatch and gap costs\nAlignment types: 0 - "
+            "local, 1 - global, 2 - semi_global\n");
     exit(EXIT_FAILURE);
   }
   // parse 2nd file as FASTA
@@ -217,11 +236,12 @@ int main(int argc, char **argv) {
     string &target = fasta_objects[rand2]->sequence;
     string cigar;
     unsigned int target_begin;
-    cout << brown::pairwise_alignment(query.c_str(), query.size(),
+    cout << "Alignment score: "
+         << brown::pairwise_alignment(query.c_str(), query.size(),
                                       target.c_str(), target.size(), type,
                                       match, mismatch, gap, cigar, target_begin)
          << '\n';
-    cout << cigar <<  '\n';
+    cout << "CIGAR string: " << cigar << '\n';
 
   }
   // parse 2nd file as FASTQ
@@ -248,10 +268,24 @@ int main(int argc, char **argv) {
       }
     }
     print_fastq_stats(fastq_objects);
+    srand(time(NULL));
+    int rand1 = rand() % fastq_objects.size();
+    int rand2 = rand() % fastq_objects.size();
+    string &query = fastq_objects[rand1]->sequence;
+    string &target = fastq_objects[rand2]->sequence;
+    string cigar;
+    unsigned int target_begin;
+    cout << "Alignment score: "
+         << brown::pairwise_alignment(query.c_str(), query.size(),
+                                      target.c_str(), target.size(), type,
+                                      match, mismatch, gap, cigar, target_begin)
+         << '\n';
+    cout << "CIGAR string: " << cigar << '\n';
   } else {
     fprintf(stderr,
-            "2 files needed along with the alignment type and match, mismatch "
-            "and gap costs\n");
+            "Please provide 2 files in FASTA/FASTQ format along with alignment "
+            "type and match, mismatch and gap costs\nAlignment types: 0 - "
+            "local, 1 - global, 2 - semi_global\n");
     exit(EXIT_FAILURE);
   }
 }
