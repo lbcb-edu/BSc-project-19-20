@@ -1,0 +1,1 @@
+/usr/bin/c++    -rdynamic CMakeFiles/Mapper.dir/src/brown_mapper.cpp.o  -o Mapper  brown_alignment/libbrown_alignment.a vendor/bioparser/lib/libz.a 

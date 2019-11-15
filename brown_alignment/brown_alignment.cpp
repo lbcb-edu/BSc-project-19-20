@@ -219,6 +219,7 @@ void create_cigar(vector<vector<matrixCell>>& matrix, AlignmentType type,
       }
     }
   }
+  target_begin = column;
 }
 
 void align(const char* query, unsigned int query_length, const char* target,

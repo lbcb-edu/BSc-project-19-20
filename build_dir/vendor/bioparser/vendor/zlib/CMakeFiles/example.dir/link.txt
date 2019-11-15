@@ -1,0 +1,1 @@
+/usr/bin/cc   -rdynamic CMakeFiles/example.dir/test/example.o  -o ../../bin/example  -Wl,-rpath,/home/filip/git/Project/BSc-project-19-20/build_dir/vendor/bioparser/lib ../../lib/libz.so.1.2.11 

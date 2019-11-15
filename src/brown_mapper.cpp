@@ -164,6 +164,7 @@ int main(int argc, char **argv) {
                                       match, mismatch, gap, cigar, target_begin)
          << '\n';
     cout << "CIGAR string: " << cigar << '\n';
+    cout << "Beginning: " << target_begin << "\n";
 
   }
 
@@ -204,6 +205,7 @@ int main(int argc, char **argv) {
                                       match, mismatch, gap, cigar, target_begin)
          << '\n';
     cout << "CIGAR string: " << cigar << '\n';
+    cout << "Beginning: " << target_begin << "\n";
   } else {
     fprintf(stderr,
             "Please provide 2 files in FASTA/FASTQ format along with alignment "
@@ -242,6 +244,7 @@ int main(int argc, char **argv) {
                                       match, mismatch, gap, cigar, target_begin)
          << '\n';
     cout << "CIGAR string: " << cigar << '\n';
+    cout << "Beginning: " << target_begin << "\n";
 
   }
   // parse 2nd file as FASTQ
@@ -281,6 +284,7 @@ int main(int argc, char **argv) {
                                       match, mismatch, gap, cigar, target_begin)
          << '\n';
     cout << "CIGAR string: " << cigar << '\n';
+    cout << "Beginning: " << target_begin << "\n";
   } else {
     fprintf(stderr,
             "Please provide 2 files in FASTA/FASTQ format along with alignment "
