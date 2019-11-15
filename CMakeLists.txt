@@ -6,7 +6,6 @@ set(BLUE_MAPPER_VERSION_MAJOR 0)
 set(BLUE_MAPPER_VERSION_MINOR 2)
 set(BLUE_MAPPER_VERSION_PATCH 0)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g -std=c++17 -lpthread")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -28,7 +27,6 @@ target_link_libraries(
   blue_mapper PUBLIC 
   alignment 
   bioparser
-  ${CMAKE_THREADS_LIB_INIT}
 )
 
 target_include_directories(
