@@ -1,13 +1,14 @@
 #include <bioparser/bioparser.hpp>
 #include <cctype>
-#include <future>
 #include <iostream>
 #include <limits>
+#include <random>
 #include <sstream>
 #include <string>
 #include <unordered_set>
 #include <vector>
 
+#include "alignment/alignment.hpp"
 #include "config.hpp"
 #include "mapper.hpp"
 
@@ -18,11 +19,26 @@ namespace util {
   return s;
 }
 
+bool EndsWith(const ::std::string& str, const ::std::string& ext) noexcept {
+  return str.find(ext) == str.length() - ext.length();
+}
+
 ::std::ostream& DisplayHelp(::std::ostream& out) noexcept {
   out << "Mapper that displays input genome statistics." << ::std::endl
-      << "Arguments: [fragments] [reference]." << ::std::endl
+      << "Arguments: [fragments] [reference] [alignmentType] [match] "
+         "[mismatch] [gap]."
+      << ::std::endl
       << " - fragments: input file in a FASTA or FASTQ format" << ::std::endl
-      << " - reference: input file in a FASTA format";
+      << " - reference: input file in a FASTA format" << ::std::endl
+      << " - alignmentType: the alignment algorithm used for aligning two "
+         "random "
+         "sequences from the first file options: nw (Needleman-Wunsch), sw "
+         "(Smith-Waterman) or ov (overlap algorithm)"
+      << ::std::endl
+      << " - match: the cost of matching bases" << ::std::endl
+      << " - mismatch: the cost of mismatching bases" << ::std::endl
+      << " - gap: the cost of a gap in either source or target sequence"
+      << ::std::endl;
 
   return out;
 }
@@ -33,10 +49,6 @@ namespace util {
      << BLUE_MAPPER_VERSION_PATCH;
 
   return ss.str();
-}
-
-bool EndsWith(const ::std::string& str, const ::std::string& ext) noexcept {
-  return str.find(ext) == str.length() - ext.length();
 }
 
 using namespace ::mapper;
@@ -62,23 +74,50 @@ using namespace ::mapper;
   return out;
 }
 
+struct Terminator {
+  int status;
+};
+
+::std::ostream& operator<<(::std::ostream& out, Terminator t) {
+  out << ::std::endl;
+  ::std::exit(t.status);
+}
+
+int ParseInteger(const char* n) {
+  try {
+    return ::std::stoi(n);
+  } catch (::std::invalid_argument& exc) {
+    ::std::cerr << "Error while attempting to parse " << n << " as a number."
+                << Terminator{EXIT_FAILURE};
+  }
+
+  return {};
+}
+
+template <typename IntegralType>
+IntegralType Rnd(const IntegralType bound) {
+  static ::std::mt19937 mt{::std::random_device{}()};
+  static ::std::uniform_int_distribution<IntegralType> uniform{0, bound - 1};
+
+  return uniform(mt);
+}
+
 }  // namespace util
 
 int main(int argc, char** argv, char** env) {
+  /*
+   *
+   * Argument validation.
+   *
+   */
+
   ::std::string arg1;
 
-  if (argc == 1 || "-h" == (arg1 = ::util::ToLower(argv[1])) ||
-      "--help" == arg1) {
-    ::util::DisplayHelp(::std::cerr) << ::std::endl;
-    ::std::exit(EXIT_SUCCESS);
-  } else if ("-v" == arg1 || "--Version" == arg1) {
-    ::std::cerr << ::util::Version() << ::std::endl;
-    ::std::exit(EXIT_SUCCESS);
-  } else if (argc != 3) {
-    ::std::cerr << "This program requires 2 arguments. See --help."
-                << ::std::endl;
-    ::std::exit(EXIT_FAILURE);
-  }
+  if (argc == 2 &&
+      ("-v" == (arg1 = ::util::ToLower(argv[1])) || "--version" == arg1))
+    ::std::cerr << ::util::Version() << ::util::Terminator{EXIT_SUCCESS};
+  else if ((argc != 3 && argc != 7) || "-h" == arg1 || "--help" == arg1)
+    ::util::DisplayHelp(::std::cerr) << ::util::Terminator{EXIT_SUCCESS};
 
   // clang-format off
   const ::std::unordered_set<::std::string> 
@@ -104,11 +143,9 @@ int main(int argc, char** argv, char** env) {
       }
   }
 
-  if (-1 == using_fasta) {
+  if (-1 == using_fasta)
     ::std::cerr << "Source file should be in FASTA or FASTQ format."
-                << ::std::endl;
-    ::std::exit(EXIT_FAILURE);
-  }
+                << ::util::Terminator{EXIT_FAILURE};
 
   bool destination_valid = false;
 
@@ -118,10 +155,33 @@ int main(int argc, char** argv, char** env) {
       break;
     }
 
-  if (!destination_valid) {
-    ::std::cerr << "Destination file should be in FASTA format." << ::std::endl;
-    ::std::exit(EXIT_FAILURE);
-  }
+  if (!destination_valid)
+    ::std::cerr << "Destination file should be in FASTA format."
+                << ::util::Terminator{EXIT_FAILURE};
+
+  ::algn::AlignmentType algorithm;
+
+  if (const ::std::string a_type{::util::ToLower(argv[3])}; a_type == "nw")
+    algorithm = ::algn::AlignmentType::kNeedlemanWunsch;
+  else if (a_type == "sw")
+    algorithm = ::algn::AlignmentType::kSmithWaterman;
+  else if (a_type == "ov")
+    algorithm = ::algn::AlignmentType::kOverlap;
+  else
+    ::std::cerr << "Invalid alignment algorithm."
+                << ::util::Terminator{EXIT_FAILURE};
+
+  int match_cost = ::util::ParseInteger(argv[4]),
+      mismatch_cost = ::util::ParseInteger(argv[5]),
+      gap_cost = ::util::ParseInteger(argv[6]);
+
+  /*
+   *
+   * Sequence loading from input files and statistic output.
+   *
+   */
+
+  ::std::cerr << "Starting with sequence loading." << ::std::endl;
 
   auto fragments = using_fasta ? ::mapper::Parse<::mapper::Sequence>(src)
                                : ::mapper::Parse<::mapper::QSequence>(src);
@@ -138,4 +198,58 @@ int main(int argc, char** argv, char** env) {
               << fragments << ::std::endl
               << "Reference statistics: " << ::std::endl
               << reference << ::std::endl;
+
+  /*
+   *
+   * Sequence alignment.
+   *
+   */
+
+  auto source = *fragments[::util::Rnd(fragments.size())];
+  auto target = *fragments[::util::Rnd(fragments.size())];
+
+  auto source_length = static_cast<unsigned>(source.sequence.size());
+  auto target_length = static_cast<unsigned>(target.sequence.size());
+
+  if (source.sequence.size() > target.sequence.size())
+    ::std::swap(source, target);
+
+  fragments.clear();
+  fragments.shrink_to_fit();
+  reference.clear();
+  reference.shrink_to_fit();
+
+  ::std::cerr << ::std::endl
+              << "Aligning two random sequences, query length: "
+              << source_length << ", target length: " << target_length
+              << ::std::endl;
+
+  // there is much more memory that the program owns but does not use
+  // it is leftover from storing sequences
+  ::std::cerr << "Estimated (active) memory usage: "
+              << (8 * target_length * source_length) / (1 << 20)
+              << " megabytes." << ::std::endl;
+
+  ::std::string cigar;
+  unsigned int target_begin;
+
+  using namespace ::algn;
+
+  auto score = PairwiseAlignment(
+      Query{source.sequence.c_str()}, QueryLength{source_length},
+      Target{target.sequence.c_str()}, TargetLength{target_length}, algorithm,
+      Match{match_cost}, Mismatch{mismatch_cost}, Gap{gap_cost}, cigar,
+      target_begin);
+
+  ::std::cerr << "Done." << ::std::endl;
+  ::std::cerr << "Alignment score: " << score << ::std::endl;
+
+  ::std::cerr << "Cigar length is " << cigar.size() << "."
+              << " Do you want to print it (y/n)? ";
+
+  ::std::string response;
+  ::std::cin >> response;
+
+  if (::util::ToLower(response) == "y")
+    ::std::cerr << cigar << ::std::endl;
 }

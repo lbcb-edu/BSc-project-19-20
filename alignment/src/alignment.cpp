@@ -147,6 +147,7 @@ void ConstructCigar(const detail::Contiguous2DArray<detail::Cell>& alignment,
                     unsigned int& target_begin,
                     ::std::function<void(::std::string&)> cigar_modifier) {
   Cell current = alignment[pos.first][pos.second];
+  cigar.reserve(::std::min(alignment.rows, alignment.cols));
 
   while (current.action != kNone) {
     cigar += current.action;
@@ -157,6 +158,8 @@ void ConstructCigar(const detail::Contiguous2DArray<detail::Cell>& alignment,
 
   if (cigar_modifier)
     cigar_modifier(cigar);
+
+  cigar.shrink_to_fit();
 
   ::std::reverse(::std::begin(cigar), ::std::end(cigar));
 }
