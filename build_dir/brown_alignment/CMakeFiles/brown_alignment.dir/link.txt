@@ -1,2 +1,0 @@
-/usr/bin/ar qc libbrown_alignment.a  CMakeFiles/brown_alignment.dir/brown_alignment.cpp.o
-/usr/bin/ranlib libbrown_alignment.a
