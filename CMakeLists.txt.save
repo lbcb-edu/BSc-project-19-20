@@ -13,7 +13,7 @@ configure_file (
 include_directories ("${PROJECT_BINARY_DIR}/vendor/bioparser/include")
 add_subdirectory (vendor/bioparser EXCLUDE_FROM_ALL)
 add_subdirectory (brown_alignment)
-option(brown_tests "tests" ON)
+add_subdirectory(vendor/googletest EXCLUDE_FROM_ALL)
 
 add_executable (Mapper src/brown_mapper.cpp)
 target_link_libraries (Mapper bioparser)
@@ -22,13 +22,4 @@ target_include_directories(Mapper PUBLIC
                           "${PROJECT_BINARY_DIR}"
                           "${PROJECT_SOURCE_DIR}/brown_alignment"
                           )
-
-if(brown_tests)
-	include_directories(${PROJECT_SOURCE_DIR}/src)
-
-	add_executable(brown_tests test/brown_tests.cpp)
-
-	add_subdirectory(vendor/googletest EXCLUDE_FROM_ALL)
-
-	target_link_libraries(brown_tests brown_alignment gtest_main)
-endif(brown_tests)
+add_subdirectory(test)
