@@ -3,6 +3,7 @@
 #include<unistd.h>
 
 #include "bioparser/bioparser.hpp"
+#include "pink_alignment.h"
 
 #define VERSION "v0.1.0"
 
@@ -17,7 +18,11 @@ void help() {
               << "This program accepts two files as floating arguments - first file (which contains a set of fragments) in FASTA or FASTQ format, and second one (which contains a corresponding reference genome) in FASTA format." << std::endl
               << "This program has following options:\n" << std::endl
               << "    -h   --help\n       prints the help menu\n" << std::endl
-              << "    -v   --version\n        prints the version number\n" << std::endl;
+              << "    -v   --version\n        prints the version number\n" << std::endl
+              << "    -t   --type\n       sets Alignment type to following argument. Default type is global.\n" << std::endl
+              << "    -m   --match\n       sets match argument for pairwise alignment to following argument. Default value is 3.\n" << std::endl
+              << "    -s   --mismatch\n       sets mismatch argument for pairwise alignment to following argument. Default value is -1.\n" << std::endl
+              << "    -g   --gap\n       sets gap argument for pairwise alignment to following argument. Default value is -2.\n" << std::endl;
 }
 
 void version(){
@@ -142,7 +147,12 @@ void print_statistics (std::string file){
 int main(int argc, char* argv[]) {
 
     int opt;
-    while((opt = getopt(argc, argv, ":hv")) != -1)  {
+    std::string alignment_type;
+    pink::AlignmentType type = pink::global;
+    int match = 3;
+    int mismatch = -1;
+    int gap = -2;
+    while((opt = getopt(argc, argv, ":hvt:m:s:g:")) != -1)  {
         switch(opt) {
             case 'h':
                 help();
@@ -150,6 +160,26 @@ int main(int argc, char* argv[]) {
             case 'v':
                 version();
                 return 0;
+            case 't':
+                alignment_type = optarg;
+                if(alignment_type == "global")
+                    type = pink::global;
+                else if(alignment_type == "semi_global")
+                    type = pink::semi_global;
+                else if(alignment_type == "local")
+                    type = pink::local;
+                else
+                    errorMessage();
+                break;
+            case 'm':
+                match = atoi(optarg);
+                break;
+            case 's' :
+                mismatch = atoi(optarg);
+                break;
+            case 'g' :
+                gap = atoi(optarg);
+                break;
             default:
                 errorMessage();
         }
@@ -167,9 +197,43 @@ int main(int argc, char* argv[]) {
         errorMessage();
     }
 
-    print_statistics(first);
-    std::cerr << std::endl;
-    print_statistics(second);
+    // print_statistics(first);
+    // std::cerr << std::endl;
+    // print_statistics(second);
+
+
+    std::vector<std::unique_ptr<Fast>> fast_objects;
+    if(is_extension_ok(first, 'a')){
+        fast_objects = parse_fasta(first);
+    } else {
+        fast_objects = parse_fastq(first);
+    }
+
+    int which1 = std::rand() % fast_objects.size();
+    int which2 = std::rand() % fast_objects.size();
+
+    const char *query = (fast_objects[which1]->sequence).c_str();
+    const char *target = (fast_objects[which2]->sequence).c_str();
+    unsigned int query_length = (fast_objects[which1]->sequence).length();
+    unsigned int target_length = (fast_objects[which2]->sequence).length();
+
+    int cost = pink::pairwise_alignment(query, query_length, target, target_length, type, match, mismatch, gap);
+
+    std::string s = "";
+    for(int i = 0; i < query_length; i++){
+        s += query[i];
+    }
+    std::string t = "";
+    for(int i = 0; i < target_length; i++){
+        t += target[i];
+    }
+
+    std::cout << "Cost for pairwise alignment for " << s << " and " << t << " is: " << cost << std::endl;
+
+    std::string cigar;
+    unsigned int target_begin;
+    pink::pairwise_alignment(query, query_length, target, target_length, type, match, mismatch, gap, cigar, target_begin);
+    std::cout << "Cigar string: " << cigar << std::endl;
 
     return 0;
 }
