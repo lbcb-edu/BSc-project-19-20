@@ -1,3 +1,4 @@
+#include <string>
 namespace white {
 
     enum AlignmentType {
