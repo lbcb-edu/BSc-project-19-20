@@ -118,7 +118,7 @@ int main(int argc, char **argv) {
         fprintf(stdout, "v%d.%d\n", Mapper_VERSION_MAJOR, Mapper_VERSION_MINOR);
         exit(EXIT_SUCCESS);
       case 'h':
-        fprintf(stdout, "-v (--version)  Project version\n"); 
+        fprintf(stdout, "-v (--version)  Project version\n");
         fprintf(stdout, "-h (--help)     Help\n\n");
         fprintf(stdout,
                 "Please provide 2 files in FASTA/FASTQ format along with "

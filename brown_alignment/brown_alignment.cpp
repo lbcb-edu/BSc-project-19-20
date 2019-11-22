@@ -13,210 +13,116 @@ struct matrixCell {
   valueType cost;
 };
 
+void do_cigar(vector<vector<matrixCell>>& matrix, string& cigar, int& row,
+              int& column, int& cntD, int& cntI, int& cntM, int& cntX) {
+  if (matrix[row][column].cost == valueType::deletion) {
+    if (cntI != 0) {
+      string a = to_string(cntI);
+      cigar.append(a);
+      cigar.push_back('I');
+      cntI = 0;
+    }
+    if (cntM != 0) {
+      string a = to_string(cntM);
+      cigar.append(a);
+      cigar.push_back('=');
+      cntM = 0;
+    }
+    if (cntX != 0) {
+      string a = to_string(cntX);
+      cigar.append(a);
+      cigar.push_back('X');
+      cntX = 0;
+    }
+    cntD++;
+    row--;
+  } else if (matrix[row][column].cost == valueType::insertion) {
+    if (cntD != 0) {
+      string a = to_string(cntD);
+      cigar.append(a);
+      cigar.push_back('D');
+      cntD = 0;
+    }
+    if (cntM != 0) {
+      string a = to_string(cntM);
+      cigar.append(a);
+      cigar.push_back('=');
+      cntM = 0;
+    }
+    if (cntX != 0) {
+      string a = to_string(cntX);
+      cigar.append(a);
+      cigar.push_back('X');
+      cntX = 0;
+    }
+    cntI++;
+    column--;
+  } else if (matrix[row][column].cost == valueType::match) {
+    if (cntI != 0) {
+      cout << "bla";
+      string a = to_string(cntI);
+      cigar.append(a);
+      cigar.push_back('I');
+      cntI = 0;
+    }
+    if (cntD != 0) {
+      string a = to_string(cntD);
+      cigar.append(a);
+      cigar.push_back('D');
+      cntD = 0;
+    }
+    if (cntX != 0) {
+      string a = to_string(cntX);
+      cigar.append(a);
+      cigar.push_back('X');
+      cntX = 0;
+    }
+    cntM++;
+    row--;
+    column--;
+  } else if (matrix[row][column].cost == valueType::mismatch) {
+    if (cntI != 0) {
+      cout << "bla";
+      string a = to_string(cntI);
+      cigar.append(a);
+      cigar.push_back('I');
+      cntI = 0;
+    }
+    if (cntM != 0) {
+      string a = to_string(cntM);
+      cigar.append(a);
+      cigar.push_back('=');
+      cntM = 0;
+    }
+    if (cntD != 0) {
+      string a = to_string(cntD);
+      cigar.append(a);
+      cigar.push_back('D');
+      cntD = 0;
+    }
+    cntX++;
+    row--;
+    column--;
+  }
+}
+
 void create_cigar(vector<vector<matrixCell>>& matrix, AlignmentType type,
                   string& cigar, unsigned int& target_begin, int row,
                   int column, const char* query, unsigned int query_length,
                   const char* target) {
-  int cntD = 0, cntI = 0, cntM = 0, cntX = 0;
-  // cout << "bla";
-
   if (row < query_length) {
     string a = to_string(query_length - row);
     cigar.append(a);
     cigar.push_back('S');
   }
-
+  int cntD = 0, cntI = 0, cntM = 0, cntX = 0;
   if (type == AlignmentType::local) {
     while (matrix[row][column].value != 0) {
-      if (matrix[row][column].cost == valueType::deletion) {
-        if (cntI != 0) {
-          // cout << "bla";
-          string a = to_string(cntI);
-          cigar.append(a);
-          cigar.push_back('I');
-          cntI = 0;
-        }
-        if (cntM != 0) {
-          // cout << "bla";
-          string a = to_string(cntM);
-          cigar.append(a);
-          cigar.push_back('=');
-          cntM = 0;
-        }
-        if (cntX != 0) {
-          string a = to_string(cntX);
-          cigar.append(a);
-          cigar.push_back('X');
-          cntX = 0;
-        }
-        cntD++;
-        row--;
-      } else if (matrix[row][column].cost == valueType::insertion) {
-        if (cntD != 0) {
-          string a = to_string(cntD);
-          cigar.append(a);
-          cigar.push_back('D');
-          cntD = 0;
-        }
-        if (cntM != 0) {
-          // cout << "bla";
-          string a = to_string(cntM);
-          cigar.append(a);
-          cigar.push_back('=');
-          cntM = 0;
-        }
-        if (cntX != 0) {
-          string a = to_string(cntX);
-          cigar.append(a);
-          cigar.push_back('X');
-          cntX = 0;
-        }
-        cntI++;
-        column--;
-      } else if (matrix[row][column].cost == valueType::match) {
-        if (cntI != 0) {
-          cout << "bla";
-          string a = to_string(cntI);
-          cigar.append(a);
-          cigar.push_back('I');
-          cntI = 0;
-        }
-        if (cntD != 0) {
-          string a = to_string(cntD);
-          cigar.append(a);
-          cigar.push_back('D');
-          cntD = 0;
-        }
-        if (cntX != 0) {
-          string a = to_string(cntX);
-          cigar.append(a);
-          cigar.push_back('X');
-          cntX = 0;
-        }
-        cntM++;
-        row--;
-        column--;
-      } else if (matrix[row][column].cost == valueType::mismatch) {
-        if (cntI != 0) {
-          cout << "bla";
-          string a = to_string(cntI);
-          cigar.append(a);
-          cigar.push_back('I');
-          cntI = 0;
-        }
-        if (cntM != 0) {
-          // cout << "bla";
-          string a = to_string(cntM);
-          cigar.append(a);
-          cigar.push_back('=');
-          cntM = 0;
-        }
-        if (cntD != 0) {
-          string a = to_string(cntD);
-          cigar.append(a);
-          cigar.push_back('D');
-          cntD = 0;
-        }
-        cntX++;
-        row--;
-        column--;
-      }
+      do_cigar(matrix, cigar, row, column, cntD, cntI, cntM, cntX);
     }
   } else {
     while (matrix[row][column].cost != valueType::none) {
-      if (matrix[row][column].cost == valueType::deletion) {
-        if (cntI != 0) {
-          // cout << "bla";
-          string a = to_string(cntI);
-          cigar.append(a);
-          cigar.push_back('I');
-          cntI = 0;
-        }
-        if (cntM != 0) {
-          // cout << "bla";
-          string a = to_string(cntM);
-          cigar.append(a);
-          cigar.push_back('=');
-          cntM = 0;
-        }
-        if (cntX != 0) {
-          string a = to_string(cntX);
-          cigar.append(a);
-          cigar.push_back('X');
-          cntX = 0;
-        }
-        cntD++;
-        row--;
-      } else if (matrix[row][column].cost == valueType::insertion) {
-        if (cntD != 0) {
-          string a = to_string(cntD);
-          cigar.append(a);
-          cigar.push_back('D');
-          cntD = 0;
-        }
-        if (cntM != 0) {
-          // cout << "bla";
-          string a = to_string(cntM);
-          cigar.append(a);
-          cigar.push_back('=');
-          cntM = 0;
-        }
-        if (cntX != 0) {
-          string a = to_string(cntX);
-          cigar.append(a);
-          cigar.push_back('X');
-          cntX = 0;
-        }
-        cntI++;
-        column--;
-      } else if (matrix[row][column].cost == valueType::match) {
-        if (cntI != 0) {
-          cout << "bla";
-          string a = to_string(cntI);
-          cigar.append(a);
-          cigar.push_back('I');
-          cntI = 0;
-        }
-        if (cntD != 0) {
-          string a = to_string(cntD);
-          cigar.append(a);
-          cigar.push_back('D');
-          cntD = 0;
-        }
-        if (cntX != 0) {
-          string a = to_string(cntX);
-          cigar.append(a);
-          cigar.push_back('X');
-          cntX = 0;
-        }
-        cntM++;
-        row--;
-        column--;
-      } else if (matrix[row][column].cost == valueType::mismatch) {
-        if (cntI != 0) {
-          cout << "bla";
-          string a = to_string(cntI);
-          cigar.append(a);
-          cigar.push_back('I');
-          cntI = 0;
-        }
-        if (cntM != 0) {
-          // cout << "bla";
-          string a = to_string(cntM);
-          cigar.append(a);
-          cigar.push_back('=');
-          cntM = 0;
-        }
-        if (cntD != 0) {
-          string a = to_string(cntD);
-          cigar.append(a);
-          cigar.push_back('D');
-          cntD = 0;
-        }
-        cntX++;
-        row--;
-        column--;
-      }
+      do_cigar(matrix, cigar, row, column, cntD, cntI, cntM, cntX);
     }
   }
   target_begin = column;
