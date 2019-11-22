@@ -1,0 +1,1 @@
+/usr/bin/c++    -rdynamic CMakeFiles/brown_tests.dir/test/brown_tests.cpp.o  -o brown_tests  brown_alignment/libbrown_alignment.a lib/libgtest_main.a lib/libgtest.a -lpthread 
