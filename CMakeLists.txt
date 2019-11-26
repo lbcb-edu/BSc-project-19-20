@@ -16,12 +16,9 @@ configure_file(
 
 add_subdirectory("vendor/bioparser" EXCLUDE_FROM_ALL)
 add_subdirectory("vendor/googletest" EXCLUDE_FROM_ALL)
-
 add_subdirectory("alignment" EXCLUDE_FROM_ALL)
 
 add_executable(blue_mapper "src/main.cpp")
-
-find_package(Threads)
 
 target_link_libraries(
   blue_mapper PUBLIC 
@@ -42,4 +39,10 @@ target_link_libraries(
   alignment_tests PUBLIC
   alignment
   gtest
+)
+
+target_include_directories(
+  alignment_tests PUBLIC
+  "${PROJECT_BINARY_DIR}/alignment/include"
+  "${PROJECT_BINARY_DIR}/vendor/googletest/googletest/include"
 )

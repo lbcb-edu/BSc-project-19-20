@@ -16,7 +16,7 @@ using Query = StrongType<const char*, struct QueryTag>;
 using QueryLength = StrongType<unsigned int, struct QueryLengthTag>;
 
 using Target = StrongType<const char*, struct TargetTag>;
-using TargetLength = StrongType<unsigned int, struct QueryLengthTag>;
+using TargetLength = StrongType<unsigned int, struct TargetLengthTag>;
 
 using Match = StrongType<int, struct MatchTag>;
 using Mismatch = StrongType<int, struct MismatchTag>;
