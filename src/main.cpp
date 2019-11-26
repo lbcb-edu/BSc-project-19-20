@@ -211,9 +211,6 @@ int main(int argc, char** argv, char** env) {
   auto source_length = static_cast<unsigned>(source.sequence.size());
   auto target_length = static_cast<unsigned>(target.sequence.size());
 
-  if (source.sequence.size() > target.sequence.size())
-    ::std::swap(source, target);
-
   fragments.clear();
   fragments.shrink_to_fit();
   reference.clear();

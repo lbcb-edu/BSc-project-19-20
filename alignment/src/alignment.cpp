@@ -142,6 +142,28 @@ inline void UpdatePosition(Action action, Position& pos) {
   }
 }
 
+::std::string FormatCigar(const ::std::string& cigar) {
+  if (!cigar.length())
+    return "";
+
+  auto iter = ::std::rbegin(cigar);
+
+  ::std::pair<char, ::std::size_t> seq{*iter++, 1};
+  ::std::string retval;
+
+  ::std::for_each(iter, ::std::rend(cigar), [&](const char c) {
+    if (c == seq.first)
+      ++seq.second;
+    else
+      retval += ::std::to_string(seq.second), retval += seq.first, seq = {c, 1};
+  });
+
+  retval += ::std::to_string(seq.second);
+  retval += seq.first;
+
+  return retval;
+}
+
 void ConstructCigar(const detail::Contiguous2DArray<detail::Cell>& alignment,
                     Position pos, ::std::string& cigar,
                     unsigned int& target_begin,
@@ -159,9 +181,7 @@ void ConstructCigar(const detail::Contiguous2DArray<detail::Cell>& alignment,
   if (cigar_modifier)
     cigar_modifier(cigar);
 
-  cigar.shrink_to_fit();
-
-  ::std::reverse(::std::begin(cigar), ::std::end(cigar));
+  cigar = FormatCigar(cigar);
 }
 
 }  // namespace detail
@@ -203,11 +223,10 @@ int PairwiseAlignment(Query query, QueryLength query_length, Target target,
   auto ret = isSW ? detail::SmithWaterman(ai) : detail::Overlap(ai);
   auto start = ret.first[ret.second.first][ret.second.second];
 
-  detail::ConstructCigar(ret.first, ret.second, cigar, target_begin,
-                         [isSW](::std::string& cigar) {
-                           if (isSW)
-                             cigar.resize(cigar.length() - 1);
-                         });
+  detail::ConstructCigar(
+      ret.first, ret.second, cigar, target_begin,
+      isSW ? [](::std::string& cigar) { cigar.resize(cigar.length() - 1); }
+           : [](::std::string&) {});
 
   return start.score;
 }

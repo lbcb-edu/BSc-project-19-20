@@ -43,7 +43,7 @@ TEST(NeedleWunschTest, GeneralTest) {
                         Match{2}, Mismatch{-1}, Gap{-1}, cigar, target_begin);
 
   ASSERT_EQ(0, target_begin);
-  ASSERT_EQ("D=X=XI==", cigar);
+  ASSERT_EQ("1D1=1X1=1X1I2=", cigar);
   ASSERT_EQ(4, score);
 }
 
@@ -58,7 +58,7 @@ TEST(SmithWatermanTest, GeneralTest) {
 
   ASSERT_EQ(2, target_begin);
   ASSERT_EQ(6, score);
-  ASSERT_EQ("=D==", cigar);
+  ASSERT_EQ("1=1D2=", cigar);
 }
 
 TEST(OverlapTest, GeneralTest) {
@@ -72,7 +72,7 @@ TEST(OverlapTest, GeneralTest) {
 
   ASSERT_EQ(2, target_begin);
   ASSERT_EQ(16, score);
-  ASSERT_EQ("====", cigar);
+  ASSERT_EQ("4=", cigar);
 }
 
 }  // namespace
