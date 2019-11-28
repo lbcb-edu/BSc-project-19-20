@@ -5,16 +5,14 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <cstdlib>
-#include <cstdio>
 #include <memory>
 #include <string>
-#include <thread>
 #include <vector>
-#include <memory>
-#include <array>
+#include <random>
 
 #include <bioparser/bioparser.hpp>
 
+#include "orange_alignment.h"
 #include "orange_mapper_conf.h"
 
 namespace orange {
@@ -30,6 +28,10 @@ enum FileType { kFasta, kFastq, kUnsupported };
  */
 struct option const long_options[] = {{"help", no_argument, NULL, 'h'},
                                       {"version", no_argument, NULL, 'v'},
+                                      {"type", required_argument, NULL, 't'},
+                                      {"match", required_argument, 0, 'm'},
+                                      {"mismatch", required_argument, 0, 's'},
+                                      {"gap", required_argument, 0, 'g'},
                                       {NULL, 0, NULL, 0}};
 
 /**
@@ -108,23 +110,49 @@ auto createFastqParser =
         &bioparser::createParser<bioparser::FastqParser, FastQ>};
 
 /**
- * @brief Prints program version to stderr
+ * @brief Prints program version to stderr,
+ *      exits upon completion
  */
 auto printVersion() {
     std::cerr << orange_mapper_VERSION_MAJOR << '.'
               << orange_mapper_VERSION_MINOR << '.'
               << orange_mapper_VERSION_PATCH << '\n';
+    std::exit(EXIT_SUCCESS);
 }
 
 /**
- * @brief Prints program usage information to stderr
+ * @brief Prints program usage information to stderr,
+ *      exits upon completion
  */
 auto printHelp() {
     std::cerr << "Genome sequence mapper.\n"
               << "Reads are supported in FASTA and FASTQ formats while "
               << "reference is expected to be FASTA.\n\n"
-              << "Usage:\n\t orange_mapper <reads> <reference>\n\n"
+              << "Usage:\n\t orange_mapper <reads> <reference> "
+              << "-t <alignment_type> -m <match> -s <mismatch> -g <gap>\n\n"
               << "Options:\n\t-h\thelp\n\t-v\tverions\n";
+    std::exit(EXIT_SUCCESS);
+}
+
+/**
+ * @brief parses alignment type from comman line argument
+ *
+ * @param type command line argument value
+ * @return auto @ref orange::alignment::AlignmentType
+ */
+auto parseAlignType(char const* type) {
+    auto str_val = std::string_view{type};
+
+    if (str_val == "global")
+        return alignment::AlignmentType::kGlobal;
+    if (str_val == "local")
+        return alignment::AlignmentType::kLocal;
+    if (str_val == "semi-global")
+        return alignment::AlignmentType::kSemiGlobal;
+
+    throw std::invalid_argument(
+        "Unknow alignment type.\n"
+        "Use orange_mapper -h for further information");
 }
 
 /**
@@ -140,11 +168,14 @@ auto printHelp() {
  * @param argc number of command line arguments
  * @param argv commane line arguments
  *
+ * @param conf sequence alignemnt config passed over command line options
+ *
  * @return int index of first non-option element in argv
  */
-auto parseOptions(int argc, char* argv[]) {
+auto parseOptions(int argc, char* argv[], alignment::AlignConf& conf) {
     auto opt = int{};
-    while ((opt = getopt_long(argc, argv, "hv", long_options, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "hvm:s:g:t:", long_options, NULL)) !=
+           -1) {
         switch (opt) {
             case 'v':
                 printVersion();
@@ -152,6 +183,19 @@ auto parseOptions(int argc, char* argv[]) {
             case 'h':
                 printHelp();
                 break;
+            case 't':
+                conf.type_ = parseAlignType(optarg);
+                break;
+            case 'm':
+                conf.match_ = std::atoi(optarg);
+                break;
+            case 's':
+                conf.mismatch_ = std::atoi(optarg);
+                break;
+            case 'g':
+                conf.gap_ = std::atoi(optarg);
+                break;
+
             default:
                 throw std::invalid_argument(
                     "Uknown option.\n\tUse: 'orange_mapper -h'");
@@ -196,7 +240,7 @@ auto parseFileType(std::string_view file) {
 }
 
 /**
- * @brief Loads FASTA/FASTQ files into 
+ * @brief Loads FASTA/FASTQ files into
  *
  * @param path_to_file path to file contaning FASTA/FASTQ sequences
  *
@@ -258,6 +302,42 @@ auto printStats(std::string_view const& origin, VecSeqPtr const& vec_seq) {
               << "\tMaximum length: " << max_len << '\n';
 }
 
+/**
+ * @brief
+ *
+ * @param reads
+ * @param ref
+ * @param align_type
+ * @param match
+ * @param mismatch
+ * @param gap
+ * @return auto
+ */
+auto printRngAlign(VecSeqPtr const& reads, VecSeqPtr const& ref,
+                   alignment::AlignConf conf) {
+    auto rng = [](auto bound) {
+        static auto generator = std::mt19937{std::random_device{}()};
+        static auto dist =
+            std::uniform_int_distribution<decltype(bound)>{0, bound - 1};
+
+        return dist(generator);
+    };
+
+    auto const& read_seq = reads.at(rng(reads.size()));
+    auto const& ref_seq = ref.at(0);
+
+    auto cigar = std::string{};
+    auto target_begin = std::uint32_t{};
+
+     auto const align_score = alignment::pairwiseAlignment(
+         read_seq.get()->seq_, read_seq.get()->seq_len_, ref_seq.get()->seq_,
+         ref_seq.get()->seq_len_, conf.type_, conf.match_, conf.mismatch_,
+         conf.gap_, cigar, target_begin);
+
+     std::cerr << "Random alignment score: " << align_score << '\n'
+              << "CIGAR:\n\t" << cigar << '\n';
+}
+
 }  // namespace mapper
 }  // namespace orange
 
@@ -273,22 +353,30 @@ int main(int argc, char* argv[]) {
     using namespace orange;
 
     try {
-        auto file_index = mapper::parseOptions(argc, argv);
+        // Alignment configuration
+        auto conf = alignment::AlignConf{};
+
+        auto arg_index = mapper::parseOptions(argc, argv, conf);
 
         // Check number of passed arguments
-        if (argc - file_index < 2) {
+        if (argc - arg_index < 2) {
             std::cerr << "Invalid number of arguments.\n"
                          "\tRequired two input files:\n"
                          "\t\t1. Set of fragments (FASTA/FASTQ)\n"
                          "\t\t2. Reference genome (FASTA)\n\n"
-                         "\tEg. orange_mapper escherichia_coli_r7_reads.fastq "
-                         "escherichia_coli_reference.fasta\n";
+                         "Followed up with alignment algorithm specification "
+                         "{global, local, semi-global}\n"
+                         "and match, mismatch, gap scoring values for the "
+                         "coresponding type.\n"
+                         "\tEg. orange_mapper escherichia_coli_r7_reads.fastq"
+                         " escherichia_coli_reference.fasta -t global -m 1 -s "
+                         "-1 -g -1\n";
             return EXIT_FAILURE;
         }
 
         // Extracting resource paths
-        auto path_to_reads = std::string{argv[file_index]};
-        auto path_to_ref = std::string{argv[file_index + 1]};
+        auto path_to_reads = std::string{argv[arg_index]};
+        auto path_to_ref = std::string{argv[arg_index + 1]};
 
         // Determine scan formats
         auto reads_type = mapper::parseFileType(path_to_reads);
@@ -307,6 +395,10 @@ int main(int argc, char* argv[]) {
         // Print stats
         mapper::printStats(path_to_reads, reads);
         mapper::printStats(path_to_ref, ref);
+
+        // Print alignment score of two random sequences
+        std::cout << "Starting random alignment.\n";
+        mapper::printRngAlign(reads, ref, conf);
 
     } catch (std::exception const& e) {
         std::cerr << e.what() << '\n';

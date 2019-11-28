@@ -224,6 +224,8 @@ int pairwiseAlignment(char const* query, unsigned int query_length,
             curr_pos = nxt_pos;
         }
 
+        cigar.shrink_to_fit();
+
         std::reverse(begin(cigar), end(cigar));
         target_begin = curr_pos.c_;
     };

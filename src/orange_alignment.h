@@ -5,6 +5,7 @@
 
 namespace orange {
 namespace alignment {
+
 /**
  * @brief Determines type of sequence alignment done by
  *          @ref orange::alignment::pairwise_alignment
@@ -13,6 +14,16 @@ enum AlignmentType {
     kGlobal,     ///< Global alignment using Needleman-Wunsch
     kLocal,      ///< Local alignment using Smith-Waterman
     kSemiGlobal  ///< Semi-global alignment
+};
+
+/**
+ * @brief Holds alignment type and scoring scheme 
+ */
+struct AlignConf {
+    AlignmentType type_;
+    int match_;
+    int mismatch_;
+    int gap_;
 };
 
 /**
