@@ -313,28 +313,16 @@ auto printStats(std::string_view const& origin, VecSeqPtr const& vec_seq) {
  * @param gap
  * @return auto
  */
-auto printRngAlign(VecSeqPtr const& reads, VecSeqPtr const& ref,
+auto printRngAlign(Sequence const& query, Sequence const& target,
                    alignment::AlignConf conf) {
-    auto rng = [](auto bound) {
-        static auto generator = std::mt19937{std::random_device{}()};
-        static auto dist =
-            std::uniform_int_distribution<decltype(bound)>{0, bound - 1};
-
-        return dist(generator);
-    };
-
-    auto const& read_seq = reads.at(rng(reads.size()));
-    auto const& ref_seq = ref.at(0);
-
     auto cigar = std::string{};
     auto target_begin = std::uint32_t{};
 
-     auto const align_score = alignment::pairwiseAlignment(
-         read_seq.get()->seq_, read_seq.get()->seq_len_, ref_seq.get()->seq_,
-         ref_seq.get()->seq_len_, conf.type_, conf.match_, conf.mismatch_,
-         conf.gap_, cigar, target_begin);
+    auto const align_score = alignment::pairwiseAlignment(
+        query.seq_, query.seq_len_, target.seq_, target.seq_len_, conf.type_,
+        conf.match_, conf.mismatch_, conf.gap_, cigar, target_begin);
 
-     std::cerr << "Random alignment score: " << align_score << '\n'
+    std::cerr << "Random alignment score: " << align_score << '\n'
               << "CIGAR:\n\t" << cigar << '\n';
 }
 
@@ -396,9 +384,27 @@ int main(int argc, char* argv[]) {
         mapper::printStats(path_to_reads, reads);
         mapper::printStats(path_to_ref, ref);
 
+        // Pick random sequences for alignemnt
+        auto rng = [](auto bound) {
+            static auto generator = std::mt19937{std::random_device{}()};
+            static auto dist =
+                std::uniform_int_distribution<decltype(bound)>{0, bound - 1};
+
+            return dist(generator);
+        };
+
+        auto query = *reads.at(rng(reads.size())).get();
+        auto target = *reads.at(rng(reads.size())).get();
+
+        // Free space for alignment
+        // clang-format off
+        reads.clear(); reads.shrink_to_fit();
+        ref.clear(); ref.shrink_to_fit();
+        // clang-format on
+
         // Print alignment score of two random sequences
         std::cout << "Starting random alignment.\n";
-        mapper::printRngAlign(reads, ref, conf);
+        mapper::printRngAlign(query, target, conf);
 
     } catch (std::exception const& e) {
         std::cerr << e.what() << '\n';
