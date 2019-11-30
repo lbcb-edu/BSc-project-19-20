@@ -80,6 +80,18 @@ install/local/fast: preinstall/fast
 	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
 .PHONY : install/local/fast
 
+# Special rule for the target install
+install: preinstall
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
+	/usr/bin/cmake -P cmake_install.cmake
+.PHONY : install
+
+# Special rule for the target install
+install/fast: preinstall/fast
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
+	/usr/bin/cmake -P cmake_install.cmake
+.PHONY : install/fast
+
 # Special rule for the target edit_cache
 edit_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
@@ -111,18 +123,6 @@ list_install_components:
 list_install_components/fast: list_install_components
 
 .PHONY : list_install_components/fast
-
-# Special rule for the target install
-install: preinstall
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
-	/usr/bin/cmake -P cmake_install.cmake
-.PHONY : install
-
-# Special rule for the target install
-install/fast: preinstall/fast
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
-	/usr/bin/cmake -P cmake_install.cmake
-.PHONY : install/fast
 
 # The main all target
 all: cmake_check_build_system
@@ -181,6 +181,19 @@ pink_mapper: cmake_check_build_system
 pink_mapper/fast:
 	$(MAKE) -f CMakeFiles/pink_mapper.dir/build.make CMakeFiles/pink_mapper.dir/build
 .PHONY : pink_mapper/fast
+
+#=============================================================================
+# Target rules for targets named pink_mapper_test
+
+# Build rule for target.
+pink_mapper_test: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 pink_mapper_test
+.PHONY : pink_mapper_test
+
+# fast build rule for target.
+pink_mapper_test/fast:
+	$(MAKE) -f CMakeFiles/pink_mapper_test.dir/build.make CMakeFiles/pink_mapper_test.dir/build
+.PHONY : pink_mapper_test/fast
 
 #=============================================================================
 # Target rules for targets named zlibstatic
@@ -260,6 +273,32 @@ example64/fast:
 	$(MAKE) -f vendor/bioparser/vendor/zlib/CMakeFiles/example64.dir/build.make vendor/bioparser/vendor/zlib/CMakeFiles/example64.dir/build
 .PHONY : example64/fast
 
+#=============================================================================
+# Target rules for targets named gtest_main
+
+# Build rule for target.
+gtest_main: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 gtest_main
+.PHONY : gtest_main
+
+# fast build rule for target.
+gtest_main/fast:
+	$(MAKE) -f vendor/googletest/googletest/CMakeFiles/gtest_main.dir/build.make vendor/googletest/googletest/CMakeFiles/gtest_main.dir/build
+.PHONY : gtest_main/fast
+
+#=============================================================================
+# Target rules for targets named gtest
+
+# Build rule for target.
+gtest: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 gtest
+.PHONY : gtest
+
+# fast build rule for target.
+gtest/fast:
+	$(MAKE) -f vendor/googletest/googletest/CMakeFiles/gtest.dir/build.make vendor/googletest/googletest/CMakeFiles/gtest.dir/build
+.PHONY : gtest/fast
+
 src/pink_alignment.o: src/pink_alignment.cpp.o
 
 .PHONY : src/pink_alignment.o
@@ -314,6 +353,33 @@ src/pink_mapper.cpp.s:
 	$(MAKE) -f CMakeFiles/pink_mapper.dir/build.make CMakeFiles/pink_mapper.dir/src/pink_mapper.cpp.s
 .PHONY : src/pink_mapper.cpp.s
 
+test/pink_mapper_test.o: test/pink_mapper_test.cpp.o
+
+.PHONY : test/pink_mapper_test.o
+
+# target to build an object file
+test/pink_mapper_test.cpp.o:
+	$(MAKE) -f CMakeFiles/pink_mapper_test.dir/build.make CMakeFiles/pink_mapper_test.dir/test/pink_mapper_test.cpp.o
+.PHONY : test/pink_mapper_test.cpp.o
+
+test/pink_mapper_test.i: test/pink_mapper_test.cpp.i
+
+.PHONY : test/pink_mapper_test.i
+
+# target to preprocess a source file
+test/pink_mapper_test.cpp.i:
+	$(MAKE) -f CMakeFiles/pink_mapper_test.dir/build.make CMakeFiles/pink_mapper_test.dir/test/pink_mapper_test.cpp.i
+.PHONY : test/pink_mapper_test.cpp.i
+
+test/pink_mapper_test.s: test/pink_mapper_test.cpp.s
+
+.PHONY : test/pink_mapper_test.s
+
+# target to generate assembly for a file
+test/pink_mapper_test.cpp.s:
+	$(MAKE) -f CMakeFiles/pink_mapper_test.dir/build.make CMakeFiles/pink_mapper_test.dir/test/pink_mapper_test.cpp.s
+.PHONY : test/pink_mapper_test.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -322,24 +388,30 @@ help:
 	@echo "... depend"
 	@echo "... install/strip"
 	@echo "... install/local"
+	@echo "... install"
 	@echo "... pink_alignment"
 	@echo "... pink_mapper"
+	@echo "... pink_mapper_test"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... list_install_components"
-	@echo "... install"
 	@echo "... zlibstatic"
 	@echo "... zlib"
 	@echo "... example"
 	@echo "... minigzip"
 	@echo "... minigzip64"
 	@echo "... example64"
+	@echo "... gtest_main"
+	@echo "... gtest"
 	@echo "... src/pink_alignment.o"
 	@echo "... src/pink_alignment.i"
 	@echo "... src/pink_alignment.s"
 	@echo "... src/pink_mapper.o"
 	@echo "... src/pink_mapper.i"
 	@echo "... src/pink_mapper.s"
+	@echo "... test/pink_mapper_test.o"
+	@echo "... test/pink_mapper_test.i"
+	@echo "... test/pink_mapper_test.s"
 .PHONY : help
 
 

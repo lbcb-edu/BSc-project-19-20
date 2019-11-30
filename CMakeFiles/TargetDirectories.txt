@@ -1,11 +1,12 @@
 /home/ivona/FER/Projekt/pink/CMakeFiles/install/strip.dir
 /home/ivona/FER/Projekt/pink/CMakeFiles/install/local.dir
+/home/ivona/FER/Projekt/pink/CMakeFiles/install.dir
 /home/ivona/FER/Projekt/pink/CMakeFiles/pink_alignment.dir
 /home/ivona/FER/Projekt/pink/CMakeFiles/pink_mapper.dir
+/home/ivona/FER/Projekt/pink/CMakeFiles/pink_mapper_test.dir
 /home/ivona/FER/Projekt/pink/CMakeFiles/edit_cache.dir
 /home/ivona/FER/Projekt/pink/CMakeFiles/rebuild_cache.dir
 /home/ivona/FER/Projekt/pink/CMakeFiles/list_install_components.dir
-/home/ivona/FER/Projekt/pink/CMakeFiles/install.dir
 /home/ivona/FER/Projekt/pink/vendor/bioparser/CMakeFiles/install/strip.dir
 /home/ivona/FER/Projekt/pink/vendor/bioparser/CMakeFiles/edit_cache.dir
 /home/ivona/FER/Projekt/pink/vendor/bioparser/CMakeFiles/rebuild_cache.dir
@@ -24,3 +25,11 @@
 /home/ivona/FER/Projekt/pink/vendor/bioparser/vendor/zlib/CMakeFiles/install/local.dir
 /home/ivona/FER/Projekt/pink/vendor/bioparser/vendor/zlib/CMakeFiles/minigzip64.dir
 /home/ivona/FER/Projekt/pink/vendor/bioparser/vendor/zlib/CMakeFiles/example64.dir
+/home/ivona/FER/Projekt/pink/vendor/googletest/googletest/CMakeFiles/install/strip.dir
+/home/ivona/FER/Projekt/pink/vendor/googletest/googletest/CMakeFiles/install/local.dir
+/home/ivona/FER/Projekt/pink/vendor/googletest/googletest/CMakeFiles/edit_cache.dir
+/home/ivona/FER/Projekt/pink/vendor/googletest/googletest/CMakeFiles/gtest_main.dir
+/home/ivona/FER/Projekt/pink/vendor/googletest/googletest/CMakeFiles/list_install_components.dir
+/home/ivona/FER/Projekt/pink/vendor/googletest/googletest/CMakeFiles/gtest.dir
+/home/ivona/FER/Projekt/pink/vendor/googletest/googletest/CMakeFiles/rebuild_cache.dir
+/home/ivona/FER/Projekt/pink/vendor/googletest/googletest/CMakeFiles/install.dir

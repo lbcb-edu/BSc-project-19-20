@@ -212,6 +212,9 @@ INSTALL_PKGCONFIG_DIR:PATH=/usr/local/share/pkgconfig
 //Single output directory for building all libraries.
 LIBRARY_OUTPUT_PATH:PATH=
 
+//Path to a program.
+PYTHON_EXECUTABLE:FILEPATH=/usr/bin/python
+
 //Value Computed by CMake
 bioparser_BINARY_DIR:STATIC=/home/ivona/FER/Projekt/pink/vendor/bioparser
 
@@ -222,6 +225,34 @@ bioparser_SOURCE_DIR:STATIC=/home/ivona/FER/Projekt/pink/vendor/bioparser
 bioparser_build_tests:BOOL=OFF
 
 //Value Computed by CMake
+gtest_BINARY_DIR:STATIC=/home/ivona/FER/Projekt/pink/vendor/googletest/googletest
+
+//Dependencies for target
+gtest_LIB_DEPENDS:STATIC=
+
+//Value Computed by CMake
+gtest_SOURCE_DIR:STATIC=/home/ivona/FER/Projekt/pink/vendor/googletest/googletest
+
+//Build gtest's sample programs.
+gtest_build_samples:BOOL=OFF
+
+//Build all of gtest's own tests.
+gtest_build_tests:BOOL=OFF
+
+//Disable uses of pthreads in gtest.
+gtest_disable_pthreads:BOOL=OFF
+
+//Use shared (DLL) run-time lib even when Google Test is built
+// as static lib.
+gtest_force_shared_crt:BOOL=OFF
+
+//Build gtest with internal symbols hidden in shared libraries.
+gtest_hide_internal_symbols:BOOL=OFF
+
+//Dependencies for the target
+gtest_main_LIB_DEPENDS:STATIC=general;gtest;
+
+//Value Computed by CMake
 pink_BINARY_DIR:STATIC=/home/ivona/FER/Projekt/pink
 
 //Value Computed by CMake
@@ -229,6 +260,9 @@ pink_SOURCE_DIR:STATIC=/home/ivona/FER/Projekt/pink
 
 //Dependencies for target
 pink_alignment_LIB_DEPENDS:STATIC=
+
+//Build pink mapper unit tests
+pink_mapper_build_tests:BOOL=ON
 
 //Value Computed by CMake
 zlib_BINARY_DIR:STATIC=/home/ivona/FER/Projekt/pink/vendor/bioparser/vendor/zlib
@@ -319,6 +353,14 @@ CMAKE_GENERATOR:INTERNAL=Unix Makefiles
 CMAKE_GENERATOR_PLATFORM:INTERNAL=
 //Name of generator toolset.
 CMAKE_GENERATOR_TOOLSET:INTERNAL=
+//Have symbol pthread_create
+CMAKE_HAVE_LIBC_CREATE:INTERNAL=
+//Have library pthreads
+CMAKE_HAVE_PTHREADS_CREATE:INTERNAL=
+//Have library pthread
+CMAKE_HAVE_PTHREAD_CREATE:INTERNAL=1
+//Have include pthread.h
+CMAKE_HAVE_PTHREAD_H:INTERNAL=1
 //Source directory with the top level CMakeLists.txt file for this
 // project
 CMAKE_HOME_DIRECTORY:INTERNAL=/home/ivona/FER/Projekt/pink
@@ -341,7 +383,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_NM
 CMAKE_NM-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=3
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=4
 //ADVANCED property for variable: CMAKE_OBJCOPY
 CMAKE_OBJCOPY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJDUMP
@@ -382,6 +424,10 @@ CMAKE_STRIP-ADVANCED:INTERNAL=1
 CMAKE_UNAME:INTERNAL=/bin/uname
 //ADVANCED property for variable: CMAKE_VERBOSE_MAKEFILE
 CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
+//Details about finding PythonInterp
+FIND_PACKAGE_MESSAGE_DETAILS_PythonInterp:INTERNAL=[/usr/bin/python][v2.7.15()]
+//Details about finding Threads
+FIND_PACKAGE_MESSAGE_DETAILS_Threads:INTERNAL=[TRUE][v()]
 //Have function fseeko
 HAVE_FSEEKO:INTERNAL=1
 //Result of TRY_COMPILE
@@ -394,6 +440,18 @@ HAVE_STDINT_H:INTERNAL=1
 HAVE_SYS_TYPES_H:INTERNAL=1
 //CHECK_TYPE_SIZE: sizeof(off64_t)
 OFF64_T:INTERNAL=8
+//ADVANCED property for variable: PYTHON_EXECUTABLE
+PYTHON_EXECUTABLE-ADVANCED:INTERNAL=1
 //Have include unistd.h
 Z_HAVE_UNISTD_H:INTERNAL=1
+//ADVANCED property for variable: gtest_build_samples
+gtest_build_samples-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: gtest_build_tests
+gtest_build_tests-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: gtest_disable_pthreads
+gtest_disable_pthreads-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: gtest_force_shared_crt
+gtest_force_shared_crt-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: gtest_hide_internal_symbols
+gtest_hide_internal_symbols-ADVANCED:INTERNAL=1
 

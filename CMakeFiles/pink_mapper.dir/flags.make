@@ -6,5 +6,5 @@ CXX_FLAGS =   -std=gnu++11
 
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/ivona/FER/Projekt/pink/vendor/bioparser/include -I/home/ivona/FER/Projekt/pink/vendor/bioparser/vendor/zlib 
+CXX_INCLUDES = -I/home/ivona/FER/Projekt/pink/src -I/home/ivona/FER/Projekt/pink/vendor/bioparser/include -I/home/ivona/FER/Projekt/pink/vendor/bioparser/vendor/zlib 
 

@@ -1,0 +1,1 @@
+/usr/bin/c++    -rdynamic CMakeFiles/pink_mapper_test.dir/test/pink_mapper_test.cpp.o  -o pink_mapper_test libpink_alignment.a lib/libgtest_main.a lib/libgtest.a -lpthread 

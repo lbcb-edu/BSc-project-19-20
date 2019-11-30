@@ -3,16 +3,16 @@
 
 TEST(PairwiseAlignment, global) {
     std::string cigar;
-    int target_begin;
+    unsigned int target_begin;
     EXPECT_EQ(pink::pairwise_alignment("TGCATAT", 7, "ATCCGAT", 7, pink::global, 1, -1, -1, cigar, target_begin), 0);
 
 }
 
 TEST(PairwiseAlignment, semi_global) {
     std::string cigar;
-    int target_begin;
-    EXPECT_EQ (pink::pairwise_alignment ("ACCCAAGGG", 9, "GGCTCCATTA", 10, pink::semi_global, 1, -1, -1, cigar, target_start), 1);
-    EXPECT_EQ (target_start, 2);
+    unsigned int target_begin;
+    EXPECT_EQ (pink::pairwise_alignment ("ACCCAAGGG", 9, "GGCTCCATTA", 10, pink::semi_global, 1, -1, -1, cigar, target_begin), 1);
+    EXPECT_EQ (target_begin, 2);
 }
 
 TEST(PairwiseAlignment, local) {

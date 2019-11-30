@@ -1436,3 +1436,31 @@ Linking C executable cmTC_cee34
 make[1]: Leaving directory '/home/ivona/FER/Projekt/pink/CMakeFiles/CMakeTmp'
 
 
+Determining if the include file pthread.h exists passed with the following output:
+Change Dir: /home/ivona/FER/Projekt/pink/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_55b3a/fast"
+/usr/bin/make -f CMakeFiles/cmTC_55b3a.dir/build.make CMakeFiles/cmTC_55b3a.dir/build
+make[1]: Entering directory '/home/ivona/FER/Projekt/pink/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_55b3a.dir/CheckIncludeFile.c.o
+/usr/bin/cc    -o CMakeFiles/cmTC_55b3a.dir/CheckIncludeFile.c.o   -c /home/ivona/FER/Projekt/pink/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTC_55b3a
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_55b3a.dir/link.txt --verbose=1
+/usr/bin/cc      -rdynamic CMakeFiles/cmTC_55b3a.dir/CheckIncludeFile.c.o  -o cmTC_55b3a 
+make[1]: Leaving directory '/home/ivona/FER/Projekt/pink/CMakeFiles/CMakeTmp'
+
+
+Determining if the function pthread_create exists in the pthread passed with the following output:
+Change Dir: /home/ivona/FER/Projekt/pink/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_86d56/fast"
+/usr/bin/make -f CMakeFiles/cmTC_86d56.dir/build.make CMakeFiles/cmTC_86d56.dir/build
+make[1]: Entering directory '/home/ivona/FER/Projekt/pink/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_86d56.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_86d56.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.10/Modules/CheckFunctionExists.c
+Linking C executable cmTC_86d56
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_86d56.dir/link.txt --verbose=1
+/usr/bin/cc  -DCHECK_FUNCTION_EXISTS=pthread_create    -rdynamic CMakeFiles/cmTC_86d56.dir/CheckFunctionExists.c.o  -o cmTC_86d56 -lpthread 
+make[1]: Leaving directory '/home/ivona/FER/Projekt/pink/CMakeFiles/CMakeTmp'
+
+
