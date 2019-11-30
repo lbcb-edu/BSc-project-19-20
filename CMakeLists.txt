@@ -13,6 +13,8 @@ set(PINK_MAPPER_VERSION_PATCH 0)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(pink_mapper_build_tests "Build pink mapper unit tests" ON)
+
 add_executable(
     pink_mapper
     ${PROJECT_SOURCE_DIR}/src/pink_mapper.cpp   
