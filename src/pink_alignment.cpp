@@ -15,11 +15,11 @@ namespace pink {
         matrix[0][0].value = 0;
         matrix[0][0].parent = no;
         if(type == global) {
-            for (unsigned int i = 0; i < m; i++) {
+            for (unsigned int i = 1; i < m; i++) {
                 matrix[i][0].value = i * gap;
                 matrix[i][0].parent = up;
             }
-            for (unsigned int j = 0; j < n; j++) {
+            for (unsigned int j = 1; j < n; j++) {
                 matrix[0][j].value = j * gap;
                 matrix[0][j].parent = left;
             }
@@ -179,9 +179,10 @@ namespace pink {
                 int mmatch = matrix[i-1][j-1].value + w;
 
                 int val = std::max({insertion, deletion, mmatch});
-                if(type == local)
-                    if(val < 0)
+                if(type == local) {
+                    if (val < 0)
                         val = 0;
+                }
 
                 matrix[i][j].value = val;
 
