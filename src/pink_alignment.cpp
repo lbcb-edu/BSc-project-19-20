@@ -46,7 +46,8 @@ namespace pink {
             str = std::to_string(no_of_rows - 1 - index_i) + 'S';
             cigar = str.append(cigar);
         }
-        while (matrix[index_i][index_j].parent != no) {
+        bool flag = true;
+        while (flag) {
             switch (matrix[index_i][index_j].parent) {
                 case up :
                     if (mm != 0) {
@@ -74,10 +75,10 @@ namespace pink {
                         str = std::to_string(m) + '=';
                         cigar = str.append(cigar);
                         m = 0;
-                    } else if (i != 0) {
-                        str = std::to_string(i) + 'I';
+                    } else if (d != 0) {
+                        str = std::to_string(d) + 'D';
                         cigar = str.append(cigar);
-                        i = 0;
+                        d = 0;
                     }
                     i++;
                     index_j--;
@@ -94,7 +95,7 @@ namespace pink {
                         i = 0;
                     }
 
-                    if(query[index_i-1] == target[index_j-1]){
+                    if(query[index_i - 1] == target[index_j - 1]){
                         if(mm != 0) {
                             str = std::to_string(mm) + 'X';
                             cigar = str.append(cigar);
@@ -114,8 +115,24 @@ namespace pink {
                     index_j--;
                     break;
                 default:
-                    index_i--;
-                    index_j--;
+                    if (mm != 0) {
+                        str = std::to_string(mm) + 'X';
+                        cigar = str.append(cigar);
+                        mm = 0;
+                    } else if (m != 0) {
+                        str = std::to_string(m) + '=';
+                        cigar = str.append(cigar);
+                        m = 0;
+                    } else if (d != 0) {
+                        str = std::to_string(d) + 'D';
+                        cigar = str.append(cigar);
+                        d = 0;
+                    } else if (i != 0) {
+                        str = std::to_string(i) + 'I';
+                        cigar = str.append(cigar);
+                        i = 0;
+                    }
+                    flag = false;
                     break;
             }
         }
@@ -151,14 +168,14 @@ namespace pink {
         if(type == global)
             init_matrix(matrix, no_of_rows, no_of_columns, type, gap);
         else // using suffix-prefix alignment algorithm for semi-global alignment
-            init_matrix(matrix, no_of_rows, no_of_columns, type,0);
+            init_matrix(matrix, no_of_rows, no_of_columns, type, 0);
 
 
         for(unsigned int i = 1; i < no_of_rows; i++){
             for(unsigned int j = 1; j < no_of_columns; j++){
                 int insertion = matrix[i][j-1].value + gap;
                 int deletion = matrix[i-1][j].value + gap;
-                int w = query[i] == target[j] ? match : mismatch;
+                int w = query[i - 1] == target[j - 1] ? match : mismatch;
                 int mmatch = matrix[i-1][j-1].value + w;
 
                 int val = std::max({insertion, deletion, mmatch});

@@ -235,5 +235,7 @@ int main(int argc, char* argv[]) {
     pink::pairwise_alignment(query, query_length, target, target_length, type, match, mismatch, gap, cigar, target_begin);
     std::cout << "Cigar string: " << cigar << std::endl;
 
+
+
     return 0;
 }
