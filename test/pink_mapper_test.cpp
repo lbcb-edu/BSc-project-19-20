@@ -11,8 +11,8 @@ TEST(PairwiseAlignment, global) {
 TEST(PairwiseAlignment, semi_global) {
     std::string cigar;
     unsigned int target_begin;
-    EXPECT_EQ (pink::pairwise_alignment ("ACCCAAGGG", 9, "GGCTCCATTA", 10, pink::semi_global, 1, -1, -1, cigar, target_begin), 1);
-    EXPECT_EQ (target_begin, 2);
+    EXPECT_EQ (pink::pairwise_alignment ("ACCCAAGGG", 9, "GGCTCCATTA", 10, pink::semi_global, 1, -1, -1, cigar, target_begin), 2);
+    EXPECT_EQ (target_begin, 0);
 }
 
 TEST(PairwiseAlignment, local) {
