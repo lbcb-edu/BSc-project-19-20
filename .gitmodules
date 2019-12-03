@@ -4,4 +4,5 @@
 
 [submodule "vendor/bioparser"]
 	path = vendor/bioparser
+    ignore = dirty
 	url = https://github.com/rvaser/bioparser
