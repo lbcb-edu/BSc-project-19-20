@@ -80,3 +80,23 @@ A good read for this part of the project is the second chapter of the Bioinforma
 ## Unit tests and continuous integration
 
 The alignment library, and all other code components to follow, should have a set of unit tests (using googletest added as a submodule) which are automatically run after each commit to the team branch (via TravisCI). Unit tests must be compiled on Ubuntu and macOS with both gcc and clang compilers. A success/failure badge for the integration should be placed in the README.
+
+## Minimizers
+
+The next step is to implement a library that for any DNA/RNA sequence returns its set of minimizers, which are specific small substrings of defined length *k* (often called *k*-mers). As alignment algorithms have quadratic complexity, *k*-mer indexing is often used for fast detection of similar regions between two sequences prior the exact alignment. However, collecting all *k*-mers can have a big impact on computational resources (both memory and execution time), especially choosing those that are quite frequent in a set of sequences. Considering only a subset of *k*-mers can alleviate the whole process while keeping reasonable levels of sensitivity. One such method are minimizers which are described [here](https://academic.oup.com/bioinformatics/article/20/18/3363/202143). 
+
+The library should be named in a form of `<team name>_minimizers` (e.g. `blue_minimizers`) and should share its namespace with the alignment library (e.g. `blue`). Other constraints apply as well, it has to be created with the same `CMakeLists.txt`, it has to be linked to the mapper, and have its own unit tests which are run via TravisCI. The implementation has no requirements (it can be just one function or through a class) but the function for finding minimizers should have the following prototype:
+
+```cpp
+std::vector<std::tuple<unsigned int, unsigned int, bool>> minimizers(const char* sequence, unsigned int sequence_length,
+                                                                     unsigned int k,
+                                                                     unsigned int window_length);
+```
+
+where the return value is the list of found minimizers, their positions in the sequence and their origin (whether they are located on the original strand or the reverse complement), while parameters `k` and `window_length` are self explanatory (check minimizer paper).
+
+Once the library is finished, it has to be used to find minimizers of all sequences in the first input file. The mapper has to print the number of distinct minimizers, fraction of singletons and the number of occurences of the most frequent minimizer when the top `f` frequent minimizers are **not** taken in account (add optional arguments for setting `k`, `w` and `f` to the mapper). Default values for `(k, w, f)` should be `(15, 5, 0.001)`.
+
+## Disclaimer
+
+Laboratory for Bioinformatics and Computational Biology cannot be held responsible for any copyright infringement caused by actions of students contributing to any of its repositories. Any case of copyright infringement will be promptly removed from the affected repositories and reported to appropriate faculty organs.
