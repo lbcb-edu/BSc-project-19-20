@@ -8,7 +8,7 @@
 
 #include "strong_type.hpp"
 
-namespace algn {
+namespace blue {
 
 enum AlignmentType { kNeedlemanWunsch, kSmithWaterman, kOverlap };
 

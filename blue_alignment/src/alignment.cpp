@@ -1,6 +1,6 @@
 #include "alignment/alignment.hpp"
 
-namespace algn {
+namespace blue {
 namespace detail {
 
 // clang-format off

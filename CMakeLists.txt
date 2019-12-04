@@ -16,33 +16,33 @@ configure_file(
 
 add_subdirectory("vendor/bioparser" EXCLUDE_FROM_ALL)
 add_subdirectory("vendor/googletest" EXCLUDE_FROM_ALL)
-add_subdirectory("alignment" EXCLUDE_FROM_ALL)
+add_subdirectory("blue_alignment" EXCLUDE_FROM_ALL)
 
 add_executable(blue_mapper "src/main.cpp")
 
 target_link_libraries(
   blue_mapper PUBLIC 
-  alignment 
+  blue_alignment 
   bioparser
 )
 
 target_include_directories(
   blue_mapper PUBLIC 
-  "${PROJECT_BINARY_DIR}/alignment/include"
+  "${PROJECT_BINARY_DIR}/blue_alignment/include"
   "${PROJECT_BINARY_DIR}/include"
   "${PROJECT_BINARY_DIR}/vendor/bioparser/include"
 )
 
-add_executable(alignment_tests "alignment/test/alignment.t.cpp")
+add_executable(alignment_tests "blue_alignment/test/alignment.t.cpp")
 
 target_link_libraries(
   alignment_tests PUBLIC
-  alignment
+  blue_alignment
   gtest
 )
 
 target_include_directories(
   alignment_tests PUBLIC
-  "${PROJECT_BINARY_DIR}/alignment/include"
+  "${PROJECT_BINARY_DIR}/blue_alignment/include"
   "${PROJECT_BINARY_DIR}/vendor/googletest/googletest/include"
 )

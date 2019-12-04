@@ -2,7 +2,7 @@
 
 #include <utility>
 
-namespace algn {
+namespace blue {
 
 template <typename T, typename Tag>
 class StrongType {

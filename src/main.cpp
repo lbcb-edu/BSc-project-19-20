@@ -159,14 +159,14 @@ int main(int argc, char** argv, char** env) {
     ::std::cerr << "Destination file should be in FASTA format."
                 << ::util::Terminator{EXIT_FAILURE};
 
-  ::algn::AlignmentType algorithm;
+  ::blue::AlignmentType algorithm;
 
   if (const ::std::string a_type{::util::ToLower(argv[3])}; a_type == "nw")
-    algorithm = ::algn::AlignmentType::kNeedlemanWunsch;
+    algorithm = ::blue::AlignmentType::kNeedlemanWunsch;
   else if (a_type == "sw")
-    algorithm = ::algn::AlignmentType::kSmithWaterman;
+    algorithm = ::blue::AlignmentType::kSmithWaterman;
   else if (a_type == "ov")
-    algorithm = ::algn::AlignmentType::kOverlap;
+    algorithm = ::blue::AlignmentType::kOverlap;
   else
     ::std::cerr << "Invalid alignment algorithm."
                 << ::util::Terminator{EXIT_FAILURE};
@@ -230,7 +230,7 @@ int main(int argc, char** argv, char** env) {
   ::std::string cigar;
   unsigned int target_begin;
 
-  using namespace ::algn;
+  using namespace ::blue;
 
   auto score = PairwiseAlignment(
       Query{source.sequence.c_str()}, QueryLength{source_length},

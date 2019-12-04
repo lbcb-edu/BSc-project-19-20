@@ -5,7 +5,7 @@
 
 #include "../include/alignment/alignment.hpp"
 
-namespace algn {
+namespace blue {
 namespace {
 
 TEST(ContiguousArrayTest, IndexingTest) {
