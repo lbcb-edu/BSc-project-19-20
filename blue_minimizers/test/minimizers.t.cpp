@@ -1,13 +1,17 @@
-#include <gtest/gtest.h>
+#include <iostream>
 
+#include <gtest/gtest.h>
 #include <minimizers/minimizers.hpp>
 
 namespace blue {
 namespace {
 
 TEST(MinimizerTests, InitialTest) {
-  ASSERT_EQ((KMerInfo{10, 11, true}),  // lmao @ macros
-            minimizers("", SequenceLength{0}, KType{10}, WindowLength{11})[0]);
+  for (auto&& kmer :
+       minimizers("AAACTG", SequenceLength{6}, KType{2}, WindowLength{2})) {
+    ::std::cout << ::std::get<0>(kmer) << " " << ::std::get<1>(kmer) << " "
+                << ::std::get<2>(kmer) << "\n";
+  }
 }
 
 }  // namespace
