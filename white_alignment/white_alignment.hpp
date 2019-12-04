@@ -22,3 +22,4 @@ namespace white {
                            std::string& cigar,
                            unsigned int& target_begin);
 }
+

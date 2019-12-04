@@ -34,5 +34,3 @@ target_include_directories(
 add_executable(alignment_test tests/alignment_test.cpp)
 
 target_link_libraries(alignment_test white_alignment gtest)
-
-
