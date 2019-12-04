@@ -17,18 +17,24 @@ configure_file(
 add_subdirectory("vendor/bioparser" EXCLUDE_FROM_ALL)
 add_subdirectory("vendor/googletest" EXCLUDE_FROM_ALL)
 add_subdirectory("blue_alignment" EXCLUDE_FROM_ALL)
+add_subdirectory("blue_minimizers" EXCLUDE_FROM_ALL)
+add_subdirectory("blue_common" EXCLUDE_FROM_ALL)
 
 add_executable(blue_mapper "src/main.cpp")
 
 target_link_libraries(
   blue_mapper PUBLIC 
   blue_alignment 
+  blue_common
+  blue_minimizers
   bioparser
 )
 
 target_include_directories(
   blue_mapper PUBLIC 
   "${PROJECT_BINARY_DIR}/blue_alignment/include"
+  "${PROJECT_BINARY_DIR}/blue_common/include"
+  "${PROJECT_BINARY_DIR}/blue_minimizers/include"
   "${PROJECT_BINARY_DIR}/include"
   "${PROJECT_BINARY_DIR}/vendor/bioparser/include"
 )
@@ -38,11 +44,29 @@ add_executable(alignment_tests "blue_alignment/test/alignment.t.cpp")
 target_link_libraries(
   alignment_tests PUBLIC
   blue_alignment
+  blue_common
   gtest
 )
 
 target_include_directories(
   alignment_tests PUBLIC
   "${PROJECT_BINARY_DIR}/blue_alignment/include"
+  "${PROJECT_BINARY_DIR}/blue_common/include"
+  "${PROJECT_BINARY_DIR}/vendor/googletest/googletest/include"
+)
+
+add_executable(minimizers_tests "blue_minimizers/test/minimizers.t.cpp")
+
+target_link_libraries(
+  minimizers_tests PUBLIC
+  blue_common
+  blue_minimizers
+  gtest
+)
+
+target_include_directories(
+  minimizers_tests PUBLIC
+  "${PROJECT_BINARY_DIR}/blue_common/include"
+  "${PROJECT_BINARY_DIR}/blue_minimizers/include"
   "${PROJECT_BINARY_DIR}/vendor/googletest/googletest/include"
 )

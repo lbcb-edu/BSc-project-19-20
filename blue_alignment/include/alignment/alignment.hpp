@@ -6,7 +6,7 @@
 #include <string>
 #include <utility>
 
-#include "strong_type.hpp"
+#include <common/strong_type.hpp>
 
 namespace blue {
 
@@ -71,4 +71,4 @@ class Contiguous2DArray {
 };
 
 }  // namespace detail
-}  // namespace algn
+}  // namespace blue
