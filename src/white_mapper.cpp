@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <set>
 #include "config.h"
 #include "options.hpp"
 #include <bioparser/bioparser.hpp>
@@ -66,34 +67,29 @@ int main(int argc, char* argv[]) {
 
 		case 3:
 			std::string first_file = std::string(argv[1]), second_file = std::string(argv[2]);
-			
-			// test search file extension, will be changed
-			int it = first_file.size() - 1;
-			while (it--) {
-				if (first_file[it] == '.') break;
+	
+			std::string first_file_extension, second_file_extension;
+			if (!checkFileFormats(first_file, second_file, first_file_extension, second_file_extension)) {
+				return 0;
 			}
-			std::string file_extension = first_file.substr(it + 1, first_file.size() - it);
-			//std::cout << file_extension << std::endl;
 			
 			std::vector<std::unique_ptr<FASTAformat>> fasta_objects;
-			auto fasta_parser = bioparser::createParser<bioparser::FastaParser, FASTAformat>(argv[1]);
-			fasta_parser->parse(fasta_objects, -1);
+			std::vector<std::unique_ptr<FASTQformat>> fastq_objects;
 			
-			int mini = 999999;
-			int maxi = 0;
-			int sum = 0;
-			for (int i = 0; i < fasta_objects.size(); i++) {
-				mini = std::min(mini, fasta_objects[i]->sequence_length);
-				maxi = std::max(maxi, fasta_objects[i]->sequence_length);
-				sum += fasta_objects[i]->sequence_length;
+			if (fasta_file_formats.count(first_file_extension)) {
+				auto fasta_parser = bioparser::createParser<bioparser::FastaParser, FASTAformat>(first_file);
+				fasta_parser->parse(fasta_objects, -1);
+				std::vector<int> sequence_calc;
+				long long sum = 0;
+				for (int i = 0; i < fasta_objects.size(); i++) {
+					sequence_calc.push_back(fasta_objects[i]->sequence_length);
+					sum += fasta_objects[i]->sequence_length;
+				}
+				std::sort(sequence_calc.begin(), sequence_calc.end());
+				
+				outputFileStatistics(first_file, fasta_objects.size(), sum, sequence_calc[0], sequence_calc[sequence_calc.size() - 1]);
 			}
-
-			double avg = (double)sum / fasta_objects.size();
-
-			std::cout << "Number of sequences: " << fasta_objects.size() << std::endl;
-			std::cout << "Average length of sequence: " << avg << std::endl;
-			std::cout << "Minimal length of sequence: " << mini << std::endl;
-			std::cout << "Maximal length of sequence: " << maxi << std::endl;
+			
 			break;
 	}
 
