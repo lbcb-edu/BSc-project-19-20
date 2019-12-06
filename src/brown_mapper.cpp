@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include "../brown_alignment/brown_alignment.hpp"
+#include "../brown_minimizers/brown_minimizers.hpp"
 #include "../vendor/bioparser/include/bioparser/bioparser.hpp"
 #include "MapperConfig.h"
 #define MAX 1000
@@ -15,6 +16,9 @@ static struct option options[] = {{"version", no_argument, 0, 'v'},
                                   {"match", required_argument, 0, 'm'},
                                   {"mismatch", required_argument, 0, 'x'},
                                   {"gap", required_argument, 0, 'g'},
+                                  {"k", required_argument, 0, 'k'},
+                                  {"window_length", required_argument, 0, 'w'},
+                                  {"top minimizers not taken into account", required_argument, 0, 'f'},
                                   {0, 0, 0, 0}};
 
 class FASTAfile {
@@ -107,10 +111,11 @@ string convertToString(char *a, int size) {
 
 int main(int argc, char **argv) {
   bool flag = false;
-  int match = 0, mismatch = 0, gap = 0;
+  int match = 0, mismatch = 0, gap = 0, k = 15, w = 5;
+  float f = 0.001;
 
   char opt;
-  while ((opt = getopt_long(argc, argv, "hvm:x:g:", options, NULL)) != -1) {
+  while ((opt = getopt_long(argc, argv, "hvm:x:g:k:w:f:", options, NULL)) != -1) {
     switch (opt) {
       case 0:
         break;
@@ -122,7 +127,7 @@ int main(int argc, char **argv) {
         fprintf(stdout, "-h (--help)     Help\n\n");
         fprintf(stdout,
                 "Please provide 2 files in FASTA/FASTQ format along with "
-                "alignment type and match, mismatch and gap costs\nAlignment "
+                "alignment type and match, mismatch and gap costs, k, window width and number of top frequent minimizers not taken into acount\nAlignment "
                 "types: 0 - local, 1 - global, 2 - semi_global\n");
         exit(EXIT_SUCCESS);
       case 'm':
@@ -134,30 +139,39 @@ int main(int argc, char **argv) {
       case 'g':
         gap = stoi(optarg);
         break;
+      case 'k':
+        k = stoi(optarg);
+        break;
+      case 'w':
+        w = stoi(optarg);
+        break;
+      case 'f':
+        f = stoi(optarg);
+        break;
       default:
         fprintf(stderr, "Unknown options\n");
         exit(EXIT_FAILURE);
     }
   }
 
-  if (argc != 10) {
+  if (argc != 16) {
     fprintf(stderr,
-            "Please provide 2 files in FASTA/FASTQ format along with alignment "
-            "type and match, mismatch and gap costs\nAlignment types: 0 - "
-            "local, 1 - global, 2 - semi_global\n");
+            "Please provide 2 files in FASTA/FASTQ format along with "
+                "alignment type and match, mismatch and gap costs, k, window width and number of top frequent minimizers not taken into acount\nAlignment "
+                "types: 0 - local, 1 - global, 2 - semi_global\n");
     exit(EXIT_FAILURE);
   }
   // parse 1st file as FASTA
-  if (has_suffix(convertToString(argv[7], strlen(argv[7])), ".fasta") ||
-      has_suffix(convertToString(argv[7], strlen(argv[7])), ".fa") ||
-      has_suffix(convertToString(argv[7], strlen(argv[7])), ".fasta.gz") ||
-      has_suffix(convertToString(argv[7], strlen(argv[7])), ".fa.gz")) {
+  if (has_suffix(convertToString(argv[13], strlen(argv[13])), ".fasta") ||
+      has_suffix(convertToString(argv[13], strlen(argv[13])), ".fa") ||
+      has_suffix(convertToString(argv[13], strlen(argv[13])), ".fasta.gz") ||
+      has_suffix(convertToString(argv[13], strlen(argv[13])), ".fa.gz")) {
     vector<unique_ptr<FASTAfile>> fasta_objects;
-    string path = convertToString(argv[7], strlen(argv[7]));
+    string path = convertToString(argv[13], strlen(argv[13]));
     brown::AlignmentType type;
-    if (atoi(argv[9]) == 0) type = brown::AlignmentType::local;
-    if (atoi(argv[9]) == 1) type = brown::AlignmentType::global;
-    if (atoi(argv[9]) == 2) type = brown::AlignmentType::semi_global;
+    if (atoi(argv[15]) == 0) type = brown::AlignmentType::local;
+    if (atoi(argv[15]) == 1) type = brown::AlignmentType::global;
+    if (atoi(argv[15]) == 2) type = brown::AlignmentType::semi_global;
     auto fasta_parser =
         bioparser::createParser<bioparser::FastaParser, FASTAfile>(path);
     fasta_parser->parse(fasta_objects, -1);
@@ -176,20 +190,22 @@ int main(int argc, char **argv) {
          << '\n';
     cout << "CIGAR string: " << cigar << '\n';
     cout << "Beginning: " << target_begin << "\n";
+    vector<tuple<unsigned int, unsigned int, bool>> minimizersList;
+    minimizersList = brown::minimizers(query.c_str(), query.size(), k, w);
 
   }
 
   // parse 1st file as FASTQ
-  else if (has_suffix(convertToString(argv[7], strlen(argv[7])), ".fastq") ||
-           has_suffix(convertToString(argv[7], strlen(argv[7])), ".fq") ||
-           has_suffix(convertToString(argv[7], strlen(argv[7])), ".fastq.gz") ||
-           has_suffix(convertToString(argv[7], strlen(argv[7])), ".fq.gz")) {
+  else if (has_suffix(convertToString(argv[13], strlen(argv[13])), ".fastq") ||
+           has_suffix(convertToString(argv[13], strlen(argv[13])), ".fq") ||
+           has_suffix(convertToString(argv[13], strlen(argv[13])), ".fastq.gz") ||
+           has_suffix(convertToString(argv[13], strlen(argv[13])), ".fq.gz")) {
     std::vector<std::unique_ptr<FASTQfile>> fastq_objects;
-    string path = convertToString(argv[7], strlen(argv[7]));
+    string path = convertToString(argv[13], strlen(argv[13]));
     brown::AlignmentType type;
-    if (atoi(argv[9]) == 0) type = brown::AlignmentType::local;
-    if (atoi(argv[9]) == 1) type = brown::AlignmentType::global;
-    if (atoi(argv[9]) == 2) type = brown::AlignmentType::semi_global;
+    if (atoi(argv[15]) == 0) type = brown::AlignmentType::local;
+    if (atoi(argv[15]) == 1) type = brown::AlignmentType::global;
+    if (atoi(argv[15]) == 2) type = brown::AlignmentType::semi_global;
     auto fastq_parser =
         bioparser::createParser<bioparser::FastqParser, FASTQfile>(path);
     std::uint64_t size_in_bytes = 500 * 1024 * 1024;
@@ -214,24 +230,26 @@ int main(int argc, char **argv) {
          << '\n';
     cout << "CIGAR string: " << cigar << '\n';
     cout << "Beginning: " << target_begin << "\n";
+    vector<tuple<unsigned int, unsigned int, bool>> minimizersList;
+    minimizersList = brown::minimizers(query.c_str(), query.size(), k, w);
   } else {
     fprintf(stderr,
-            "Please provide 2 files in FASTA/FASTQ format along with alignment "
-            "type and match, mismatch and gap costs\nAlignment types: 0 - "
-            "local, 1 - global, 2 - semi_global\n");
+            "Please provide 2 files in FASTA/FASTQ format along with "
+                "alignment type and match, mismatch and gap costs, k, window width and number of top frequent minimizers not taken into acount\nAlignment "
+                "types: 0 - local, 1 - global, 2 - semi_global\n");
     exit(EXIT_FAILURE);
   }
   // parse 2nd file as FASTA
-  if (has_suffix(convertToString(argv[8], strlen(argv[8])), ".fasta") ||
-      has_suffix(convertToString(argv[8], strlen(argv[8])), ".fa") ||
-      has_suffix(convertToString(argv[8], strlen(argv[8])), ".fasta.gz") ||
-      has_suffix(convertToString(argv[8], strlen(argv[8])), ".fa.gz")) {
+  if (has_suffix(convertToString(argv[14], strlen(argv[14])), ".fasta") ||
+      has_suffix(convertToString(argv[14], strlen(argv[14])), ".fa") ||
+      has_suffix(convertToString(argv[14], strlen(argv[14])), ".fasta.gz") ||
+      has_suffix(convertToString(argv[14], strlen(argv[14])), ".fa.gz")) {
     vector<unique_ptr<FASTAfile>> fasta_objects;
-    string path = convertToString(argv[8], strlen(argv[8]));
+    string path = convertToString(argv[14], strlen(argv[14]));
     brown::AlignmentType type;
-    if (atoi(argv[9]) == 0) type = brown::AlignmentType::local;
-    if (atoi(argv[9]) == 1) type = brown::AlignmentType::global;
-    if (atoi(argv[9]) == 2) type = brown::AlignmentType::semi_global;
+    if (atoi(argv[15]) == 0) type = brown::AlignmentType::local;
+    if (atoi(argv[15]) == 1) type = brown::AlignmentType::global;
+    if (atoi(argv[15]) == 2) type = brown::AlignmentType::semi_global;
     auto fasta_parser =
         bioparser::createParser<bioparser::FastaParser, FASTAfile>(path);
     fasta_parser->parse(fasta_objects, -1);
@@ -253,16 +271,16 @@ int main(int argc, char **argv) {
 
   }
   // parse 2nd file as FASTQ
-  else if (has_suffix(convertToString(argv[8], strlen(argv[8])), ".fastq") ||
-           has_suffix(convertToString(argv[8], strlen(argv[8])), ".fq") ||
-           has_suffix(convertToString(argv[8], strlen(argv[8])), ".fastq.gz") ||
-           has_suffix(convertToString(argv[8], strlen(argv[8])), ".fq.gz")) {
+  else if (has_suffix(convertToString(argv[14], strlen(argv[14])), ".fastq") ||
+           has_suffix(convertToString(argv[14], strlen(argv[14])), ".fq") ||
+           has_suffix(convertToString(argv[14], strlen(argv[14])), ".fastq.gz") ||
+           has_suffix(convertToString(argv[14], strlen(argv[14])), ".fq.gz")) {
     brown::AlignmentType type;
-    if (atoi(argv[9]) == 0) type = brown::AlignmentType::local;
-    if (atoi(argv[9]) == 1) type = brown::AlignmentType::global;
-    if (atoi(argv[9]) == 2) type = brown::AlignmentType::semi_global;
+    if (atoi(argv[15]) == 0) type = brown::AlignmentType::local;
+    if (atoi(argv[15]) == 1) type = brown::AlignmentType::global;
+    if (atoi(argv[15]) == 2) type = brown::AlignmentType::semi_global;
     std::vector<std::unique_ptr<FASTQfile>> fastq_objects;
-    string path = convertToString(argv[8], strlen(argv[8]));
+    string path = convertToString(argv[14], strlen(argv[14]));
     auto fastq_parser =
         bioparser::createParser<bioparser::FastqParser, FASTQfile>(path);
     std::uint64_t size_in_bytes = 500 * 1024 * 1024;
@@ -289,9 +307,9 @@ int main(int argc, char **argv) {
     cout << "Beginning: " << target_begin << "\n";
   } else {
     fprintf(stderr,
-            "Please provide 2 files in FASTA/FASTQ format along with alignment "
-            "type and match, mismatch and gap costs\nAlignment types: 0 - "
-            "local, 1 - global, 2 - semi_global\n");
+            "Please provide 2 files in FASTA/FASTQ format along with "
+                "alignment type and match, mismatch and gap costs, k, window width and number of top frequent minimizers not taken into acount\nAlignment "
+                "types: 0 - local, 1 - global, 2 - semi_global\n");
     exit(EXIT_FAILURE);
   }
 }

@@ -1,0 +1,1 @@
+add_library(brown_minimizers brown_minimizers.cpp)
