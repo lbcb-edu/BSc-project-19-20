@@ -8,11 +8,17 @@ namespace orange {
 namespace minimizers {
 
 /**
- * @brief std::tuple describing a minimizer.
+ * @brief std::tuple describing a K-Mer.
  *
- * @detalis <minimizer bit mask, position in sequence, original or complement>
+ * @detalis <K-Mer bit mask, position in sequence, original or complement>
  */
-using Kmer = std::tuple<std::uint32_t, std::uint32_t, bool>;
+using KMer = std::tuple<std::uint32_t, std::uint32_t, bool>;
+
+/**
+ * @brief std::vector of @ref orange::minimizers::KMer
+ *      representing a sequence of K-Mers
+ */
+using KMers = std::vector<KMer>;
 
 /**
  * @brief Returns a std::vector of @ref orange::minimizers::minimizer
@@ -29,9 +35,9 @@ using Kmer = std::tuple<std::uint32_t, std::uint32_t, bool>;
  *
  * @return std::vector<minimizer>
  */
-std::vector<Kmer> minimizers(const char* sequence,
-                                  unsigned int sequence_length, unsigned int k,
-                                  unsigned int window_length);
+KMers minimizers(char const* sequence,
+                                  std::uint32_t sequence_length, std::uint32_t k,
+                                  std::uint32_t window_length);
 
 }  // namespace minimizers
 }  // namespace orange
