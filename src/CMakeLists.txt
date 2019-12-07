@@ -12,11 +12,18 @@ add_library(
         orange_alignment.cc
 )
 
+add_library(
+    orange_minimizers
+        orange_minimizers.h
+        orange_minimizers.cc
+)
+
 
 target_link_libraries(
     orange_mapper
         PRIVATE
             orange_mapper_conf
+            orange_minimizers
             orange_alignment
             bioparser
 )
