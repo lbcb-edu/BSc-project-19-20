@@ -8,7 +8,7 @@
 namespace orange {
 namespace minimizers {
 
-using Window = std::uint32_t;
+using KMerVal = std::uint32_t;
 
 /**
  * @brief K-Mare queue with O(1) minimum element access
@@ -47,7 +47,8 @@ public:
 
 private:
     std::queue<KMer> raw_queue_;  //<<< Contains all the kmers
-    std::deque<std::reference_wrapper<KMer>> min_queue_;  //<<< Contains smallest kmers
+    std::deque<std::reference_wrapper<KMer>>
+        min_queue_;  //<<< Contains smallest kmers
 };
 
 /**
@@ -93,54 +94,61 @@ std::uint32_t getMask(char const base) {
 }
 
 /**
- * @brief Streams consecutive windows over a sequence
+ * @brief Streams consecutive KMers over a sequence
  */
-class WindowStream {
+class KMerStream {
 public:
-    WindowStream(std::string_view seq, std::uint32_t k, std::uint32_t win_sz)
-        : seq_{seq}, k_{k}, win_sz_{win_sz}, pos_{0}, win_{0}, comp_win_{0} {
+    KMerStream(std::string_view seq, std::uint32_t k)
+        : seq_{seq}, k_{k}, pos_{0}, kmer_{0}, comp_kmer_{0} {
         auto shift = int{2} * k - 2;  // Each base holds up two bits
-        for (; pos_ < win_sz_; ++pos_) {
-            win_ |= getMask(seq_[pos_]) << shift;
-            comp_win_ |= getMask(getComplement(seq_[pos_])) << shift;
+        for (; pos_ < k_; ++pos_) {
+            kmer_ |= getMask(seq_[pos_]) << shift;
+            comp_kmer_ |= getMask(getComplement(seq_[pos_])) << shift;
 
             shift -= 2;
         }
+
+        // First 2 * k bits are set to 1
+        mask_ = (1 << (2 * k)) - 1;
     }
 
-    void shiftWins() {
-        if (pos_ >= win_sz_)
+    void shiftKMer() {
+        if (pos_ >= seq_.size())
             return;
 
-        win_ <<= 2, comp_win_ <<= 2;
+        // Shift and ignore bits
+        kmer_ <<= 2, comp_kmer_ <<= 2;
+        kmer_ &= mask_, comp_kmer_ &= mask_;
 
-        win_ |= getMask(seq_[pos_]);
-        comp_win_ |= getMask(getComplement(seq_[pos_]));
+        kmer_ |= getMask(seq_[pos_]);
+        comp_kmer_ |= getMask(getComplement(seq_[pos_]));
 
         ++pos_;
     }
 
-    bool hasWindow() const { return pos_ - 1 < win_sz_; }
+    std::uint32_t pos() const { return pos_; }
 
-    KMer getCurrWin() const { return KMer{win_, pos_ - k_, false}; }
+    bool hasKMer() const { return pos_ - 1 < seq_.size(); }
 
-    KMer getCurrCompWin() const { return KMer{comp_win_, pos_ - k_, true}; }
+    KMer getCurrKMer() const { return KMer{kmer_, pos_ - k_, false}; }
+
+    KMer getCurrCompKMer() const { return KMer{comp_kmer_, pos_ - k_, true}; }
 
 private:
-    std::string_view seq_;
+    std::string_view seq_; //<<< Sequence
 
-    std::uint32_t k_;
-    std::uint32_t win_sz_;
+    std::uint32_t k_; //<<< KMer length
 
-    std::uint32_t pos_;
+    std::uint32_t pos_; //<<< Refers to the current symbol in a sequence
+    std::uint32_t mask_;  //<<< Used for ignoring leftover bits in a shift
 
-    Window win_;
-    Window comp_win_;
+    KMerVal kmer_; //<<< KMer on the original strand
+    KMerVal comp_kmer_; //<<< KMer on the complement strand
 };
 
 /**
  * @brief Finds internal minimizers of a given sequene.
- * 
+ *
  * @param seq target sequence
  * @param k size of a K-mer
  * @param win_len sliding window lenght
@@ -148,17 +156,27 @@ private:
  */
 KMers internalMinimizers(std::string_view seq, std::uint32_t k,
                          std::uint32_t win_len) {
-    auto win_stream = WindowStream{seq, k, win_len};
+    auto kmer_stream = KMerStream{seq, k};
     auto queue = MinKQueue{};
 
     auto minimizers = KMers{};
 
-    while (win_stream.hasWindow()) {
-        queue.push(win_stream.getCurrWin());
-        queue.push(win_stream.getCurrCompWin());
+    auto push_shift = [&queue, &kmer_stream] {
+        queue.push(kmer_stream.getCurrKMer());
+        queue.push(kmer_stream.getCurrCompKMer());
 
+        kmer_stream.shiftKMer();
+    };
+
+    auto min_and_pop = [&queue, &minimizers] {
         minimizers.push_back(queue.min());
-    }
+        queue.pop();
+    };
+
+    while (kmer_stream.pos() < win_len) push_shift();
+    min_and_pop();
+
+    while (kmer_stream.hasKMer()) push_shift(), min_and_pop();
 
     return minimizers;
 }
@@ -172,6 +190,11 @@ KMers minimizers(char const* sequence, unsigned int sequence_length,
 
     if (window_length > sequence_length)
         throw std::invalid_argument("Window size is too large!");
+
+    auto minimizers = internalMinimizers(
+        std::string_view(sequence, sequence_length), k, window_length);
+
+    return minimizers;
 }
 
 }  // namespace minimizers
