@@ -25,14 +25,16 @@ public:
         while (!min_queue_.empty() &&
                std::get<0>(min_queue_.back().get()) > std::get<0>(kmer))
             min_queue_.pop_back();
-        raw_queue_.push(std::move(kmer));
+
+        min_queue_.push_back(raw_queue_.back());
     }
 
     /**
      * @brief Removes an element from the front of the queue
      */
     void pop() {
-        if (raw_queue_.front() == min_queue_.front().get())
+        if (!min_queue_.empty() && std::get<1>(raw_queue_.front()) >=
+                                       std::get<1>(min_queue_.front().get()))
             min_queue_.pop_front();
         raw_queue_.pop();
     }
@@ -109,7 +111,10 @@ public:
         }
 
         // First 2 * k bits are set to 1
-        mask_ = (1 << (2 * k)) - 1;
+        if (k < 16)
+            mask_ = (1 << (2 * k)) - 1;
+        else
+            mask_ = std::numeric_limits<std::uint32_t>::max();
     }
 
     void shiftKMer() {
@@ -128,22 +133,22 @@ public:
 
     std::uint32_t pos() const { return pos_; }
 
-    bool hasKMer() const { return pos_ - 1 < seq_.size(); }
+    bool hasShift() const { return pos_ < seq_.size(); }
 
     KMer getCurrKMer() const { return KMer{kmer_, pos_ - k_, false}; }
 
     KMer getCurrCompKMer() const { return KMer{comp_kmer_, pos_ - k_, true}; }
 
 private:
-    std::string_view seq_; //<<< Sequence
+    std::string_view seq_;  //<<< Sequence
 
-    std::uint32_t k_; //<<< KMer length
+    std::uint32_t k_;  //<<< KMer length
 
-    std::uint32_t pos_; //<<< Refers to the current symbol in a sequence
+    std::uint32_t pos_;   //<<< Refers to the current symbol in a sequence
     std::uint32_t mask_;  //<<< Used for ignoring leftover bits in a shift
 
-    KMerVal kmer_; //<<< KMer on the original strand
-    KMerVal comp_kmer_; //<<< KMer on the complement strand
+    KMerVal kmer_;       //<<< KMer on the original strand
+    KMerVal comp_kmer_;  //<<< KMer on the complement strand
 };
 
 /**
@@ -161,28 +166,39 @@ KMers internalMinimizers(std::string_view seq, std::uint32_t k,
 
     auto minimizers = KMers{};
 
-    auto push_shift = [&queue, &kmer_stream] {
+    auto push = [&queue, &kmer_stream] {
         queue.push(kmer_stream.getCurrKMer());
         queue.push(kmer_stream.getCurrCompKMer());
+    };
 
+    auto push_shift = [&push, &kmer_stream] {
+        push();
         kmer_stream.shiftKMer();
     };
 
     auto min_and_pop = [&queue, &minimizers] {
         minimizers.push_back(queue.min());
+        // double pop because
+        // we store original and complement
+        queue.pop();
         queue.pop();
     };
 
-    while (kmer_stream.pos() < win_len) push_shift();
+    // clang-format off
+    while (kmer_stream.pos() <= win_len)
+        push_shift();
     min_and_pop();
 
-    while (kmer_stream.hasKMer()) push_shift(), min_and_pop();
+    while (kmer_stream.hasShift())
+        push_shift(), min_and_pop();
+    push(), minimizers.push_back(queue.min());
+    // clang-format on
 
     return minimizers;
 }
 
-KMers minimizers(char const* sequence, unsigned int sequence_length,
-                 unsigned int k, unsigned int window_length) {
+KMers minimizers(char const* sequence, std::uint32_t sequence_length,
+                 std::uint32_t k, std::uint32_t window_length) {
     if (k < 0 || k > 16)
         throw std::invalid_argument(
             "Unsupported Kmer size! "
