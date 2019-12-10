@@ -37,37 +37,72 @@ namespace brown {
                 codedSequence.push_back(s);
             }
         }
-        deque<int> window;
-        int smallest = -1;
-        int cnt = 0;
-        int pos = 0;
+        deque<unsigned int> window;
+        deque<unsigned int> sums;
+        unsigned int smallest = -1;
+        unsigned int smallPos = -1;
+        unsigned int previous = -1;
+        unsigned int pos = 0;
         for (int i = 0; i < sequence_length; i++) {
             if((i + 1) <= window_length + k - 1) {
-                window.push_back((int)codedSequence[i].b);
+                window.push_back((unsigned int)codedSequence[i].b);
                 //cout << window[i] << "\n";
                 if((i + 1) >= k) {
-                    int sum = 0;
+                    unsigned int sum = 0;
                     for (int j = 0; j < k; j++)
                     {
-                        sum += pow(10, k-j-1)*window[j + cnt];
+                        sum += pow(10, k-j-1)*window[j + i + 1 - k];
                     }
+                    sums.push_back(sum);
                     //cout << sum << " ";
                     if(smallest == -1 || sum < smallest) {
                         smallest = sum;
                         pos = i + 1 - k;
-                    } 
-                    cnt++;
+                    }
+                    if(i + 1 == window_length + k - 1) {
+                        mins.push_back(make_tuple(smallest, pos, true));
+                        previous = smallest;
+                        smallPos = pos;
+                    }
                 }
-                if(cnt == window_length) mins.push_back(make_tuple(smallest, pos, true));
             } else {
                 window.pop_front();
-                window.push_back((int)codedSequence[i].b);
+                window.push_back((unsigned int)codedSequence[i].b);
+                sums.pop_front();
+                unsigned int sum = 0;
+                for (int j = 0; j < k; j++)
+                {
+                    sum += pow(10, k-j-1)*window[j + window_length - 1];
+                }
+                sums.push_back(sum);
+                if(sum >= previous && smallPos > i - window_length) continue;
+                else if(sum >= previous && smallPos <= i - window_length) {
+                    smallest = -1;
+                    for (int j = 0; j < sums.size(); j++)
+                    {
+                    if(smallest == -1 || sums[j] < smallest) {
+                            smallest = sums[j];
+                            pos = i + 1 - k;
+                        }
+                    }
+                    mins.push_back(make_tuple(smallest, pos, true));
+                    previous = smallest;
+                    smallPos = pos;
+                }
+                else if(sum < previous && smallPos > i + 1 - window_length){
+                    smallest = sum;
+                    pos = i + 1 - k;
+                    mins.push_back(make_tuple(smallest, pos, true));
+                    previous = smallest;
+                    smallPos = pos;
+                }
             }
         }
-        // for (int i = 0; i < mins.size(); i++)
-        // {
-        //     cout << get<0>(mins[i]) << " " << get<1>(mins[i]) << " " << get<2>(mins[i]) << "\n"; 
-        // }
+        for (int i = 0; i < mins.size(); i++)
+        {
+            cout << get<0>(mins[i]) << " " << get<1>(mins[i]) << " " << get<2>(mins[i]) << "\n"; 
+            //cout << "nekaj";
+        }
         
         return mins;
         
