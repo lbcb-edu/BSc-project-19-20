@@ -10,12 +10,14 @@
 #include <set>
 #include "config.h"
 #include "options.hpp"
+#include "../white_alignment/white_alignment.hpp"
 #include <bioparser/bioparser.hpp>
 
 
 class FASTAformat {
 	public:
-		std::string name, sequence;
+		const char* name;
+		const char* sequence;
 		int name_length, sequence_length;
 
 		FASTAformat(
@@ -88,6 +90,19 @@ int main(int argc, char* argv[]) {
 				std::sort(sequence_calc.begin(), sequence_calc.end());
 				
 				outputFileStatistics(first_file, fasta_objects.size(), sum, sequence_calc[0], sequence_calc[sequence_calc.size() - 1]);
+
+                std::string Cigar;
+                unsigned int t_begin;
+                int firstInd = rand() % fasta_objects.size();
+                int secondInd = rand() % fasta_objects.size();
+                const char* seq1 = fasta_objects[firstInd]->sequence;
+                const char* seq2 = fasta_objects[secondInd]->sequence;
+                int lenght1 = fasta_objects[firstInd]->sequence_length;
+                int length2 = fasta_objects[secondInd]->sequence_length;
+                int optimalAlign = white::PairwiseAlignment(seq1, lenght1, seq2, length2, white::AlignmentType::kGlobal, 2, -1, -2, Cigar, t_begin);
+                std::cout << Cigar << std::endl;
+                break;
+
 			}
 			
 			break;
