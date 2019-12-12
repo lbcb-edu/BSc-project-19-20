@@ -1,6 +1,9 @@
 #include <getopt.h>
+#include <algorithm>
 #include <cstring>
 #include <iostream>
+#include <iterator>
+#include <map>
 #include <memory>
 #include <vector>
 #include "../brown_alignment/brown_alignment.hpp"
@@ -11,15 +14,16 @@
 
 using namespace std;
 
-static struct option options[] = {{"version", no_argument, 0, 'v'},
-                                  {"help", no_argument, 0, 'h'},
-                                  {"match", required_argument, 0, 'm'},
-                                  {"mismatch", required_argument, 0, 'x'},
-                                  {"gap", required_argument, 0, 'g'},
-                                  {"k", required_argument, 0, 'k'},
-                                  {"window_length", required_argument, 0, 'w'},
-                                  {"top minimizers not taken into account", required_argument, 0, 'f'},
-                                  {0, 0, 0, 0}};
+static struct option options[] = {
+    {"version", no_argument, 0, 'v'},
+    {"help", no_argument, 0, 'h'},
+    {"match", required_argument, 0, 'm'},
+    {"mismatch", required_argument, 0, 'x'},
+    {"gap", required_argument, 0, 'g'},
+    {"k", required_argument, 0, 'k'},
+    {"window_length", required_argument, 0, 'w'},
+    {"top minimizers not taken into account", required_argument, 0, 'f'},
+    {0, 0, 0, 0}};
 
 class FASTAfile {
  public:
@@ -62,7 +66,7 @@ void print_fasta_stats(vector<unique_ptr<FASTAfile>> &objects) {
 
   avg = sum / objects.size();
 
-  cout << "Number of sequnces in file: " << objects.size() << "\n";
+  cout << "Number of sequences in file: " << objects.size() << "\n";
   cout << "Average sequence length: " << avg << "\n";
   cout << "Minimun sequence length: " << min << "\n";
   cout << "Maximum sequence length: " << max << "\n";
@@ -87,7 +91,7 @@ void print_fastq_stats(vector<unique_ptr<FASTQfile>> &objects) {
 
   avg = sum / objects.size();
 
-  cout << "Number of sequnces in file: " << objects.size() << "\n";
+  cout << "Number of sequences in file: " << objects.size() << "\n";
   cout << "Average sequence length: " << avg << "\n";
   cout << "Minimun sequence length: " << min << "\n";
   cout << "Maximum sequence length: " << max << "\n";
@@ -115,7 +119,8 @@ int main(int argc, char **argv) {
   float f = 0.001;
 
   char opt;
-  while ((opt = getopt_long(argc, argv, "hvm:x:g:k:w:f:", options, NULL)) != -1) {
+  while ((opt = getopt_long(argc, argv, "hvm:x:g:k:w:f:", options, NULL)) !=
+         -1) {
     switch (opt) {
       case 0:
         break;
@@ -127,7 +132,9 @@ int main(int argc, char **argv) {
         fprintf(stdout, "-h (--help)     Help\n\n");
         fprintf(stdout,
                 "Please provide 2 files in FASTA/FASTQ format along with "
-                "alignment type and match, mismatch and gap costs, k, window width and number of top frequent minimizers not taken into acount\nAlignment "
+                "alignment type and match, mismatch and gap costs, k, window "
+                "width and number of top frequent minimizers not taken into "
+                "acount\nAlignment "
                 "types: 0 - local, 1 - global, 2 - semi_global\n");
         exit(EXIT_SUCCESS);
       case 'm':
@@ -155,10 +162,12 @@ int main(int argc, char **argv) {
   }
 
   if (argc != 16) {
-    fprintf(stderr,
-            "Please provide 2 files in FASTA/FASTQ format along with "
-                "alignment type and match, mismatch and gap costs, k, window width and number of top frequent minimizers not taken into acount\nAlignment "
-                "types: 0 - local, 1 - global, 2 - semi_global\n");
+    fprintf(
+        stderr,
+        "Please provide 2 files in FASTA/FASTQ format along with "
+        "alignment type and match, mismatch and gap costs, k, window width and "
+        "number of top frequent minimizers not taken into acount\nAlignment "
+        "types: 0 - local, 1 - global, 2 - semi_global\n");
     exit(EXIT_FAILURE);
   }
   // parse 1st file as FASTA
@@ -192,13 +201,39 @@ int main(int argc, char **argv) {
     cout << "Beginning: " << target_begin << "\n";
     vector<tuple<unsigned int, unsigned int, bool>> minimizersList;
     minimizersList = brown::minimizers(query.c_str(), query.size(), k, w);
+    map<int, int> printList;
+    for (int i = 0; i < minimizersList.size(); i++) {
+      printList[get<0>(minimizersList[i])]++;
+    }
+    int cnt = 0;
+    int singleton = 0;
+    cout << "Number of distinct minimizers: " << printList.size() << "\n";
+    for (map<int, int>::iterator itr = printList.begin();
+         itr != printList.end(); ++itr) {
+      if (itr->second == 1) singleton++;
+    }
+    cout << "Fraction of singletons: "
+         << (float)singleton / (float)printList.size() << "\n";
+    vector<pair<int, int>> kul;
+    copy(printList.begin(), printList.end(),
+         back_inserter<vector<pair<int, int>>>(kul));
+    sort(kul.begin(), kul.end(),
+         [](const pair<int, int> &l, const pair<int, int> &r) {
+           if (l.second != r.second) return l.second > r.second;
 
+           return l.first > r.first;
+         });
+
+    cout << "Number of occurences of the most frequent minimizer without f "
+            "most frequent: "
+         << kul[f].second << "\n";
   }
 
   // parse 1st file as FASTQ
   else if (has_suffix(convertToString(argv[13], strlen(argv[13])), ".fastq") ||
            has_suffix(convertToString(argv[13], strlen(argv[13])), ".fq") ||
-           has_suffix(convertToString(argv[13], strlen(argv[13])), ".fastq.gz") ||
+           has_suffix(convertToString(argv[13], strlen(argv[13])),
+                      ".fastq.gz") ||
            has_suffix(convertToString(argv[13], strlen(argv[13])), ".fq.gz")) {
     std::vector<std::unique_ptr<FASTQfile>> fastq_objects;
     string path = convertToString(argv[13], strlen(argv[13]));
@@ -232,11 +267,39 @@ int main(int argc, char **argv) {
     cout << "Beginning: " << target_begin << "\n";
     vector<tuple<unsigned int, unsigned int, bool>> minimizersList;
     minimizersList = brown::minimizers(query.c_str(), query.size(), k, w);
+    map<int, int> printList;
+    for (int i = 0; i < minimizersList.size(); i++) {
+      printList[get<0>(minimizersList[i])]++;
+    }
+    int cnt = 0;
+    int singleton = 0;
+    cout << "Number of distinct minimizers: " << printList.size() << "\n";
+    for (map<int, int>::iterator itr = printList.begin();
+         itr != printList.end(); ++itr) {
+      if (itr->second == 1) singleton++;
+    }
+    cout << "Fraction of singletons: "
+         << (float)singleton / (float)printList.size() << "\n";
+    vector<pair<int, int>> kul;
+    copy(printList.begin(), printList.end(),
+         back_inserter<vector<pair<int, int>>>(kul));
+    sort(kul.begin(), kul.end(),
+         [](const pair<int, int> &l, const pair<int, int> &r) {
+           if (l.second != r.second) return l.second > r.second;
+
+           return l.first > r.first;
+         });
+
+    cout << "Number of occurences of the most frequent minimizer without f "
+            "most frequent: "
+         << kul[f].second << "\n";
   } else {
-    fprintf(stderr,
-            "Please provide 2 files in FASTA/FASTQ format along with "
-                "alignment type and match, mismatch and gap costs, k, window width and number of top frequent minimizers not taken into acount\nAlignment "
-                "types: 0 - local, 1 - global, 2 - semi_global\n");
+    fprintf(
+        stderr,
+        "Please provide 2 files in FASTA/FASTQ format along with "
+        "alignment type and match, mismatch and gap costs, k, window width and "
+        "number of top frequent minimizers not taken into acount\nAlignment "
+        "types: 0 - local, 1 - global, 2 - semi_global\n");
     exit(EXIT_FAILURE);
   }
   // parse 2nd file as FASTA
@@ -273,7 +336,8 @@ int main(int argc, char **argv) {
   // parse 2nd file as FASTQ
   else if (has_suffix(convertToString(argv[14], strlen(argv[14])), ".fastq") ||
            has_suffix(convertToString(argv[14], strlen(argv[14])), ".fq") ||
-           has_suffix(convertToString(argv[14], strlen(argv[14])), ".fastq.gz") ||
+           has_suffix(convertToString(argv[14], strlen(argv[14])),
+                      ".fastq.gz") ||
            has_suffix(convertToString(argv[14], strlen(argv[14])), ".fq.gz")) {
     brown::AlignmentType type;
     if (atoi(argv[15]) == 0) type = brown::AlignmentType::local;
@@ -306,10 +370,12 @@ int main(int argc, char **argv) {
     cout << "CIGAR string: " << cigar << '\n';
     cout << "Beginning: " << target_begin << "\n";
   } else {
-    fprintf(stderr,
-            "Please provide 2 files in FASTA/FASTQ format along with "
-                "alignment type and match, mismatch and gap costs, k, window width and number of top frequent minimizers not taken into acount\nAlignment "
-                "types: 0 - local, 1 - global, 2 - semi_global\n");
+    fprintf(
+        stderr,
+        "Please provide 2 files in FASTA/FASTQ format along with "
+        "alignment type and match, mismatch and gap costs, k, window width and "
+        "number of top frequent minimizers not taken into acount\nAlignment "
+        "types: 0 - local, 1 - global, 2 - semi_global\n");
     exit(EXIT_FAILURE);
   }
 }
