@@ -28,11 +28,16 @@ add_library(
     pink_alignment src/pink_alignment.cpp
 )
 
+add_library(
+    pink_minimizers src/pink_minimizers.cpp
+)
+
 
 target_link_libraries(
     pink_mapper
         bioparser
 	pink_alignment
+	pink_minimizers
 )
 
 if (pink_mapper_build_tests)
@@ -42,6 +47,6 @@ if (pink_mapper_build_tests)
 
     add_subdirectory(vendor/googletest/googletest EXCLUDE_FROM_ALL)
 
-    target_link_libraries(pink_mapper_test pink_alignment gtest_main)
+    target_link_libraries(pink_mapper_test pink_alignment pink_minimizers gtest_main)
 
 endif (pink_mapper_build_tests)
