@@ -33,5 +33,5 @@ if(brown_tests)
 
 	add_subdirectory(vendor/googletest EXCLUDE_FROM_ALL)
 
-	target_link_libraries(brown_tests brown_alignment gtest_main)
+	target_link_libraries(brown_tests brown_alignment gtest_main brown_minimizers)
 endif(brown_tests)
