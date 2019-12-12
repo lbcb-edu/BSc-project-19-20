@@ -227,6 +227,7 @@ int main(int argc, char **argv) {
     cout << "Number of occurences of the most frequent minimizer without f "
             "most frequent: "
          << kul[f].second << "\n";
+    cout << "\n";
   }
 
   // parse 1st file as FASTQ
@@ -293,6 +294,7 @@ int main(int argc, char **argv) {
     cout << "Number of occurences of the most frequent minimizer without f "
             "most frequent: "
          << kul[f].second << "\n";
+    cout << "\n";
   } else {
     fprintf(
         stderr,
