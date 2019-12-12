@@ -1,6 +1,4 @@
 #include <algorithm>
-#include <string>
-#include <vector>
 #include <tuple>
 
 #include <gtest/gtest.h>
@@ -56,87 +54,69 @@ TEST(PairwiseAlignmentMatrix, local) {
 TEST(Minimizers, s15k3win5) {
     using namespace orange::minimizers;
 
-    auto sequence = std::string{"TGGTCTCACTGACCC"};
-    auto correct_ans = KMers{{5, 0, 1}, {5, 11, 0}, {5, 11, 0}, {7, 7, 0},
-                             {7, 7, 0}, {7, 7, 0},  {7, 9, 1},  {8, 3, 1},
-                             {8, 3, 1}, {8, 3, 1},  {11, 5, 1}};
+    auto sequence = std::string{"GACATCATCGCCACA"};
+    auto correct_ans =
+        KMers{{4, 1, 0}, {4, 12, 0}, {9, 7, 1}, {11, 4, 1}, {30, 0, 1}};
 
     auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 3, 5);
-    std::sort(begin(algo_ans), end(algo_ans));
 
     EXPECT_EQ(correct_ans, algo_ans);
 }
 
-TEST(Minimizers, s15k3win3) {
+TEST(Minimizers, s15k1win1) {
     using namespace orange::minimizers;
 
-    auto sequence = std::string{"GTCGGAGGTCTTTGC"};
+    auto sequence = std::string{"TACTAGCTTCCATGT"};
     auto correct_ans =
-        KMers{{0, 10, 1}, {1, 11, 1}, {6, 12, 1}, {8, 8, 1},  {9, 1, 1},
-              {10, 5, 0}, {18, 0, 1}, {18, 7, 1}, {20, 6, 1}, {23, 3, 1},
-              {26, 2, 0}, {29, 4, 1}, {31, 9, 0}};
-
-    auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 3, 3);
-    std::sort(begin(algo_ans), end(algo_ans));
-
-    EXPECT_EQ(correct_ans, algo_ans);
-}
-
-TEST(Minimizers, s15k5win8) {
-    using namespace orange::minimizers;
-
-    auto sequence = std::string{"TGGTGGGCTCCAAAT"};
-    auto correct_ans =
-        KMers{{81, 0, 1},  {86, 3, 1},  {86, 3, 1},  {86, 3, 1},
-              {175, 8, 1}, {175, 8, 1}, {175, 8, 1}, {344, 4, 1}};
-
-    auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 5, 8);
-    std::sort(begin(algo_ans), end(algo_ans));
-
-    EXPECT_EQ(correct_ans, algo_ans);
-}
-
-TEST(Minimizers, s22k7win13) {
-    using namespace orange::minimizers;
-
-    auto sequence = std::string{"ATAGATTTCTCCTAGCTTGTCT"};
-    auto correct_ans = KMers{
-        {138, 5, 1}, {138, 5, 1}, {138, 5, 1},  {138, 5, 1},   {138, 5, 1},
-        {138, 5, 1}, {552, 6, 1}, {2211, 7, 1}, {2555, 13, 0}, {2555, 13, 0}};
-
-    auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 7, 13);
-    std::sort(begin(algo_ans), end(algo_ans));
-
-    EXPECT_EQ(correct_ans, algo_ans);
-}
-
-TEST(Minimizers, s33k16win20) {
-    using namespace orange::minimizers;
-
-    auto sequence = std::string{"GGACGAGCTATCAAGGCAATGTTCAAAATATGG"};
-    auto correct_ans =
-        KMers{{172211456, 12, 0}, {172211456, 12, 0}, {172211456, 12, 0},
-              {172211456, 12, 0}, {172211456, 12, 0}, {250872634, 17, 0},
-              {412930212, 2, 0},  {412930212, 2, 0},  {412930212, 2, 0},
-              {657729806, 5, 0},  {657729806, 5, 0},  {657729806, 5, 0},
-              {794543151, 10, 1}, {794543151, 10, 1}};
-
-    auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 16, 20);
-    std::sort(begin(algo_ans), end(algo_ans));
-
-    EXPECT_EQ(correct_ans, algo_ans);
-}
-
-TEST(Minimizers, s10k1win1) {
-    using namespace orange::minimizers;
-
-    auto sequence = std::string{"GACGACGTTG"};
-    auto correct_ans =
-        KMers{{0, 1, 0}, {0, 4, 0}, {0, 7, 1}, {0, 8, 1}, {1, 0, 1},
-              {1, 2, 0}, {1, 3, 1}, {1, 5, 0}, {1, 6, 1}, {1, 9, 1}};
+        KMers{{0, 0, 1}, {0, 1, 0},  {0, 3, 1},  {0, 4, 0},  {0, 7, 1},
+              {0, 8, 1}, {0, 11, 0}, {0, 12, 1}, {0, 14, 1}, {1, 2, 0},
+              {1, 5, 1}, {1, 6, 0},  {1, 9, 0},  {1, 10, 0}, {1, 13, 1}};
 
     auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 1, 1);
-    std::sort(begin(algo_ans), end(algo_ans));
+
+    EXPECT_EQ(correct_ans, algo_ans);
+}
+
+TEST(Minimizers, s64k16win32) {
+    using namespace orange::minimizers;
+
+    auto sequence = std::string{
+        "ATCTGCGGCAGTTGTATCCGATGTTTGAGACCTAGTCAGTGTCTTGATGGACGTTCCATCAACG"};
+    auto correct_ans =
+        KMers{{31362349, 23, 1},  {80376065, 11, 1},  {118984876, 43, 1},
+              {395357374, 47, 1}, {426575050, 3, 1},  {563531852, 1, 1},
+              {932858860, 0, 0},  {1581429497, 48, 1}};
+
+    auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 16, 32);
+
+    EXPECT_EQ(correct_ans, algo_ans);
+}
+
+TEST(Minimizers, s15k7win5) {
+    using namespace orange::minimizers;
+
+    auto sequence = std::string{"AAAACAGATGGGGTT"};
+    auto correct_ans =
+        KMers{{18, 0, 0}, {72, 1, 0}, {291, 2, 0}, {1166, 3, 0}, {1360, 8, 1}};
+
+    auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 7, 5);
+
+    EXPECT_EQ(correct_ans, algo_ans);
+}
+
+TEST(Minimizers, s64k16win8) {
+    using namespace orange::minimizers;
+
+    auto sequence = std::string{
+        "GAACTCTGCTAGGAAACCTTGGCCTGCATAATCAAAAGTAATGTCGGCATTGGACACTCGCTGA"};
+    auto correct_ans =
+        KMers{{11595172, 33, 0},  {25073555, 13, 0},   {46380691, 34, 0},
+              {94483403, 18, 1},  {125422081, 1, 0},   {185522767, 35, 0},
+              {218149101, 29, 0}, {249188257, 39, 0},  {307955182, 41, 1},
+              {377933615, 19, 1}, {416807429, 6, 1},   {456966099, 24, 1},
+              {632315618, 43, 1}, {1048868472, 48, 0}, {2116128127, 0, 1}};
+
+    auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 16, 8);
 
     EXPECT_EQ(correct_ans, algo_ans);
 }

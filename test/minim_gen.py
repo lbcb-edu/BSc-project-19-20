@@ -1,10 +1,8 @@
 from random import choice
 
-n_seq = 1
-seq_len = 10
-
-k = 1
-win_len = 1 
+seq_len = 15
+k = 3
+win_len = 5
 
 bases = ('A', 'C', 'G', 'T')
 
@@ -28,15 +26,18 @@ def convert_kmer(kmer):
 def get_complement(kmer):
     return ''.join(complements[base] for base in kmer)
 
-def find_minimizers(seq, k, win_len):
+def find_minimizers(seq, k, win_len, begin, end):
     """ Bruteforce minimizer finding """
-    minimizers = []
 
-    for i in range(len(seq) - win_len + 1):
+    minimizers = []
+    for i in range(begin, end - win_len + 1):
         kmers = []
-        for j in range(win_len - k + 1):
+        for j in range(win_len):
             start = i + j
             stop = start + k
+
+            if stop > len(seq):
+                break
 
             org = seq[start:stop:1]
             comp = get_complement(org)
@@ -44,21 +45,34 @@ def find_minimizers(seq, k, win_len):
             kmers.append((convert_kmer(org), start, 0))
             kmers.append((convert_kmer(comp), start, 1))
 
-        minimizers.append(min(kmers))
-        kmers.clear()   
-
-    minimizers.sort()
+        if len(kmers) > 0:
+            minimizers.append(min(kmers))
+        kmers.clear()
 
     return minimizers
 
+def sorted_and_unique(li):
+    ret =  list(set(li))
+    ret.sort()
+
+    return ret
 
 if __name__ == "__main__":
     # Comment out to override default params
-    # n_seq, seq_len, k, win_len = input().split()
+    seq_len, k, win_len = map(int, input().split())
     
     seq = gen_seq(seq_len)
+    minimizers = find_minimizers(seq, k, win_len, 0, seq_len)
+
+    for u in range(1, win_len):
+        minimizers.extend(find_minimizers(seq, k, u, 0, u))
+    if k < win_len:
+        for u in range(k, win_len):
+            minimizers.extend(find_minimizers(seq, k, u, seq_len - u, seq_len))
+
+    minimizers = sorted_and_unique(minimizers)
     
     print(f"{seq}\n")
-    for minim in find_minimizers(seq, k, win_len):
+    for minim in minimizers:
         print(f"{{{minim[0]}, {minim[1]}, {minim[2]}}},")
     
