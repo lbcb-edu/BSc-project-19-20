@@ -356,9 +356,10 @@ auto printMinimizerStats(VecSeqPtr const& reads,
     std::sort(vec.begin(), vec.end(),
               [](auto const& l, auto const& r) { return l.second > r.second; });
 
-    auto n_singletons_lambda = [&vec]() {
+    auto n_singletons_lambda = [&vec]() -> std::uint64_t {
         auto it = std::lower_bound(
-            vec.begin(), vec.end(), KMerCnt{0, 1},
+            vec.begin(), vec.end(),
+            std::make_pair(std::uint64_t{0}, std::uint64_t{1}),
             [](auto const& l, auto const& r) { return l.second > r.second; });
 
         if (it == vec.end())
@@ -370,7 +371,7 @@ auto printMinimizerStats(VecSeqPtr const& reads,
     auto most_freq = vec[static_cast<std::size_t>(conf.f_ * vec.size())].second;
     auto n_singletons = n_singletons_lambda();
 
-    std::cerr<< "Fraction: " << 1.0 * n_singletons / most_freq << '\n';
+    std::cerr << "Fraction: " << 1.0 * n_singletons / most_freq << '\n';
 }
 
 }  // namespace mapper
@@ -427,8 +428,6 @@ int main(int argc, char* argv[]) {
 
         // Report end of file loading
         std::cout << "Finsihed loading files\n\ngi";
-
-        ref.clear();
 
         // Prinit minimizers stats for reads
         std::cerr << "Procesing reads minimizers data...\n";

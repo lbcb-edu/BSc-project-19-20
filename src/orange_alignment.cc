@@ -59,7 +59,7 @@ int pairwiseAlignment(char const* query, unsigned int query_length,
                                        Row(target_length + 1, {0})};
 
         if (type == AlignmentType::kGlobal)
-            for (auto i = int{1}; i <= target_length; ++i) rows[0][i] = i * gap;
+            for (auto i = std::uint32_t{1}; i <= target_length; ++i) rows[0][i] = i * gap;
 
         return rows;
     }();
@@ -85,7 +85,7 @@ int pairwiseAlignment(char const* query, unsigned int query_length,
     }();
 
     // Matrix traversal
-    for (auto i = int{1}; i <= query_length; ++i) {
+    for (auto i = std::uint32_t{1}; i <= query_length; ++i) {
         auto& prev = rows[(i - 1) & 1];
         auto& curr = rows[i & 1];
 
@@ -125,11 +125,11 @@ int pairwiseAlignment(char const* query, unsigned int query_length,
                              Row(target_length + 1, {0, ParentDir::kStop}));
 
         if (type == AlignmentType::kGlobal)
-            for (auto i = int{1}; i <= target_length; ++i)
+            for (auto i = std::uint32_t{1}; i <= target_length; ++i)
                 matrix[0][i].score_ = i * gap;
 
         if (type != AlignmentType::kLocal)
-            for (auto i = int{1}; i <= query_length; ++i)
+            for (auto i = std::uint32_t{1}; i <= query_length; ++i)
                 matrix[i][0].score_ = i * gap;
 
         return matrix;
