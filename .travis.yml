@@ -9,6 +9,7 @@ matrix:
       env: 
         - CC=gcc-9 
         - CXX=g++-9
+        - CXXFLAGS="-std=c++17 -stdlib=libc++"
       addons:
         apt:
           sources:
@@ -16,6 +17,7 @@ matrix:
           packages:
             - g++-9
             - cmake
+            - libc++-9-dev
 
     # clang 8, linux, xenial
     - os: linux
