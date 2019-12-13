@@ -11,12 +11,20 @@
 namespace orange {
 namespace minimizers {
 
+using KMerVal = std::uint32_t;
+using KMerPos = std::uint32_t;
+using KMerOrigin = bool;
+
 /**
  * @brief std::tuple describing a K-Mer.
  *
  * @detalis <K-Mer bit mask, position in sequence, original or complement>
  */
-using KMer = std::tuple<std::uint32_t, std::uint32_t, bool>;
+using KMer = std::tuple<KMerVal, KMerPos, KMerOrigin>;
+
+constexpr auto KMerValMax = std::numeric_limits<KMerVal>::max();
+constexpr auto KMerPosMax = std::numeric_limits<KMerPos>::max();
+constexpr auto DelimiterKMer = KMer{KMerValMax, KMerPosMax, 0};
 
 /**
  * @brief std::vector of @ref orange::minimizers::KMer
@@ -90,9 +98,11 @@ namespace minimizers {
 using KMerUSet = std::unordered_set<KMer>;
 
 /**
- * @brief unordered map of @ref orange::minimizers::KMer
+ * @brief unordered map with @ref orange::minimizers::KMerVal as keys
  */
-using KMerUMap = std::unordered_map<KMer, std::hash<KMer>>;
+template <typename T>
+using KMerValUMap = std::unordered_map<KMerVal, T>;
+
 }  // namespace minimizers
 }  // namespace orange
 

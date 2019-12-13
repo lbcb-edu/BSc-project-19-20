@@ -51,16 +51,6 @@ TEST(PairwiseAlignmentMatrix, local) {
     EXPECT_EQ(target_start, 2);
 }
 
-template <typename T>
-auto unique_sorted(std::vector<T> vec) {
-    auto set = std::set<T>{};
-    for (auto& it: vec)
-        set.insert(it);
-    vec.assign(set.begin(), set.end());
-
-    return vec;
-}
-
 TEST(Minimizers, s15k3win5) {
     using namespace orange::minimizers;
 
@@ -69,7 +59,6 @@ TEST(Minimizers, s15k3win5) {
         KMers{{4, 1, 0}, {4, 12, 0}, {9, 7, 1}, {11, 4, 1}, {30, 0, 1}};
 
     auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 3, 5);
-    algo_ans = unique_sorted(algo_ans);
 
     EXPECT_EQ(correct_ans, algo_ans);
 }
@@ -84,7 +73,6 @@ TEST(Minimizers, s15k1win1) {
               {1, 5, 1}, {1, 6, 0},  {1, 9, 0},  {1, 10, 0}, {1, 13, 1}};
 
     auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 1, 1);
-    algo_ans = unique_sorted(algo_ans);
 
     EXPECT_EQ(correct_ans, algo_ans);
 }
@@ -100,7 +88,6 @@ TEST(Minimizers, s64k16win32) {
               {932858860, 0, 0},  {1581429497, 48, 1}};
 
     auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 16, 32);
-    algo_ans = unique_sorted(algo_ans);
 
     EXPECT_EQ(correct_ans, algo_ans);
 }
@@ -113,7 +100,6 @@ TEST(Minimizers, s15k7win5) {
         KMers{{18, 0, 0}, {72, 1, 0}, {291, 2, 0}, {1166, 3, 0}, {1360, 8, 1}};
 
     auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 7, 5);
-    algo_ans = unique_sorted(algo_ans);
 
     EXPECT_EQ(correct_ans, algo_ans);
 }
@@ -131,8 +117,6 @@ TEST(Minimizers, s64k16win8) {
               {632315618, 43, 1}, {1048868472, 48, 0}, {2116128127, 0, 1}};
 
     auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 16, 8);
-    algo_ans = unique_sorted(algo_ans);
-
 
     EXPECT_EQ(correct_ans, algo_ans);
 }

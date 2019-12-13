@@ -333,12 +333,23 @@ auto printRngAlign(Sequence const& query, Sequence const& target,
         conf.match_, conf.mismatch_, conf.gap_, cigar, target_begin);
 
     std::cerr << "Random alignment score: " << align_score << '\n'
-              << "CIGAR:\n\t" << cigar << '\n';
+              << "CIGAR:\n\t" << cigar << "\n\n";
 }
 
 auto printMinimizerStats(VecSeqPtr const& reads,
                          minimizers::MinimizerConf const& conf) {
-    auto minims = minimizers::KMerUMap{};
+    auto minims = minimizers::KMerValUMap<std::uint64_t>{};
+
+    for (auto const& it : reads) {
+        auto& read = *it.get();
+        // std::cerr << "Minims: " << minims.size() << '\n';
+        for (auto const& minim : minimizers::minimizers(
+                 read.seq_, read.seq_len_, conf.k_, conf.win_len_)) {
+            ++minims[std::get<0>(minim)];
+        }
+    }
+
+    std::cerr << "Number of distincs minimizers for reads: " << minims.size() << '\n';
 }
 
 }  // namespace mapper
@@ -396,31 +407,11 @@ int main(int argc, char* argv[]) {
         // Report end of file loading
         std::cout << "Finsihed loading files\n";
 
-        // Print stats
-        mapper::printStats(path_to_reads, reads);
-        mapper::printStats(path_to_ref, ref);
+        ref.clear();
 
-        // Pick random sequences for alignemnt
-        auto rng = [](auto bound) {
-            static auto generator = std::mt19937{std::random_device{}()};
-            static auto dist =
-                std::uniform_int_distribution<decltype(bound)>{0, bound - 1};
-
-            return dist(generator);
-        };
-
-        auto query = *reads.at(rng(reads.size())).get();
-        auto target = *reads.at(rng(reads.size())).get();
-
-        // Free space for alignment
-        // clang-format off
-        reads.clear(); reads.shrink_to_fit();
-        ref.clear(); ref.shrink_to_fit();
-        // clang-format on
-
-        // Print alignment score of two random sequences
-        std::cout << "Starting random alignment.\n";
-        mapper::printRngAlign(query, target, a_conf);
+        // Prinit minimizers stats for reads
+        std::cerr << "Procesing reads minimizers data...\n";
+        mapper::printMinimizerStats(reads, m_conf);
 
     } catch (std::exception const& e) {
         std::cerr << e.what() << '\n';
@@ -429,3 +420,5 @@ int main(int argc, char* argv[]) {
 
     return EXIT_SUCCESS;
 }
+
+// cmake -DCMAKE_BUILD_TYPE=Release ..

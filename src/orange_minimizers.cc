@@ -9,8 +9,6 @@
 namespace orange {
 namespace minimizers {
 
-using KMerVal = std::uint32_t;
-
 /**
  * @brief K-Mare queue with O(1) minimum element access
  */
@@ -129,7 +127,7 @@ public:
         if (k < 16)
             mask_ = (1 << (2 * k)) - 1;
         else
-            mask_ = std::numeric_limits<std::uint32_t>::max();
+            mask_ = KMerValMax;
     }
 
     void shiftKMer() {
@@ -182,9 +180,9 @@ private:
  *
  * @return KMers set of minimizers
  */
-KMers findMinimizers(std::string_view seq, std::uint32_t k,
-                     std::uint32_t win_len, std::uint32_t begin,
-                     std::uint32_t end) {
+auto findMinimizers(std::string_view seq, std::uint32_t k,
+                    std::uint32_t win_len, std::uint32_t begin,
+                    std::uint32_t end) {
     auto kmer_stream = KMerStream{seq, k, begin, end};
     auto queue = MinKQueue{};
 
@@ -203,7 +201,13 @@ KMers findMinimizers(std::string_view seq, std::uint32_t k,
     };
 
     auto min_and_pop = [&queue, &minimizers] {
-        minimizers.push_back(queue.min());
+        static auto prev_min = DelimiterKMer;
+
+        auto const& curr_min = queue.min();
+        if (prev_min != curr_min) {
+            minimizers.push_back(curr_min);
+            prev_min = curr_min;
+        }
         // double pop because
         // we store original and complement
         queue.pop();
@@ -233,8 +237,8 @@ KMers findMinimizers(std::string_view seq, std::uint32_t k,
  * @param win_len sliding window length
  * @return KMers set of minimizers
  */
-KMers findMinimizers(std::string_view seq, std::uint32_t k,
-                     std::uint32_t win_len) {
+auto findMinimizers(std::string_view seq, std::uint32_t k,
+                    std::uint32_t win_len) {
     return findMinimizers(seq, k, win_len, 0, seq.length());
 }
 
@@ -251,25 +255,32 @@ KMers minimizers(char const* sequence, std::uint32_t sequence_length,
     auto seq = std::string_view(sequence, sequence_length);
     auto minimizers = findMinimizers(seq, k, window_length);
 
-    auto extend_minimizers = [&minimizers](auto& vec) {
-        auto nw_sz = minimizers.size() + vec.size();
+    auto add_minimizers = [&minimizers](auto& minims) {
+        auto nw_sz = minims.size() + minimizers.size();
 
         minimizers.reserve(nw_sz);
-        minimizers.insert(minimizers.end(), vec.begin(), vec.end());
+        minimizers.insert(minimizers.end(),
+                          std::make_move_iterator(minims.begin()),
+                          std::make_move_iterator(minims.end()));
     };
 
     for (auto u = std::uint32_t{1}; u < window_length; ++u) {
         auto minims_front = findMinimizers(seq, k, u, 0, u);
-        extend_minimizers(minims_front);
+        add_minimizers(minims_front);
     }
 
     if (k < window_length) {
         for (auto u = k; u < window_length; ++u) {
             auto minims_back =
-                findMinimizers(seq, k, u, sequence_length - u, sequence_length);
-            extend_minimizers(minims_back);
+                findMinimizers(seq, k, u, sequence_length - u,
+                sequence_length);
+            add_minimizers(minims_back);
         }
     }
+
+    std::sort(minimizers.begin(), minimizers.end());
+    minimizers.erase(std::unique(minimizers.begin(), minimizers.end()),
+                     minimizers.end());
 
     return minimizers;
 }

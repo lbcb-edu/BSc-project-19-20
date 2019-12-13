@@ -44,15 +44,8 @@ matrix:
         CXX=clang++
 
 script:
-  - mkdir build
-  - cd build
-
-  - cmake .. 
-  - cmake --build . --target all -- -j .. 
-
-  # Run tests
-  - cd test
-  - ctest
+  - sudo chmod +x build.sh
+  - ./build.sh 
 
 notifications:
   email:
