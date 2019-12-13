@@ -1,0 +1,1 @@
+add_library(white_minimizers white_minimizers.cpp)
