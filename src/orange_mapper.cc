@@ -339,17 +339,38 @@ auto printRngAlign(Sequence const& query, Sequence const& target,
 auto printMinimizerStats(VecSeqPtr const& reads,
                          minimizers::MinimizerConf const& conf) {
     auto minims = minimizers::KMerValUMap<std::uint64_t>{};
+    using KMerCnt = std::pair<minimizers::KMer, std::uint64_t>;
 
     for (auto const& it : reads) {
         auto& read = *it.get();
-        // std::cerr << "Minims: " << minims.size() << '\n';
         for (auto const& minim : minimizers::minimizers(
                  read.seq_, read.seq_len_, conf.k_, conf.win_len_)) {
             ++minims[std::get<0>(minim)];
         }
     }
 
-    std::cerr << "Number of distincs minimizers for reads: " << minims.size() << '\n';
+    std::cerr << "Number of distincs minimizers for reads: " << minims.size()
+              << '\n';
+
+    auto vec = std::vector<KMerCnt>{minims.begin(), minims.end()};
+    std::sort(vec.begin(), vec.end(),
+              [](auto const& l, auto const& r) { return l.second > r.second; });
+
+    auto n_singletons_lambda = [&vec]() {
+        auto it = std::lower_bound(
+            vec.begin(), vec.end(), KMerCnt{0, 1},
+            [](auto const& l, auto const& r) { return l.second > r.second; });
+
+        if (it == vec.end())
+            throw std::range_error("No nosingletons!");
+        else
+            return static_cast<std::uint64_t>(vec.end() - it);
+    };
+
+    auto most_freq = vec[static_cast<std::size_t>(conf.f_ * vec.size())].second;
+    auto n_singletons = n_singletons_lambda();
+
+    std::cerr<< "Fraction: " << 1.0 * n_singletons / most_freq << '\n';
 }
 
 }  // namespace mapper
@@ -405,7 +426,7 @@ int main(int argc, char* argv[]) {
         auto ref = mapper::loadFile(path_to_ref, ref_type);
 
         // Report end of file loading
-        std::cout << "Finsihed loading files\n";
+        std::cout << "Finsihed loading files\n\n";
 
         ref.clear();
 
