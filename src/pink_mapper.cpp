@@ -1,14 +1,27 @@
-#include<iostream>
-#include<algorithm>
-#include<unistd.h>
+#include <iostream>
+#include <algorithm>
+#include <unistd.h>
+#include <vector>
+#include <tuple>
+#include <set>
+#include <map>
+#include <functional>
 
 #include "bioparser/bioparser.hpp"
 #include "pink_alignment.h"
+#include "pink_minimizers.h"
 
 #define VERSION "v0.1.0"
 
 #define EXTENSIONS_A_SIZE 4
 #define EXTENSIONS_Q_SIZE 4
+
+#define MATCH 3
+#define MISMATCH -1
+#define GAP -2
+#define K 15
+#define W 5
+#define F 0.001
 
 std::string extensions_a[] {".fasta", ".fa", ".fasta.gz", ".fa.gz"};
 std::string extensions_q[] { ".fastq", ".fq", ".fastq.gz", ".fq.gz"};
@@ -22,7 +35,10 @@ void help() {
               << "    -t   --type\n       sets Alignment type to following argument. Default type is global.\n" << std::endl
               << "    -m   --match\n       sets match argument for pairwise alignment to following argument. Default value is 3.\n" << std::endl
               << "    -s   --mismatch\n       sets mismatch argument for pairwise alignment to following argument. Default value is -1.\n" << std::endl
-              << "    -g   --gap\n       sets gap argument for pairwise alignment to following argument. Default value is -2.\n" << std::endl;
+              << "    -g   --gap\n       sets gap argument for pairwise alignment to following argument. Default value is -2.\n" << std::endl
+              << "    -k\n       sets k for k-mers. Default value is 15.\n" << std::endl
+              << "    -w\n       sets window length for finding interior minimizers. Default value is 5.\n" << std::endl
+              << "    -f\n       sets percentage of minimizers which are not taken in account. Default value is 0.001\n" << std::endl;
 }
 
 void version(){
@@ -149,9 +165,12 @@ int main(int argc, char* argv[]) {
     int opt;
     std::string alignment_type;
     pink::AlignmentType type = pink::global;
-    int match = 3;
-    int mismatch = -1;
-    int gap = -2;
+    int match = MATCH;
+    int mismatch = MISMATCH;
+    int gap = GAP;
+    int k = K;
+    int w = W;
+    double f = F;
     while((opt = getopt(argc, argv, ":hvt:m:s:g:")) != -1)  {
         switch(opt) {
             case 'h':
@@ -180,6 +199,15 @@ int main(int argc, char* argv[]) {
             case 'g' :
                 gap = atoi(optarg);
                 break;
+            case 'k' :
+                k = atoi(optarg);
+                break;
+            case 'w' :
+                w = atoi(optarg);
+                break;
+            case 'f' :
+                f = atoi(optarg);
+                break;
             default:
                 errorMessage();
         }
@@ -197,10 +225,50 @@ int main(int argc, char* argv[]) {
         errorMessage();
     }
 
-    // print_statistics(first);
-    // std::cerr << std::endl;
-    // print_statistics(second);
+    // FIRST
 
+//     print_statistics(first);
+//     std::cerr << std::endl;
+//     print_statistics(second);
+
+
+    // SECOND
+
+//    std::vector<std::unique_ptr<Fast>> fast_objects;
+//    if(is_extension_ok(first, 'a')){
+//        fast_objects = parse_fasta(first);
+//    } else {
+//        fast_objects = parse_fastq(first);
+//    }
+//
+//    int which1 = std::rand() % fast_objects.size();
+//    int which2 = std::rand() % fast_objects.size();
+//
+//    const char *query = (fast_objects[which1]->sequence).c_str();
+//    const char *target = (fast_objects[which2]->sequence).c_str();
+//    unsigned int query_length = (fast_objects[which1]->sequence).length();
+//    unsigned int target_length = (fast_objects[which2]->sequence).length();
+//
+//    int cost = pink::pairwise_alignment(query, query_length, target, target_length, type, match, mismatch, gap);
+//
+//    std::string s = "";
+//    for(int i = 0; i < query_length; i++){
+//        s += query[i];
+//    }
+//    std::string t = "";
+//    for(int i = 0; i < target_length; i++){
+//        t += target[i];
+//    }
+//
+//    std::cout << "Cost for pairwise alignment for " << s << " and " << t << " is: " << cost << std::endl;
+//
+//    std::string cigar;
+//    unsigned int target_begin;
+//    pink::pairwise_alignment(query, query_length, target, target_length, type, match, mismatch, gap, cigar, target_begin);
+//    std::cout << "Cigar string: " << cigar << std::endl;
+
+
+    // THIRD
 
     std::vector<std::unique_ptr<Fast>> fast_objects;
     if(is_extension_ok(first, 'a')){
@@ -209,32 +277,52 @@ int main(int argc, char* argv[]) {
         fast_objects = parse_fastq(first);
     }
 
-    int which1 = std::rand() % fast_objects.size();
-    int which2 = std::rand() % fast_objects.size();
+    std::vector<std::tuple<unsigned int, unsigned int, bool>> minimizers;
 
-    const char *query = (fast_objects[which1]->sequence).c_str();
-    const char *target = (fast_objects[which2]->sequence).c_str();
-    unsigned int query_length = (fast_objects[which1]->sequence).length();
-    unsigned int target_length = (fast_objects[which2]->sequence).length();
+    for(int i = 0; i < fast_objects.size(); i++){
+        std::vector<std::tuple<unsigned int, unsigned int, bool>> current = pink::minimizers((fast_objects[i]->sequence).c_str(), (fast_objects[i]->sequence).length(), k, w);
 
-    int cost = pink::pairwise_alignment(query, query_length, target, target_length, type, match, mismatch, gap);
-
-    std::string s = "";
-    for(int i = 0; i < query_length; i++){
-        s += query[i];
-    }
-    std::string t = "";
-    for(int i = 0; i < target_length; i++){
-        t += target[i];
+        for(auto minimizer : current) {
+            minimizers.emplace_back(minimizer);
+        }
     }
 
-    std::cout << "Cost for pairwise alignment for " << s << " and " << t << " is: " << cost << std::endl;
+    std::set<std::tuple<unsigned int, unsigned int, bool>> unique (minimizers.begin(), minimizers.end());
+    std::map<std::tuple<unsigned int, unsigned int, bool>, int> counter;
 
-    std::string cigar;
-    unsigned int target_begin;
-    pink::pairwise_alignment(query, query_length, target, target_length, type, match, mismatch, gap, cigar, target_begin);
-    std::cout << "Cigar string: " << cigar << std::endl;
+    for(auto minimizer : minimizers) {
+        if(!counter.emplace(std::make_pair(minimizer, 1)).second)
+            counter[minimizer] = counter[minimizer] + 1;
+    }
 
+    std::vector<std::pair<std::tuple<unsigned int, unsigned int, bool>, int>> pairs;
+    for (auto itr = counter.begin(); itr != counter.end(); ++itr)
+        pairs.push_back(*itr);
+
+    sort(pairs.begin(), pairs.end(), [=](std::pair<std::tuple<unsigned int, unsigned int, bool>, int>& a, std::pair<std::tuple<unsigned int, unsigned int, bool>, int>& b)
+         {
+             return a.second < b.second;
+         }
+    );
+
+    std::cout << "Number of distinct minimizers is "
+              << unique.size()
+              << std::endl;
+
+    int num_of_singletons = 0;
+    for(auto p : pairs) {
+        if(p.second == 1)
+            num_of_singletons++;
+        else
+            break;
+    }
+
+    std::cout << "Fraction of singletons: " << (double)num_of_singletons/minimizers.size() << std::endl;
+
+    int ignore = minimizers.size()*f;
+
+    std::cout << "Number of occurrences of the most frequent minimizer when the top " << f << " frequent minimizers: "
+              << pairs[minimizers.size() - 1 - ignore].second << std::endl;
 
 
     return 0;
