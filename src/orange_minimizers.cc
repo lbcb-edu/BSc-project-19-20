@@ -89,13 +89,13 @@ char getComplement(char const base) {
 std::uint32_t getMask(char const base) {
     switch (base) {
         case 'A':
-            return 0;
-        case 'C':
             return 1;
+        case 'C':
+            return 0;
         case 'G':
-            return 2;
-        case 'T':
             return 3;
+        case 'T':
+            return 2;
         default:
             throw std::invalid_argument("Invalid sequence!");
     }
@@ -133,7 +133,7 @@ public:
     }
 
     void shiftKMer() {
-        if (pos_ + k_ >= end_)
+        if (pos_ + k_ >= seq_.size() || pos_ >= end_)
             return;
 
         // Shift and ignore bits
@@ -148,7 +148,7 @@ public:
 
     std::uint32_t pos() const { return pos_; }
 
-    bool hasShift() const { return pos_ + k_ < end_; }
+    bool hasShift() const { return pos_ + k_ < seq_.size() && pos_ < end_; }
 
     KMer getCurrKMer() const { return KMer{kmer_, pos_, false}; }
 
@@ -203,13 +203,9 @@ auto findMinimizers(std::string_view seq, std::uint32_t k,
     };
 
     auto min_and_pop = [&queue, &minimizers] {
-        static auto prev_min = DelimiterKMer;
-
         auto const& curr_min = queue.min();
-        if (prev_min != curr_min) {
+        if (minimizers.empty() || minimizers.back() != curr_min)
             minimizers.push_back(curr_min);
-            prev_min = curr_min;
-        }
         // double pop because
         // we store original and complement
         queue.pop();
@@ -274,8 +270,7 @@ KMers minimizers(char const* sequence, std::uint32_t sequence_length,
     if (k < window_length) {
         for (auto u = k; u < window_length; ++u) {
             auto minims_back =
-                findMinimizers(seq, k, u, sequence_length - u,
-                sequence_length);
+                findMinimizers(seq, k, u, sequence_length - u, sequence_length);
             move_end_minims(minims_back);
         }
     }

@@ -6,7 +6,7 @@ matrix:
   # GCC 9, linux
   include: 
     - os: linux
-      dist: xenial
+      dist: bionic
       env: 
         - CC=gcc-9 
         - CXX=g++-9
