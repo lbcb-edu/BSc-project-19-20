@@ -17,7 +17,6 @@ matrix:
           packages:
             - g++-9
             - cmake
-            - libc++-9-dev
 
     # clang 8, linux, xenial
     - os: linux

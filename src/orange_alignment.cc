@@ -92,7 +92,7 @@ int pairwiseAlignment(char const* query, unsigned int query_length,
         if (type != AlignmentType::kLocal)
             curr[0] = i * gap;
 
-        for (auto j = int{1}; j <= target_length; ++j) {
+        for (auto j = std::uint32_t{1}; j <= target_length; ++j) {
             curr[j] = scoreFn(prev, curr, j,
                               (query[i - 1] == target[j - 1]) ? match : mismatch);
         }
