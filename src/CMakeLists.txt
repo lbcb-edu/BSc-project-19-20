@@ -18,29 +18,6 @@ add_library(
         orange_minimizers.cc
 )
 
-add_library(
-    orange_utility
-        INTERFACE
-)
-
-target_sources(
-        orange_utility
-            INTERFACE
-                orange_utility.h
-)
-
-target_include_directories(
-    orange_utility
-        INTERFACE
-            ./
-)
-
-target_link_libraries(
-    orange_minimizers
-        PUBLIC
-            orange_utils
-)
-
 target_link_libraries(
     orange_mapper
         PRIVATE
