@@ -55,8 +55,8 @@ TEST(Minimizers, s15k3win5) {
     using namespace orange::minimizers;
 
     auto sequence = std::string{"GACATCATCGCCACA"};
-    auto correct_ans =
-        KMers{{4, 1, 0}, {4, 12, 0}, {9, 7, 1}, {11, 4, 1}, {30, 0, 1}};
+    auto correct_ans = KMers{{4, 1, 0},  {4, 12, 0},  {13, 3, 0},
+                             {13, 6, 0}, {17, 11, 0}, {33, 0, 0}};
 
     auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 3, 5);
 
@@ -83,9 +83,9 @@ TEST(Minimizers, s64k16win32) {
     auto sequence = std::string{
         "ATCTGCGGCAGTTGTATCCGATGTTTGAGACCTAGTCAGTGTCTTGATGGACGTTCCATCAACG"};
     auto correct_ans =
-        KMers{{31362349, 23, 1},  {80376065, 11, 1},  {118984876, 43, 1},
-              {395357374, 47, 1}, {426575050, 3, 1},  {563531852, 1, 1},
-              {932858860, 0, 0},  {1581429497, 48, 1}};
+        KMers{{20352065, 10, 1},  {81408263, 9, 1},   {114610308, 39, 1},
+              {325633054, 8, 1},  {822580808, 1, 1},  {932858860, 0, 0},
+              {973526224, 43, 1}, {974902480, 46, 0}, {1871610293, 48, 1}};
 
     auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 16, 32);
 
@@ -97,7 +97,7 @@ TEST(Minimizers, s15k7win5) {
 
     auto sequence = std::string{"AAAACAGATGGGGTT"};
     auto correct_ans =
-        KMers{{18, 0, 0}, {72, 1, 0}, {291, 2, 0}, {1166, 3, 0}, {1360, 8, 1}};
+        KMers{{18, 0, 0}, {72, 1, 0}, {291, 2, 0}, {340, 8, 1}, {1166, 3, 0}};
 
     auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 7, 5);
 
@@ -110,11 +110,12 @@ TEST(Minimizers, s64k16win8) {
     auto sequence = std::string{
         "GAACTCTGCTAGGAAACCTTGGCCTGCATAATCAAAAGTAATGTCGGCATTGGACACTCGCTGA"};
     auto correct_ans =
-        KMers{{11595172, 33, 0},  {25073555, 13, 0},   {46380691, 34, 0},
-              {94483403, 18, 1},  {125422081, 1, 0},   {185522767, 35, 0},
-              {218149101, 29, 0}, {249188257, 39, 0},  {307955182, 41, 1},
-              {377933615, 19, 1}, {416807429, 6, 1},   {456966099, 24, 1},
-              {632315618, 43, 1}, {1048868472, 48, 0}, {2116128127, 0, 1}};
+        KMers{{11595172, 33, 0},  {25073555, 13, 0},  {46380691, 34, 0},
+              {100294220, 14, 0}, {125422081, 1, 0},  {184382024, 4, 1},
+              {185522767, 35, 0}, {218149101, 29, 0}, {249188257, 39, 0},
+              {331873852, 28, 1}, {401176880, 15, 0}, {536408978, 23, 1},
+              {640603193, 46, 1}, {671480414, 10, 0}, {1048868472, 48, 0},
+              {2178839168, 0, 0}};
 
     auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 16, 8);
 

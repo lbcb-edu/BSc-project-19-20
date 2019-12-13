@@ -23,8 +23,8 @@ def convert_kmer(kmer):
     bin_str = ''.join(masks[base] for base in kmer)
     return int(bin_str, 2)
 
-def get_complement(kmer):
-    return ''.join(complements[base] for base in kmer)
+def get_rev_complement(kmer):
+    return ''.join(complements[base] for base in kmer)[::-1]
 
 def find_minimizers(seq, k, win_len, begin, end):
     """ Bruteforce minimizer finding """
@@ -40,7 +40,7 @@ def find_minimizers(seq, k, win_len, begin, end):
                 break
 
             org = seq[start:stop:1]
-            comp = get_complement(org)
+            comp = get_rev_complement(org)
 
             kmers.append((convert_kmer(org), start, 0))
             kmers.append((convert_kmer(comp), start, 1))
@@ -70,7 +70,7 @@ if __name__ == "__main__":
         for u in range(k, win_len):
             minimizers.extend(find_minimizers(seq, k, u, seq_len - u, seq_len))
 
-    minimizers.sort()
+    minimizers = sorted_and_unique(minimizers)
     
     print(f"{seq}\n")
     for minim in minimizers:

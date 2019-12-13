@@ -115,12 +115,14 @@ public:
           end_{end},
           kmer_{0},
           comp_kmer_{0} {
-        auto shift = int{2} * k - 2;  // Each base holds up two bits
+        auto shift = 2 * k_ - 2;  // Each base holds up two bits
+        auto r_shift = 0;
         for (auto i = std::uint32_t{begin_}; i < begin_ + k_; ++i) {
             kmer_ |= getMask(seq_[i]) << shift;
-            comp_kmer_ |= getMask(getComplement(seq_[i])) << shift;
+            comp_kmer_ |= getMask(getComplement(seq_[i])) << r_shift;
 
             shift -= 2;
+            r_shift += 2;
         }
 
         // First 2 * k bits are set to 1
@@ -135,11 +137,11 @@ public:
             return;
 
         // Shift and ignore bits
-        kmer_ <<= 2, comp_kmer_ <<= 2;
+        kmer_ <<= 2, comp_kmer_ >>= 2;
         kmer_ &= mask_, comp_kmer_ &= mask_;
 
         kmer_ |= getMask(seq_[pos_ + k_]);
-        comp_kmer_ |= getMask(getComplement(seq_[pos_ + k_]));
+        comp_kmer_ |= getMask(getComplement(seq_[pos_ + k_])) << (2 * k_ - 2);
 
         ++pos_;
     }
@@ -255,7 +257,7 @@ KMers minimizers(char const* sequence, std::uint32_t sequence_length,
     auto seq = std::string_view(sequence, sequence_length);
     auto minimizers = findMinimizers(seq, k, window_length);
 
-    auto add_minimizers = [&minimizers](auto& minims) {
+    auto move_end_minims = [&minimizers](auto& minims) {
         auto nw_sz = minims.size() + minimizers.size();
 
         minimizers.reserve(nw_sz);
@@ -266,7 +268,7 @@ KMers minimizers(char const* sequence, std::uint32_t sequence_length,
 
     for (auto u = std::uint32_t{1}; u < window_length; ++u) {
         auto minims_front = findMinimizers(seq, k, u, 0, u);
-        add_minimizers(minims_front);
+        move_end_minims(minims_front);
     }
 
     if (k < window_length) {
@@ -274,7 +276,7 @@ KMers minimizers(char const* sequence, std::uint32_t sequence_length,
             auto minims_back =
                 findMinimizers(seq, k, u, sequence_length - u,
                 sequence_length);
-            add_minimizers(minims_back);
+            move_end_minims(minims_back);
         }
     }
 

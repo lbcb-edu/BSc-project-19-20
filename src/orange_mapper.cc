@@ -363,7 +363,7 @@ auto printMinimizerStats(VecSeqPtr const& reads,
             [](auto const& l, auto const& r) { return l.second > r.second; });
 
         if (it == vec.end())
-            throw std::range_error("No nosingletons!");
+            throw std::range_error("No singletons!");
         else
             return static_cast<std::uint64_t>(vec.end() - it);
     };
