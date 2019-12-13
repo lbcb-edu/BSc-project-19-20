@@ -67,14 +67,14 @@ namespace pink {
         k_mer_triple_reverse = std::make_tuple(k_mer_reverse, j_reverse, false);
     }
 
-    void sort_insert(std::vector<std::tuple<unsigned int, unsigned int, bool>>& k_mers, std::vector<std::tuple<unsigned int, unsigned int, bool>>& k_mers_reverse,
+    void insert(std::vector<std::tuple<unsigned int, unsigned int, bool>>& k_mers, std::vector<std::tuple<unsigned int, unsigned int, bool>>& k_mers_reverse,
                      std::unordered_set<std::tuple<unsigned int, unsigned int, bool>>& minimizers) {
-        std::sort(k_mers.begin(), k_mers.end());
-        std::sort(k_mers_reverse.begin(), k_mers_reverse.end());
-        if(k_mers[0] <= k_mers_reverse[0])
-            minimizers.emplace(k_mers[0]);
+        std::tuple<unsigned int, unsigned int, bool> minimal;
+        if(*std::min_element(k_mers.begin(), k_mers.end()) <= *std::min_element(k_mers_reverse.begin(), k_mers_reverse.end()))
+            minimal = *std::min_element(k_mers.begin(), k_mers.end());
         else
-            minimizers.emplace(k_mers_reverse[0]);
+            minimal = *std::min_element(k_mers_reverse.begin(), k_mers_reverse.end());
+        minimizers.emplace(minimal);
     }
 
     void interior_minimizers(const char* sequence, unsigned int sequence_length, unsigned int k, unsigned int window_length, std::unordered_set<std::tuple<unsigned int, unsigned int, bool>>& minimizers) {
@@ -93,7 +93,7 @@ namespace pink {
                 k_mers_reverse.push_back(k_mer_triple_reverse);
             }
 
-            sort_insert(k_mers, k_mers_reverse, minimizers);
+            insert(k_mers, k_mers_reverse, minimizers);
         }
     }
 
@@ -112,7 +112,7 @@ namespace pink {
                 k_mers_reverse.push_back(k_mer_triple_reverse);
             }
 
-            sort_insert(k_mers, k_mers_reverse, minimizers);
+            insert(k_mers, k_mers_reverse, minimizers);
         }
     }
 
@@ -132,7 +132,7 @@ namespace pink {
                 k_mers_reverse.push_back(k_mer_triple_reverse);
             }
 
-            sort_insert(k_mers, k_mers_reverse, minimizers);
+            insert(k_mers, k_mers_reverse, minimizers);
         }
     }
 
