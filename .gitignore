@@ -1,9 +1,11 @@
 # custom
 
+build/**
+
 include/config.hpp
 
-vendor/googletest
-vendor/bioparser
+**/vendor/googletest
+**/vendor/bioparser
 
 blue_mapper
 alignment_tests
