@@ -426,7 +426,7 @@ int main(int argc, char* argv[]) {
         auto ref = mapper::loadFile(path_to_ref, ref_type);
 
         // Report end of file loading
-        std::cout << "Finsihed loading files\n\n";
+        std::cout << "Finsihed loading files\n\ngi";
 
         ref.clear();
 

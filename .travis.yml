@@ -44,8 +44,7 @@ matrix:
         CXX=clang++
 
 script:
-  - sudo chmod +x build.sh
-  - ./build.sh 
+  - bash build.sh 
 
 notifications:
   email:
