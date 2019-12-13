@@ -61,7 +61,7 @@ if __name__ == "__main__":
     # Comment out to override default params
     seq_len, k, win_len = map(int, input().split())
     
-    seq = gen_seq(seq_len)
+    seq = input()
     minimizers = find_minimizers(seq, k, win_len, 0, seq_len)
 
     for u in range(1, win_len):
@@ -70,7 +70,7 @@ if __name__ == "__main__":
         for u in range(k, win_len):
             minimizers.extend(find_minimizers(seq, k, u, seq_len - u, seq_len))
 
-    minimizers = sorted_and_unique(minimizers)
+    minimizers.sort()
     
     print(f"{seq}\n")
     for minim in minimizers:

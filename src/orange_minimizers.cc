@@ -117,7 +117,6 @@ public:
           end_{end},
           kmer_{0},
           comp_kmer_{0} {
-
         auto shift = int{2} * k - 2;  // Each base holds up two bits
         for (auto i = std::uint32_t{begin_}; i < begin_ + k_; ++i) {
             kmer_ |= getMask(seq_[i]) << shift;
@@ -171,6 +170,18 @@ private:
     KMerVal comp_kmer_;  //<<< KMer on the complement strand
 };
 
+/**
+ * @brief Finds minimizers of a sequence range.
+ *
+ * @param seq target sequence
+ * @param k size of a K-mer
+ * @param win_len sliding window length
+ *
+ * @param begin range beginning
+ * @param end range ending
+ *
+ * @return KMers set of minimizers
+ */
 KMers findMinimizers(std::string_view seq, std::uint32_t k,
                      std::uint32_t win_len, std::uint32_t begin,
                      std::uint32_t end) {
@@ -179,7 +190,7 @@ KMers findMinimizers(std::string_view seq, std::uint32_t k,
 
     auto minimizers = KMers{};
 
-    auto win_end = begin +  win_len - 1;
+    auto win_end = begin + win_len - 1;
 
     auto push = [&queue, &kmer_stream] {
         queue.push(kmer_stream.getCurrKMer());
@@ -215,11 +226,11 @@ KMers findMinimizers(std::string_view seq, std::uint32_t k,
 }
 
 /**
- * @brief Finds internal minimizers of a given sequene.
+ * @brief Finds internal minimizers of a given sequence.
  *
  * @param seq target sequence
  * @param k size of a K-mer
- * @param win_len sliding window lenght
+ * @param win_len sliding window length
  * @return KMers set of minimizers
  */
 KMers findMinimizers(std::string_view seq, std::uint32_t k,
@@ -240,20 +251,11 @@ KMers minimizers(char const* sequence, std::uint32_t sequence_length,
     auto seq = std::string_view(sequence, sequence_length);
     auto minimizers = findMinimizers(seq, k, window_length);
 
-    auto unique_sorted = [](auto& vec) {
-        auto set = std::set<KMer>{};
-        for (auto& it: vec)
-            set.insert(it);
-        vec.assign(set.begin(), set.end());
-
-        return vec;
-    };
-
     auto extend_minimizers = [&minimizers](auto& vec) {
-      auto nw_sz = minimizers.size() + vec.size();
+        auto nw_sz = minimizers.size() + vec.size();
 
-      minimizers.reserve(nw_sz);
-      minimizers.insert(minimizers.end(), vec.begin(), vec.end());
+        minimizers.reserve(nw_sz);
+        minimizers.insert(minimizers.end(), vec.begin(), vec.end());
     };
 
     for (auto u = std::uint32_t{1}; u < window_length; ++u) {
@@ -262,13 +264,14 @@ KMers minimizers(char const* sequence, std::uint32_t sequence_length,
     }
 
     if (k < window_length) {
-        for (auto u = k; u < window_length ; ++u) {
-            auto minims_back = findMinimizers(seq, k, u, sequence_length - u, sequence_length);
+        for (auto u = k; u < window_length; ++u) {
+            auto minims_back =
+                findMinimizers(seq, k, u, sequence_length - u, sequence_length);
             extend_minimizers(minims_back);
         }
     }
 
-    return unique_sorted(minimizers);
+    return minimizers;
 }
 
 }  // namespace minimizers

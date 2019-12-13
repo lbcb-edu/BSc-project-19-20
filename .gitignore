@@ -4,6 +4,7 @@ build
 data
 orange_mapper
 cmake-build-debug
+.DS_Store
 
 doc/plan_projekta.aux
 doc/plan_projekta.log

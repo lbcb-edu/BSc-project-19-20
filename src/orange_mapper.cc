@@ -13,6 +13,7 @@
 #include <bioparser/bioparser.hpp>
 
 #include "orange_alignment.h"
+#include "orange_minimizers.h"
 #include "orange_mapper_conf.h"
 
 namespace orange {
@@ -32,6 +33,8 @@ struct option const long_options[] = {{"help", no_argument, NULL, 'h'},
                                       {"match", required_argument, 0, 'm'},
                                       {"mismatch", required_argument, 0, 's'},
                                       {"gap", required_argument, 0, 'g'},
+                                      {"kmer", required_argument, NULL, 'k'},
+                                      {"window", required_argument, NULL, 'w'},
                                       {NULL, 0, NULL, 0}};
 
 /**
@@ -172,7 +175,8 @@ auto parseAlignType(char const* type) {
  *
  * @return int index of first non-option element in argv
  */
-auto parseOptions(int argc, char* argv[], alignment::AlignConf& conf) {
+auto parseOptions(int argc, char* argv[], alignment::AlignConf& a_conf,
+                  minimizers::MinimizerConf& m_conf) {
     auto opt = int{};
     while ((opt = getopt_long(argc, argv, "hvm:s:g:t:", long_options, NULL)) !=
            -1) {
@@ -184,16 +188,22 @@ auto parseOptions(int argc, char* argv[], alignment::AlignConf& conf) {
                 printHelp();
                 break;
             case 't':
-                conf.type_ = parseAlignType(optarg);
+                a_conf.type_ = parseAlignType(optarg);
                 break;
             case 'm':
-                conf.match_ = std::atoi(optarg);
+                a_conf.match_ = std::atoi(optarg);
                 break;
             case 's':
-                conf.mismatch_ = std::atoi(optarg);
+                a_conf.mismatch_ = std::atoi(optarg);
                 break;
             case 'g':
-                conf.gap_ = std::atoi(optarg);
+                a_conf.gap_ = std::atoi(optarg);
+                break;
+            case 'k':
+                m_conf.k_ = std::atoi(optarg);
+                break;
+            case 'w':
+                m_conf.win_len_ = std::atoi(optarg);
                 break;
 
             default:
@@ -326,6 +336,11 @@ auto printRngAlign(Sequence const& query, Sequence const& target,
               << "CIGAR:\n\t" << cigar << '\n';
 }
 
+auto printMinimizerStats(VecSeqPtr const& reads,
+                         minimizers::MinimizerConf const& conf) {
+    auto minims = minimizers::KMerUMap{};
+}
+
 }  // namespace mapper
 }  // namespace orange
 
@@ -342,9 +357,10 @@ int main(int argc, char* argv[]) {
 
     try {
         // Alignment configuration
-        auto conf = alignment::AlignConf{};
+        auto a_conf = alignment::AlignConf{};
+        auto m_conf = minimizers::MinimizerConf{};
 
-        auto arg_index = mapper::parseOptions(argc, argv, conf);
+        auto arg_index = mapper::parseOptions(argc, argv, a_conf, m_conf);
 
         // Check number of passed arguments
         if (argc - arg_index < 2) {
@@ -404,7 +420,7 @@ int main(int argc, char* argv[]) {
 
         // Print alignment score of two random sequences
         std::cout << "Starting random alignment.\n";
-        mapper::printRngAlign(query, target, conf);
+        mapper::printRngAlign(query, target, a_conf);
 
     } catch (std::exception const& e) {
         std::cerr << e.what() << '\n';
