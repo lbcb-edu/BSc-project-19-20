@@ -11,6 +11,7 @@
 #include "config.h"
 #include "options.hpp"
 #include "../white_alignment/white_alignment.hpp"
+#include "../white_minimizers/white_minimizers.hpp"
 #include <bioparser/bioparser.hpp>
 
 
@@ -50,7 +51,9 @@ class FASTQformat {
 
 
 int main(int argc, char* argv[]) {
-	
+	unsigned int k = 15, w = 5;
+	double f = 0.001;
+
 	switch (argc) {
 		case 1:
 			noArgumentsPassed();
@@ -89,20 +92,36 @@ int main(int argc, char* argv[]) {
 				}
 				std::sort(sequence_calc.begin(), sequence_calc.end());
 				
-				outputFileStatistics(first_file, fasta_objects.size(), sum, sequence_calc[0], sequence_calc[sequence_calc.size() - 1]);
-
-                std::string Cigar;
-                unsigned int t_begin;
-                int firstInd = rand() % fasta_objects.size();
-                int secondInd = rand() % fasta_objects.size();
-                const char* seq1 = fasta_objects[firstInd]->sequence;
-                const char* seq2 = fasta_objects[secondInd]->sequence;
-                int lenght1 = fasta_objects[firstInd]->sequence_length;
-                int length2 = fasta_objects[secondInd]->sequence_length;
-                int optimalAlign = white::PairwiseAlignment(seq1, lenght1, seq2, length2, white::AlignmentType::kGlobal, 2, -1, -2, Cigar, t_begin);
-                std::cout << Cigar << std::endl;
-                break;
-
+				// outputFileStatistics(first_file, fasta_objects.size(), sum, sequence_calc[0], sequence_calc[sequence_calc.size() - 1]);
+			
+                // std::string Cigar;
+                // unsigned int t_begin;
+                // int firstInd = rand() % fasta_objects.size();
+                // int secondInd = rand() % fasta_objects.size();
+                // const char* seq1 = fasta_objects[firstInd]->sequence;
+                // const char* seq2 = fasta_objects[secondInd]->sequence;
+                // int lenght1 = fasta_objects[firstInd]->sequence_length;
+                // int length2 = fasta_objects[secondInd]->sequence_length;
+                // int optimalAlign = white::PairwiseAlignment(seq1, lenght1, seq2, length2, white::AlignmentType::kGlobal, 2, -1, -2, Cigar, t_begin);
+                // std::cout << Cigar << std::endl;
+                // break;
+				
+				
+				// for (int i = 0; i < fasta_objects.size(); i++) {
+					std::vector<std::tuple<unsigned int, unsigned int, bool>> calc;
+					// std::cout << fasta_objects[0]->sequence_length;
+					// std::cout << fasta_objects[0]->sequence;
+					// return 0;
+					const char* seq = fasta_objects[0]->sequence;
+					int len = fasta_objects[0]->sequence_length;
+					calc = white::minimizers(seq, len, k, w);
+					std::cout << calc.size() << std::endl;
+					std::set<unsigned int> uni;
+					for (auto it : calc) {
+						uni.insert(std::get<0>(it));
+					}
+					std::cout << uni.size();
+				// }
 			}
 			
 			break;
