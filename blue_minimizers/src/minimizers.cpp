@@ -1,61 +1,101 @@
 #include "minimizers/minimizers.hpp"
 
+// TODO: delete
+#include <iostream>
+
 namespace blue {
 
 namespace detail {
 
-inline char Complement(const char c) noexcept {
-  return '0' + '3' - c;
+inline unsigned Complement(const unsigned c) noexcept {
+  return 3 - c;
 }
 
-inline char CustomOrdering(const char c) noexcept {
+inline unsigned CustomOrdering(const char c) noexcept {
   switch (c) {
     case 'C':
-      return '0';
+      return 0;
     case 'A':
-      return '1';
+      return 1;
     case 'T':
-      return '2';
+      return 2;
     case 'G':
-      return '3';
-    default:
-      return '?';
+      return 3;
   }
+
+  return 0;
 }
 
-template <typename StringType>
-inline ::std::string_view ViewFrom(const StringType& str, ::std::size_t pos,
-                                   ::std::size_t count) {
-  return ::std::string_view{str.data() + pos, count};
-}
+::std::vector<KMerInfo> GenerateFrom(const char* seq, unsigned l, unsigned k) {
+  KMerInfo reg{0, 0, false}, inv{0, 0, true};
 
-template <typename StringType>
-inline KMerInfo KMerFrom(const StringType& win, const StringType& cwin,
-                         unsigned k) {
-  ::std::string_view candidate{"Z"};
-  KMerInfo ret{0, k, false};
+  using ::std::get;
 
-  for (int i = 0; i <= win.size() - k; ++i) {
-    ::std::string_view kk = ViewFrom(win, i, k);
-    ::std::string_view ck = ViewFrom(cwin, cwin.size() - k - i, k);
+  for (auto i = 0; i < k; ++i) {
+    get<0>(reg) <<= 2;
+    get<0>(inv) <<= 2;
 
-    bool complement = ck < kk;
+    get<0>(reg) |= CustomOrdering(seq[i]);
+    get<0>(inv) |= Complement(CustomOrdering(seq[l - i - 1]));
+  }
 
-    if (complement)
-      kk = ck;
+  ::std::vector<KMerInfo> ret;
 
-    if (kk < candidate) {
-      candidate = kk;
-      ret = {i, k, complement};
-    }
+  ret.reserve(l - k + 1);
+  ret.push_back(reg <= inv ? reg : inv);
+
+  unsigned mask = k == 16 ? ~0 : ((1 << (2 * k)) - 1);
+
+  for (auto i = k; i < l; ++i) {
+    ++get<1>(reg);
+    ++get<1>(inv);
+
+    get<0>(reg) <<= 2;
+    get<0>(inv) <<= 2;
+
+    get<0>(reg) |= CustomOrdering(seq[i]);
+    get<0>(inv) |= Complement(CustomOrdering(seq[l - i - 1]));
+
+    get<0>(reg) &= mask;
+    get<0>(inv) &= mask;
+
+    ret.push_back(reg <= inv ? reg : inv);
   }
 
   return ret;
 }
 
-inline KMerInfo AdjustOrigin(KMerInfo ki, unsigned pos) {
-  ::std::get<0>(ki) += pos - (::std::get<2>(ki) ? ::std::get<1>(ki) - 1 : 0);
-  return ki;
+template <typename T>
+::std::vector<int> MinByK(const ::std::vector<T>& v, unsigned k) {
+  const auto sz = v.size();
+
+  ::std::vector<int> mins(sz);
+  ::std::vector<int> s{0};
+
+  for (auto i = 1; i < sz; ++i) {
+    while (s.size() && v[s.back()] > v[i])
+      mins[s.back()] = i - 1, s.pop_back();
+
+    s.push_back(i);
+  }
+
+  while (s.size())
+    mins[s.back()] = sz - 1, s.pop_back();
+
+  ::std::vector<int> ret;
+
+  s.shrink_to_fit();
+  ret.reserve(sz - k + 1);
+
+  auto j = 0;
+  for (auto i = 0; i <= sz - k; ++i) {
+    while (j < i || mins[j] < i + k - 1)
+      ++j;
+
+    ret.push_back(j);
+  }
+
+  return ret;
 }
 
 }  // namespace detail
@@ -63,43 +103,41 @@ inline KMerInfo AdjustOrigin(KMerInfo ki, unsigned pos) {
 ::std::vector<KMerInfo> minimizers(const char* sequence,
                                    SequenceLength sequence_length, KType k,
                                    WindowLength window_length) {
-  auto len = sequence_length.get();
-  auto kk = k.get();
+  auto slen = sequence_length.get();
   auto wlen = window_length.get();
-  auto l = wlen + kk - 1;
+  auto klen = k.get();
 
-  ::std::string seq(len, ' ');
-  ::std::string com(len, ' ');
+  //::std::cout << sequence << ::std::endl;
 
-  ::std::transform(sequence, sequence + len, ::std::begin(seq),
-                   detail::CustomOrdering);
-  ::std::transform(::std::rbegin(seq), ::std::rend(seq), ::std::begin(com),
-                   detail::Complement);
+  ::std::vector<KMerInfo> kmers(
+      std::move(detail::GenerateFrom(sequence, slen, klen)));
+  decltype(kmers) min_kmers;
 
-  ::std::vector<KMerInfo> ret;
-  ret.reserve(seq.size() - window_length.get());
+  min_kmers.push_back(kmers.front());
 
-  for (int i = 0; i <= len - l; ++i)
-    ret.push_back(
-        detail::AdjustOrigin(detail::KMerFrom(detail::ViewFrom(seq, i, l),
-                                              detail::ViewFrom(com, i, l), kk),
-                             i));
+  for (auto i = 1; i < wlen - 1; ++i)
+    if (kmers[i] < min_kmers.back())
+      min_kmers.push_back(kmers[i]);
 
-  for (int u = 1; u < wlen; ++u) {
-    auto ul = u + kk - 1;
+  for (auto&& idx : detail::MinByK(kmers, wlen))
+    min_kmers.push_back(kmers[idx]);
 
-    ret.push_back(detail::KMerFrom(detail::ViewFrom(seq, 0, ul),
-                                   detail::ViewFrom(com, 0, ul), kk));
+  auto old_end = min_kmers.size();
+  min_kmers.push_back(kmers.back());
 
-    auto origin = len - ul;
+  for (auto i = 1; i < wlen - 1; ++i)
+    if (kmers[kmers.size() - i - 1] < min_kmers.back())
+      min_kmers.push_back(kmers[kmers.size() - i - 1]);
 
-    ret.push_back(detail::AdjustOrigin(
-        detail::KMerFrom(detail::ViewFrom(seq, origin, ul),
-                         detail::ViewFrom(com, origin, ul), kk),
-        origin));
-  }
+  auto cutoff = ::std::begin(min_kmers);
+  ::std::advance(cutoff, old_end);
 
-  return ret;
+  ::std::reverse(cutoff, ::std::end(min_kmers));
+
+  min_kmers.erase(::std::unique(::std::begin(min_kmers), ::std::end(min_kmers)),
+                  ::std::end(min_kmers));
+
+  return min_kmers;
 }
 
 }  // namespace blue

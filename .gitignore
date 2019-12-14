@@ -1,5 +1,7 @@
 # custom
 
+*.py
+
 build/**
 
 include/config.hpp

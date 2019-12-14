@@ -8,14 +8,17 @@
 #include <unordered_set>
 #include <vector>
 
-#include "alignment/alignment.hpp"
+#include <alignment/alignment.hpp>
+#include <minimizers/minimizers.hpp>
+
 #include "config.hpp"
 #include "mapper.hpp"
 
 namespace util {
 
 ::std::string ToLower(::std::string s) noexcept {
-  for (auto&& c : s) c = ::std::tolower(c);
+  for (auto&& c : s)
+    c = ::std::tolower(c);
   return s;
 }
 
@@ -211,8 +214,6 @@ int main(int argc, char** argv, char** env) {
   auto source_length = static_cast<unsigned>(source.sequence.size());
   auto target_length = static_cast<unsigned>(target.sequence.size());
 
-  fragments.clear();
-  fragments.shrink_to_fit();
   reference.clear();
   reference.shrink_to_fit();
 
@@ -249,4 +250,20 @@ int main(int argc, char** argv, char** env) {
 
   if (::util::ToLower(response) == "y")
     ::std::cerr << cigar << ::std::endl;
+
+  // return 0;
+
+  ::std::cerr << "Calculating kMers..." << ::std::endl;
+
+  auto a = 0;
+
+  ::std::vector<::std::vector<::blue::KMerInfo>> kmers;
+  for (auto&& frag : fragments)
+    a += ::blue::minimizers(frag->sequence.data(),
+                            blue::SequenceLength{
+                                static_cast<unsigned>(frag->sequence.length())},
+                            blue::KType{15}, blue::WindowLength{5})
+             .size();
+
+  ::std::cout << a << ::std::endl;
 }
