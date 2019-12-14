@@ -39,5 +39,5 @@ matrix:
         - CXX=clang++
 
 script:
-  - cmake . && make
+  - cmake -DCMAKE_BUILD_TYPE=Release . && make
   - ./alignment_tests
