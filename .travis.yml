@@ -6,8 +6,7 @@ matrix:
   # GCC 9, linux
   include: 
     - os: linux
-      dist: bionic
-      env: 
+      env:
         - CC=gcc-9 
         - CXX=g++-9
         - CXXFLAGS="-std=c++17 -stdlib=libc++"
