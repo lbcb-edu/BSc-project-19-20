@@ -27,39 +27,31 @@ inline unsigned CustomOrdering(const char c) noexcept {
 }
 
 ::std::vector<KMerInfo> GenerateFrom(const char* seq, unsigned l, unsigned k) {
-  KMerInfo reg{0, 0, false}, inv{0, 0, true};
+  unsigned reg{0}, inv{0};
 
   using ::std::get;
 
-  for (auto i = 0; i < k; ++i) {
-    get<0>(reg) <<= 2;
-    get<0>(inv) <<= 2;
-
-    get<0>(reg) |= CustomOrdering(seq[i]);
-    get<0>(inv) |= Complement(CustomOrdering(seq[l - i - 1]));
-  }
+  for (auto i = 0; i < k; ++i)
+    reg = (reg << 2) | CustomOrdering(seq[i]),
+    inv = (inv << 2) | Complement(CustomOrdering(seq[l - i - 1]));
 
   ::std::vector<KMerInfo> ret;
 
   ret.reserve(l - k + 1);
-  ret.push_back(reg <= inv ? reg : inv);
+
+  bool less = reg <= inv;
+
+  ret.emplace_back(less ? reg : inv, 0, !less);
 
   unsigned mask = k == 16 ? ~0 : ((1 << (2 * k)) - 1);
 
   for (auto i = k; i < l; ++i) {
-    ++get<1>(reg);
-    ++get<1>(inv);
+    reg = ((reg << 2) | CustomOrdering(seq[i])) & mask,
+    inv = ((inv << 2) | Complement(CustomOrdering(seq[l - i - 1]))) & mask;
 
-    get<0>(reg) <<= 2;
-    get<0>(inv) <<= 2;
+    less = reg <= inv;
 
-    get<0>(reg) |= CustomOrdering(seq[i]);
-    get<0>(inv) |= Complement(CustomOrdering(seq[l - i - 1]));
-
-    get<0>(reg) &= mask;
-    get<0>(inv) &= mask;
-
-    ret.push_back(reg <= inv ? reg : inv);
+    ret.emplace_back(less ? reg : inv, i - k + 1, !less);
   }
 
   return ret;
@@ -70,7 +62,7 @@ template <typename T>
   const auto sz = v.size();
 
   ::std::vector<int> mins(sz, -1);
-  ::std::vector<int> s{{0}};
+  ::std::vector<int> s{0};
 
   for (auto i = 1; i < sz; ++i) {
     while (s.size() && v[s.back()] > v[i])

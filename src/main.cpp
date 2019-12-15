@@ -1,4 +1,4 @@
-#include <bioparser/bioparser.hpp>
+#include <algorithm>
 #include <cctype>
 #include <iostream>
 #include <limits>
@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+
+#include <bioparser/bioparser.hpp>
 
 #include <alignment/alignment.hpp>
 #include <minimizers/minimizers.hpp>
@@ -125,7 +127,7 @@ int main(int argc, char** argv, char** env) {
   if (argc == 2 &&
       ("-v" == (arg1 = ::util::ToLower(argv[1])) || "--version" == arg1))
     ::std::cerr << ::util::Version() << ::util::Terminator{EXIT_SUCCESS};
-  else if ((argc != 3 && argc != 7) || "-h" == arg1 || "--help" == arg1)
+  else if ((argc != 3 && argc < 7) || "-h" == arg1 || "--help" == arg1)
     ::util::DisplayHelp(::std::cerr) << ::util::Terminator{EXIT_SUCCESS};
 
   // clang-format off
@@ -265,25 +267,52 @@ int main(int argc, char** argv, char** env) {
 
   // return 0;
 
-  ::std::cerr << "Calculating kMers..."
+  ::std::cerr << "\nCalculating kMers..."
               << "\n";
 
   ::std::unordered_map<unsigned, unsigned> occurences;
+  occurences.reserve(50'000'000);
+
   unsigned counter{0};
 
-  // TODO: add command line arguments and other statistics
-
-  ::std::ios_base::sync_with_stdio(false);
-  ::std::cin.tie(nullptr);
+  auto k = argc >= 8 ? ::std::stoi(argv[7]) : 15;
+  auto w = argc >= 9 ? ::std::stoi(argv[8]) : 5;
+  auto f = argc >= 10 ? ::std::stod(argv[9]) : 0.001;
 
   for (auto&& frag : fragments) {
     for (auto&& [kmer, u, v] :
          minimizers(frag->sequence.data(),
                     blue::SequenceLength{
                         static_cast<unsigned>(frag->sequence.length())},
-                    blue::KType{15}, blue::WindowLength{5}))
+                    blue::KType{k}, blue::WindowLength{w}))
       ++occurences[kmer];
   }
 
-  ::std::cout << "\nNumber of distinct kmers: " << occurences.size() << ".\n";
+  ::std::cout << "Number of distinct kmers: " << occurences.size() << ".\n";
+
+  ::std::vector<::std::pair<unsigned, unsigned>> pairs(
+      ::std::make_move_iterator(occurences.begin()),
+      ::std::make_move_iterator(occurences.end()));
+
+  occurences.clear();
+
+  fragments.clear();
+  fragments.shrink_to_fit();
+
+  ::std::sort(pairs.begin(), pairs.end(),
+              [](auto const& a, auto const& b) { return a.second < b.second; });
+
+  unsigned singletons =
+      ::std::find_if(pairs.begin(), pairs.end(),
+                     [](auto const& p) { return p.second != 1; }) -
+      pairs.begin();
+
+  ::std::cout << "Singleton ratio: "
+              << static_cast<double>(singletons) / pairs.size() << ".\n";
+
+  ::std::cout
+      << "Number of occurences of most frequent minimizer (when top " << f
+      << " percent are ignored): "
+      << pairs[static_cast<unsigned>((1.0 - f) * pairs.size()) - 1].second
+      << "\n";
 }
