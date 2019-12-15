@@ -27,21 +27,26 @@ bool EndsWith(const ::std::string& str, const ::std::string& ext) noexcept {
 }
 
 ::std::ostream& DisplayHelp(::std::ostream& out) noexcept {
-  out << "Mapper that displays input genome statistics." << ::std::endl
+  out << "Mapper that displays input genome statistics."
+      << "\n"
       << "Arguments: [fragments] [reference] [alignmentType] [match] "
          "[mismatch] [gap]."
-      << ::std::endl
-      << " - fragments: input file in a FASTA or FASTQ format" << ::std::endl
-      << " - reference: input file in a FASTA format" << ::std::endl
+      << "\n"
+      << " - fragments: input file in a FASTA or FASTQ format"
+      << "\n"
+      << " - reference: input file in a FASTA format"
+      << "\n"
       << " - alignmentType: the alignment algorithm used for aligning two "
          "random "
          "sequences from the first file options: nw (Needleman-Wunsch), sw "
          "(Smith-Waterman) or ov (overlap algorithm)"
-      << ::std::endl
-      << " - match: the cost of matching bases" << ::std::endl
-      << " - mismatch: the cost of mismatching bases" << ::std::endl
+      << "\n"
+      << " - match: the cost of matching bases"
+      << "\n"
+      << " - mismatch: the cost of mismatching bases"
+      << "\n"
       << " - gap: the cost of a gap in either source or target sequence"
-      << ::std::endl;
+      << "\n";
 
   return out;
 }
@@ -69,9 +74,9 @@ using namespace ::mapper;
 
   auto avg = total / (double)sequences.size();
 
-  out << " - number of sequences: " << sequences.size() << ::std::endl
-      << " - average sequence length: " << avg << ::std::endl
-      << " - max sequence length: " << max << ::std::endl
+  out << " - number of sequences: " << sequences.size() << "\n"
+      << " - average sequence length: " << avg << "\n"
+      << " - max sequence length: " << max << "\n"
       << " - min sequence length: " << min;
 
   return out;
@@ -82,7 +87,7 @@ struct Terminator {
 };
 
 ::std::ostream& operator<<(::std::ostream& out, Terminator t) {
-  out << ::std::endl;
+  out << "\n";
   ::std::exit(t.status);
 }
 
@@ -184,23 +189,28 @@ int main(int argc, char** argv, char** env) {
    *
    */
 
-  ::std::cerr << "Starting with sequence loading." << ::std::endl;
+  ::std::cerr << "Starting with sequence loading."
+              << "\n";
 
   auto fragments = using_fasta ? ::mapper::Parse<::mapper::Sequence>(src)
                                : ::mapper::Parse<::mapper::QSequence>(src);
 
-  ::std::cerr << "Loaded fragments." << ::std::endl;
+  ::std::cerr << "Loaded fragments."
+              << "\n";
 
   auto reference = ::mapper::Parse<::mapper::Sequence>(dest);
 
-  ::std::cerr << "Loaded reference." << ::std::endl;
+  ::std::cerr << "Loaded reference."
+              << "\n\n";
 
   using ::util::operator<<;
 
-  ::std::cerr << "Fragment statistics: " << ::std::endl
-              << fragments << ::std::endl
-              << "Reference statistics: " << ::std::endl
-              << reference << ::std::endl;
+  ::std::cerr << "Fragment statistics: "
+              << "\n"
+              << fragments << "\n"
+              << "Reference statistics: "
+              << "\n"
+              << reference << "\n";
 
   /*
    *
@@ -217,19 +227,19 @@ int main(int argc, char** argv, char** env) {
   reference.clear();
   reference.shrink_to_fit();
 
-  ::std::cerr << ::std::endl
+  ::std::cerr << "\n"
               << "Aligning two random sequences, query length: "
-              << source_length << ", target length: " << target_length
-              << ::std::endl;
+              << source_length << ", target length: " << target_length << "\n";
 
   // there is much more memory that the program owns but does not use
   // it is leftover from storing sequences
   ::std::cerr << "Estimated (active) memory usage: "
               << (8 * target_length * source_length) / (1 << 20)
-              << " megabytes." << ::std::endl;
+              << " megabytes."
+              << "\n";
 
   ::std::string cigar;
-  unsigned int target_begin;
+  unsigned target_begin;
 
   using namespace ::blue;
 
@@ -239,8 +249,9 @@ int main(int argc, char** argv, char** env) {
       Match{match_cost}, Mismatch{mismatch_cost}, Gap{gap_cost}, cigar,
       target_begin);
 
-  ::std::cerr << "Done." << ::std::endl;
-  ::std::cerr << "Alignment score: " << score << ::std::endl;
+  ::std::cerr << "Done."
+              << "\n";
+  ::std::cerr << "Alignment score: " << score << "\n";
 
   ::std::cerr << "Cigar length is " << cigar.size() << "."
               << " Do you want to print it (y/n)? ";
@@ -249,21 +260,29 @@ int main(int argc, char** argv, char** env) {
   ::std::cin >> response;
 
   if (::util::ToLower(response) == "y")
-    ::std::cerr << cigar << ::std::endl;
+    ::std::cerr << cigar << "\n";
 
   // return 0;
 
-  ::std::cerr << "Calculating kMers..." << ::std::endl;
+  ::std::cerr << "Calculating kMers..."
+              << "\n";
 
-  auto a = 0;
+  ::std::unordered_map<unsigned, unsigned> occurences;
+  unsigned counter{0};
 
-  ::std::vector<::std::vector<::blue::KMerInfo>> kmers;
-  for (auto&& frag : fragments)
-    a += ::blue::minimizers(frag->sequence.data(),
-                            blue::SequenceLength{
-                                static_cast<unsigned>(frag->sequence.length())},
-                            blue::KType{15}, blue::WindowLength{5})
-             .size();
+  // TODO: add command line arguments and other statistics
 
-  ::std::cout << a << ::std::endl;
+  ::std::ios_base::sync_with_stdio(false);
+  ::std::cin.tie(nullptr);
+
+  for (auto&& frag : fragments) {
+    for (auto&& [kmer, u, v] :
+         minimizers(frag->sequence.data(),
+                    blue::SequenceLength{
+                        static_cast<unsigned>(frag->sequence.length())},
+                    blue::KType{15}, blue::WindowLength{5}))
+      ++occurences[kmer];
+  }
+
+  ::std::cout << "\nNumber of distinct kmers: " << occurences.size() << ".\n";
 }

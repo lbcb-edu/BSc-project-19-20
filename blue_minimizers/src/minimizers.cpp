@@ -69,8 +69,8 @@ template <typename T>
 ::std::vector<int> MinByK(const ::std::vector<T>& v, unsigned k) {
   const auto sz = v.size();
 
-  ::std::vector<int> mins(sz);
-  ::std::vector<int> s{0};
+  ::std::vector<int> mins(sz, -1);
+  ::std::vector<int> s{{0}};
 
   for (auto i = 1; i < sz; ++i) {
     while (s.size() && v[s.back()] > v[i])
@@ -107,10 +107,9 @@ template <typename T>
   auto wlen = window_length.get();
   auto klen = k.get();
 
-  //::std::cout << sequence << ::std::endl;
-
   ::std::vector<KMerInfo> kmers(
       std::move(detail::GenerateFrom(sequence, slen, klen)));
+
   decltype(kmers) min_kmers;
 
   min_kmers.push_back(kmers.front());
