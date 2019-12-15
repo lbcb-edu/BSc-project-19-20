@@ -357,9 +357,9 @@ auto printMinimizerStats(VecSeqPtr const& reads,
               [](auto const& l, auto const& r) { return l.second > r.second; });
 
     auto n_singletons_lambda = [&vec]() -> std::uint64_t {
+        auto constexpr pivot = KMerCnt{0, 1};
         auto it = std::lower_bound(
-            vec.begin(), vec.end(),
-            std::make_pair(std::uint64_t{0}, std::uint64_t{1}),
+            vec.begin(), vec.end(), pivot,
             [](auto const& l, auto const& r) { return l.second > r.second; });
 
         if (it == vec.end())
@@ -427,7 +427,7 @@ int main(int argc, char* argv[]) {
         auto ref = mapper::loadFile(path_to_ref, ref_type);
 
         // Report end of file loading
-        std::cout << "Finsihed loading files\n\ngi";
+        std::cout << "Finsihed loading files\n\n";
 
         // Prinit minimizers stats for reads
         std::cerr << "Procesing reads minimizers data...\n";

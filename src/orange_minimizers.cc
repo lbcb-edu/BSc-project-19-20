@@ -43,7 +43,7 @@ public:
      *
      * @return true if it's empty
      */
-    bool empyt() const { return raw_queue_.empty(); }
+    bool empty() const { return raw_queue_.empty(); }
 
     /**
      * @brief Returnt the Kmer with the smallest value,
@@ -202,10 +202,13 @@ auto findMinimizers(std::string_view seq, std::uint32_t k,
         push();
     };
 
-    auto min_and_pop = [&queue, &minimizers] {
+    auto min_and_pop = [&queue, &minimizers,
+                        prev_min = DelimiterKMer]() mutable {
         auto const& curr_min = queue.min();
-        if (minimizers.empty() || minimizers.back() != curr_min)
+        if (prev_min != curr_min) {
             minimizers.push_back(curr_min);
+            prev_min = curr_min;
+        }
         // double pop because
         // we store original and complement
         queue.pop();
@@ -220,7 +223,7 @@ auto findMinimizers(std::string_view seq, std::uint32_t k,
         shift_push();
     }
 
-    while (win_end < end && !queue.empyt())
+    while (win_end < end && !queue.empty())
         ++win_end, min_and_pop();
     // clang-format on
 
