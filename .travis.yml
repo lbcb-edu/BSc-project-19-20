@@ -40,4 +40,4 @@ matrix:
 
 script:
   - cmake -DCMAKE_BUILD_TYPE=Release . && make
-  - ./alignment_tests
+  - ./alignment_tests && ./minimizers_tests
