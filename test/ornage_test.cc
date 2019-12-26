@@ -59,6 +59,7 @@ TEST(Minimizers, s15k3win5) {
                              {17, 1, 0}, {17, 12, 0}, {52, 0, 0}};
 
     auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 3, 5);
+    std::sort(algo_ans.begin(), algo_ans.end());
 
     EXPECT_EQ(correct_ans, algo_ans);
 }
@@ -73,6 +74,7 @@ TEST(Minimizers, s15k1win1) {
               {1, 7, 1},  {1, 8, 1}, {1, 11, 0}, {1, 12, 1}, {1, 14, 1}};
 
     auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 1, 1);
+    std::sort(algo_ans.begin(), algo_ans.end());
 
     EXPECT_EQ(correct_ans, algo_ans);
 }
@@ -89,6 +91,7 @@ TEST(Minimizers, s64k16win32) {
               {1657740985, 0, 0}};
 
     auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 16, 32);
+    std::sort(algo_ans.begin(), algo_ans.end());
 
     EXPECT_EQ(correct_ans, algo_ans);
 }
@@ -119,6 +122,7 @@ TEST(Minimizers, s64k16win8) {
               {1378656084, 1, 0}, {1808868141, 48, 0}, {2821135848, 0, 1}};
 
     auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 16, 8);
+    std::sort(algo_ans.begin(), algo_ans.end());
 
     EXPECT_EQ(correct_ans, algo_ans);
 }
@@ -131,6 +135,7 @@ TEST(Minimizers, s16k5w8) {
         KMers{{75, 5, 0}, {97, 8, 1}, {114, 0, 1}, {434, 10, 0}, {625, 11, 1}};
 
     auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 5, 8);
+    std::sort(algo_ans.begin(), algo_ans.end());
 
     EXPECT_EQ(correct_ans, algo_ans);
 }

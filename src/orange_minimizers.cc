@@ -3,75 +3,40 @@
 #include <algorithm>
 #include <queue>
 #include <deque>
+#include <set>
 
 #include "orange_minimizers.h"
 
 namespace orange {
 namespace minimizers {
 
-/**
- * @brief Represents a KMer in sequence
- *      flagged as minimizer in at least
- *      one search window.
- */
-struct KMerMarked {
-    KMer const raw_;
-    bool marked_;
-};
+using MinimsPos = std::set<std::size_t>;
 
-/**
- * @brief std::vector of @ref orange::minimizers::KMerMarked
- */
-using KMersMarked = std::vector<KMerMarked>;
-
-using KMMIterator = KMersMarked::iterator;
-
-/**
- * @brief K-Mare queue with O(1) minimum element access
- */
-class MinKQueue {
+class MinKPosQueue {
 public:
-    /**
-     * @brief Adds a Kmer to the back of the queue
-     *
-     * @param kmare
-     */
-    void push(KMerMarked& kmer) {
-        raw_queue_.push(kmer);
-        while (!min_queue_.empty() && min_queue_.back().get().raw_ > kmer.raw_)
-            min_queue_.pop_back();
+    MinKPosQueue(KMers const& kmers) : kmers_{kmers} {}
 
-        min_queue_.push_back(raw_queue_.back());
+    void push(std::size_t pos) {
+        raw_queue_.push(pos);
+        while (!min_queue_.empty() && kmers_[min_queue_.back()] > kmers_[pos])
+            min_queue_.pop_back();
+        min_queue_.push_back(pos);
     }
 
-    /**
-     * @brief Removes an element from the front of the queue
-     */
     void pop() {
-        if (!min_queue_.empty() &&
-            raw_queue_.front().get().raw_ == min_queue_.front().get().raw_)
+        if (raw_queue_.front() == min_queue_.front())
             min_queue_.pop_front();
         raw_queue_.pop();
     }
 
-    /**
-     * @brief Checks if MinKQueue is empty
-     *
-     * @return true if it's empty
-     */
     bool empty() const { return raw_queue_.empty(); }
 
-    /**
-     * @brief returns the KMerMakred reference with the smallest value,
-     *      aka. minimizer of the sliding window
-     *
-     * @return KMer
-     */
-    auto min() { return min_queue_.front(); }
+    std::size_t pos_min() const { return min_queue_.front(); }
 
 private:
-    std::queue<std::reference_wrapper<KMerMarked>> raw_queue_;
-    std::deque<std::reference_wrapper<KMerMarked>> min_queue_;
+    KMers const& kmers_;
+    std::queue<std::size_t> raw_queue_;
+    std::deque<std::size_t> min_queue_;
 };
 
 /**
@@ -111,8 +76,8 @@ std::uint32_t complementMask(std::uint32_t const mask) { return 3 - mask; }
  * @return KMersMarked all k-mers from the sequence
  *      with a negative flag value (they are not included by default)
  */
-KMersMarked generateKMersFlagged(std::string_view sequence, std::uint32_t k) {
-    auto kmers = KMersMarked{};
+KMers generateKMersFlagged(std::string_view sequence, std::uint32_t k) {
+    auto kmers = KMers{};
     auto curr_kmer = std::uint32_t{0};
     auto comp_kmer = std::uint32_t{0};
     auto mask = (k < 16 ? ((1 << (2 * k)) - 1) : KMerValMax);
@@ -129,8 +94,8 @@ KMersMarked generateKMersFlagged(std::string_view sequence, std::uint32_t k) {
 
     kmers.reserve(2 * (sequence.size() - k + 1));
     auto append_kmers = [&kmers, &curr_kmer, &comp_kmer](std::uint32_t pos) {
-        kmers.push_back({{curr_kmer, pos, false}, false});
-        kmers.push_back({{comp_kmer, pos, false}, false});
+        kmers.emplace_back(curr_kmer, pos, false);
+        kmers.emplace_back(comp_kmer, pos, false);
     };
 
     for (auto i = std::uint32_t{0}; i < k; ++i) {
@@ -156,24 +121,24 @@ KMersMarked generateKMersFlagged(std::string_view sequence, std::uint32_t k) {
  * @param scan_start
  * @param win_len
  */
-void makrMinimizers(KMMIterator const begin, KMMIterator const end,
+void markMinimizers(KMers const& kmers, MinimsPos& minims_pos,
+                    std::size_t const begin_pos, std::size_t const end_pos,
                     std::uint32_t scan_start, std::uint32_t win_len) {
-    auto queue = MinKQueue{};
+    auto queue = MinKPosQueue{kmers};
     auto win_end = scan_start + win_len;
 
-    auto mark_and_pop = [&queue] {
-        queue.min().get().marked_ = true;
+    auto mark_and_pop = [&queue, &minims_pos] {
+        minims_pos.insert(queue.pos_min());
         queue.pop(), queue.pop();  // pop original, pop complement
     };
 
-    for (auto curr = begin; curr != end; ++curr) {
-        auto& kmer = *curr;
-        if (std::get<1>(kmer.raw_) >= win_end) {
+    for (auto pos = begin_pos; pos != end_pos; ++pos) {
+        if (std::get<1>(kmers[pos]) >= win_end) {
             mark_and_pop();
             ++win_end;
         }
 
-        queue.push(kmer);
+        queue.push(pos);
     }
 
     mark_and_pop();
@@ -182,7 +147,30 @@ void makrMinimizers(KMMIterator const begin, KMMIterator const end,
 KMers minimizers(char const* sequence, std::uint32_t sequence_length,
                  std::uint32_t k, std::uint32_t window_length) {
     auto sequence_view = std::string_view{sequence, sequence_length};
-    auto kmers = generateKMersFlagged(sequence_view, k);
+    auto all_kmers = generateKMersFlagged(sequence_view, k);
+    auto minims_pos = MinimsPos{};
+    auto minims = KMers{};
+
+    markMinimizers(all_kmers, minims_pos, 0, all_kmers.size(), 0,
+                   window_length);
+
+    // end minimizers, front
+    for (auto u = std::uint32_t{1}; u < window_length; ++u)
+        markMinimizers(all_kmers, minims_pos, 0, 2 * u, 0, u);
+
+    // end minimizers, back
+    if (k < window_length) {
+        // TODO: Implement search
+        for (auto u = k; u < window_length; ++u)
+            markMinimizers(all_kmers, minims_pos, sz - 2 * u, sz,
+                           sequence_length - u, window_length);
+    }
+
+    /* clang-format off */
+    for (auto const& pos : minims_pos)
+        minims.push_back(std::move(all_kmers[pos]));
+    /* clang-format on */
+    return minims;
 }
 }  // namespace minimizers
 }  // namespace orange
