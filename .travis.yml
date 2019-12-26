@@ -9,7 +9,7 @@ matrix:
       env:
         - CC=gcc-9 
         - CXX=g++-9
-        - CXXFLAGS="-std=c++17 -stdlib=libc++"
+        - CXXFLAGS="-std=c++17"
       addons:
         apt:
           sources:

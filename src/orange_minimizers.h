@@ -97,12 +97,6 @@ namespace minimizers {
  */
 using KMerUSet = std::unordered_set<KMer>;
 
-/**
- * @brief unordered map with @ref orange::minimizers::KMerVal as keys
- */
-template <typename T>
-using KMerValUMap = std::unordered_map<KMerVal, T>;
-
 }  // namespace minimizers
 }  // namespace orange
 
