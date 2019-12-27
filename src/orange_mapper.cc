@@ -8,7 +8,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <random>
 
 #include <bioparser/bioparser.hpp>
 
@@ -35,6 +34,7 @@ struct option const long_options[] = {{"help", no_argument, NULL, 'h'},
                                       {"gap", required_argument, 0, 'g'},
                                       {"kmer", required_argument, NULL, 'k'},
                                       {"window", required_argument, NULL, 'w'},
+                                      {"frequency", required_argument, NULL, 'f'},
                                       {NULL, 0, NULL, 0}};
 
 /**
@@ -52,13 +52,12 @@ struct Sequence {
      */
     Sequence(char const* name, std::uint32_t name_len, char const* seq,
              std::uint32_t seq_len)
-        : name_{name}, name_len_{name_len}, seq_{seq}, seq_len_{seq_len} {}
+        : name_{name}, name_len_{name_len}, seq_(seq, seq_len) {}
 
     char const* name_;              //<<< sequence name
     std::uint32_t const name_len_;  //<<< sequence name length
 
-    char const* seq_;              //<<< genome sequence
-    std::uint32_t const seq_len_;  //<<< genome sequence
+    std::string seq_;
 };
 
 /**
@@ -133,7 +132,11 @@ auto printHelp() {
               << "reference is expected to be FASTA.\n\n"
               << "Usage:\n\t orange_mapper <reads> <reference> "
               << "-t <alignment_type> -m <match> -s <mismatch> -g <gap>\n\n"
-              << "Options:\n\t-h\thelp\n\t-v\tverions\n";
+              << "Options:\n\t-h\thelp\n\t-v\tverions\n\n\t"
+                    "-t\talignment type\n\t-m\tmatch score\n\t"
+                    "-s\tmismatch score\n\t-g\tgap score\n\n\t"
+                    "-k\tk-mer size\n\t-w\twindow length\n\t"
+                    "-f\tignore top frequent minimizers\n";
     std::exit(EXIT_SUCCESS);
 }
 
@@ -295,7 +298,7 @@ auto printStats(std::string_view const& origin, VecSeqPtr const& vec_seq) {
 
     std::for_each(begin(vec_seq), end(vec_seq),
                   [&avg_len, &min_len, &max_len](auto& seq_ptr) {
-                      auto const& seq_len = seq_ptr->seq_len_;
+                      auto const& seq_len = static_cast<std::uint32_t>(seq_ptr->seq_.size());
 
                       avg_len += seq_len;
                       min_len = std::min(min_len, seq_len);
@@ -312,24 +315,13 @@ auto printStats(std::string_view const& origin, VecSeqPtr const& vec_seq) {
               << "\tMaximum length: " << max_len << '\n';
 }
 
-/**
- * @brief
- *
- * @param reads
- * @param ref
- * @param align_type
- * @param match
- * @param mismatch
- * @param gap
- * @return auto
- */
 auto printRngAlign(Sequence const& query, Sequence const& target,
                    alignment::AlignConf conf) {
     auto cigar = std::string{};
     auto target_begin = std::uint32_t{};
 
     auto const align_score = alignment::pairwiseAlignment(
-        query.seq_, query.seq_len_, target.seq_, target.seq_len_, conf.type_,
+        query.seq_.c_str(), query.seq_.size(), target.seq_.c_str(), target.seq_.size(), conf.type_,
         conf.match_, conf.mismatch_, conf.gap_, cigar, target_begin);
 
     std::cerr << "Random alignment score: " << align_score << '\n'
@@ -338,13 +330,13 @@ auto printRngAlign(Sequence const& query, Sequence const& target,
 
 auto printMinimizerStats(VecSeqPtr const& reads,
                          minimizers::MinimizerConf const& conf) {
-    auto minims = minimizers::KMerValUMap<std::uint64_t>{};
+    auto minims = std::unordered_map<minimizers::KMerVal, std::uint64_t>{};
     using KMerCnt = std::pair<minimizers::KMer, std::uint64_t>;
 
     for (auto const& it : reads) {
         auto& read = *it.get();
         for (auto const& minim : minimizers::minimizers(
-                 read.seq_, read.seq_len_, conf.k_, conf.win_len_)) {
+                 read.seq_.c_str(), read.seq_.size(), conf.k_, conf.win_len_)) {
             ++minims[std::get<0>(minim)];
         }
     }
@@ -441,4 +433,3 @@ int main(int argc, char* argv[]) {
     return EXIT_SUCCESS;
 }
 
-// cmake -DCMAKE_BUILD_TYPE=Release ..

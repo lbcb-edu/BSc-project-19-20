@@ -75,7 +75,7 @@ std::uint32_t complementMask(std::uint32_t const mask) { return 3 - mask; }
  * @return KMersMarked all k-mers from the sequence
  *      with a negative flag value (they are not included by default)
  */
-KMers generateKMersFlagged(std::string_view sequence, std::uint32_t k) {
+KMers generateKMers(char const* sequence, std::uint32_t sequence_length, std::uint32_t k) {
     auto kmers = KMers{};
     auto curr_kmer = std::uint32_t{0};
     auto comp_kmer = std::uint32_t{0};
@@ -91,7 +91,7 @@ KMers generateKMersFlagged(std::string_view sequence, std::uint32_t k) {
         comp_kmer >>= 2, comp_kmer |= base_mask << (2 * k - 2);
     };
 
-    kmers.reserve(2 * (sequence.size() - k + 1));
+    kmers.reserve(2 * (sequence_length - k + 1));
     auto append_kmers = [&kmers, &curr_kmer, &comp_kmer](std::uint32_t pos) {
         kmers.emplace_back(curr_kmer, pos, false);
         kmers.emplace_back(comp_kmer, pos, true);
@@ -103,7 +103,7 @@ KMers generateKMersFlagged(std::string_view sequence, std::uint32_t k) {
     }
 
     append_kmers(0);
-    for (auto i = k; i < sequence.size(); ++i) {
+    for (auto i = k; i < sequence_length; ++i) {
         shift_add_curr(sequence[i]);
         shift_add_comp(sequence[i]);
 
@@ -153,8 +153,7 @@ void markMinimizers(KMers const& kmers, MinimsPos& minims_pos,
 
 KMers minimizers(char const* sequence, std::uint32_t sequence_length,
                  std::uint32_t k, std::uint32_t window_length) {
-    auto sequence_view = std::string_view{sequence, sequence_length};
-    auto all_kmers = generateKMersFlagged(sequence_view, k);
+    auto all_kmers = generateKMers(sequence, sequence_length, k);
     auto minims_pos = MinimsPos{};
     auto minims = KMers{};
 
