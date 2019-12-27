@@ -91,10 +91,12 @@ KMers generateKMers(char const* sequence, std::uint32_t sequence_length, std::ui
         comp_kmer >>= 2, comp_kmer |= base_mask << (2 * k - 2);
     };
 
-    kmers.reserve(2 * (sequence_length - k + 1));
+    kmers.reserve(sequence_length - k + 1);
     auto append_kmers = [&kmers, &curr_kmer, &comp_kmer](std::uint32_t pos) {
-        kmers.emplace_back(curr_kmer, pos, false);
-        kmers.emplace_back(comp_kmer, pos, true);
+            if (curr_kmer <= comp_kmer)
+                kmers.emplace_back(curr_kmer, pos, false);
+            else
+                kmers.emplace_back(comp_kmer, pos, true);
     };
 
     for (auto i = std::uint32_t{0}; i < k; ++i) {
@@ -129,7 +131,7 @@ void markMinimizers(KMers const& kmers, MinimsPos& minims_pos,
 
     auto mark_and_pop = [&queue, &minims_pos] {
         minims_pos.insert(queue.pos_min());
-        queue.pop(), queue.pop();  // pop original, pop complement
+        queue.pop();
     };
 
     for (auto pos = begin_pos; pos != end_pos; ++pos) {
@@ -162,15 +164,15 @@ KMers minimizers(char const* sequence, std::uint32_t sequence_length,
 
     // end minimizers, front
     for (auto u = std::uint32_t{1}; u < window_length; ++u)
-        markMinimizers(all_kmers, minims_pos, 0, 2 * u, 0, u, u);
+        markMinimizers(all_kmers, minims_pos, 0, u, 0, u, u);
 
     // end minimizers, back
     if (k < window_length) {
-        auto rev_start = all_kmers.size() - 2;
+        auto rev_start = all_kmers.size() - 1;
         for (auto u = k; u < window_length; ++u) {
             markMinimizers(all_kmers, minims_pos, rev_start, all_kmers.size(),
                            sequence_length - u, sequence_length, window_length);
-            rev_start -= 2;
+            --rev_start;
         }
     }
 

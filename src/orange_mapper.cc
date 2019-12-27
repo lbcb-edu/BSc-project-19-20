@@ -344,7 +344,9 @@ auto printMinimizerStats(VecSeqPtr const& reads,
     std::cerr << "Number of distincs minimizers for reads: " << minims.size()
               << '\n';
 
-    auto vec = std::vector<KMerCnt>{minims.begin(), minims.end()};
+    auto vec = std::vector<KMerCnt>(
+        std::make_move_iterator(minims.begin()),
+        std::make_move_iterator(minims.end()));
     std::sort(vec.begin(), vec.end(),
               [](auto const& l, auto const& r) { return l.second > r.second; });
 
