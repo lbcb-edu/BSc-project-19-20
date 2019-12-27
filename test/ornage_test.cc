@@ -105,6 +105,7 @@ TEST(Minimizers, s15k7win5) {
               {2986, 0, 1}, {4102, 7, 1}, {5121, 8, 1}};
 
     auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 7, 5);
+    std::sort(algo_ans.begin(), algo_ans.end());
 
     EXPECT_EQ(correct_ans, algo_ans);
 }

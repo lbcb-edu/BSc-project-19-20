@@ -1,6 +1,5 @@
 #include <string_view>
 #include <functional>
-#include <algorithm>
 #include <queue>
 #include <deque>
 #include <set>
@@ -95,7 +94,7 @@ KMers generateKMersFlagged(std::string_view sequence, std::uint32_t k) {
     kmers.reserve(2 * (sequence.size() - k + 1));
     auto append_kmers = [&kmers, &curr_kmer, &comp_kmer](std::uint32_t pos) {
         kmers.emplace_back(curr_kmer, pos, false);
-        kmers.emplace_back(comp_kmer, pos, false);
+        kmers.emplace_back(comp_kmer, pos, true);
     };
 
     for (auto i = std::uint32_t{0}; i < k; ++i) {
@@ -123,7 +122,8 @@ KMers generateKMersFlagged(std::string_view sequence, std::uint32_t k) {
  */
 void markMinimizers(KMers const& kmers, MinimsPos& minims_pos,
                     std::size_t const begin_pos, std::size_t const end_pos,
-                    std::uint32_t scan_start, std::uint32_t win_len) {
+                    std::uint32_t scan_start, std::uint32_t scan_end,
+                    std::uint32_t win_len) {
     auto queue = MinKPosQueue{kmers};
     auto win_end = scan_start + win_len;
 
@@ -141,7 +141,14 @@ void markMinimizers(KMers const& kmers, MinimsPos& minims_pos,
         queue.push(pos);
     }
 
-    mark_and_pop();
+    /* clang-format off */
+
+    while (!queue.empty() && win_end < scan_end)
+        mark_and_pop(), ++win_end;
+    if (!queue.empty())
+        mark_and_pop();
+
+    /* clang-format on */
 }
 
 KMers minimizers(char const* sequence, std::uint32_t sequence_length,
@@ -152,18 +159,20 @@ KMers minimizers(char const* sequence, std::uint32_t sequence_length,
     auto minims = KMers{};
 
     markMinimizers(all_kmers, minims_pos, 0, all_kmers.size(), 0,
-                   window_length);
+                   sequence_length, window_length);
 
     // end minimizers, front
     for (auto u = std::uint32_t{1}; u < window_length; ++u)
-        markMinimizers(all_kmers, minims_pos, 0, 2 * u, 0, u);
+        markMinimizers(all_kmers, minims_pos, 0, 2 * u, 0, u, u);
 
     // end minimizers, back
     if (k < window_length) {
-        // TODO: Implement search
-        for (auto u = k; u < window_length; ++u)
-            markMinimizers(all_kmers, minims_pos, sz - 2 * u, sz,
-                           sequence_length - u, window_length);
+        auto rev_start = all_kmers.size() - 2;
+        for (auto u = k; u < window_length; ++u) {
+            markMinimizers(all_kmers, minims_pos, rev_start, all_kmers.size(),
+                           sequence_length - u, sequence_length, window_length);
+            rev_start -= 2;
+        }
     }
 
     /* clang-format off */
