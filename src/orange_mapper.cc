@@ -331,7 +331,7 @@ auto printRngAlign(Sequence const& query, Sequence const& target,
 auto printMinimizerStats(VecSeqPtr const& reads,
                          minimizers::MinimizerConf const& conf) {
     auto minims = std::unordered_map<minimizers::KMerVal, std::uint64_t>{};
-    using KMerCnt = std::pair<minimizers::KMer, std::uint64_t>;
+    using KMerCnt = std::pair<minimizers::KMerVal, std::uint64_t>;
 
     for (auto const& it : reads) {
         auto& read = *it.get();
@@ -351,7 +351,7 @@ auto printMinimizerStats(VecSeqPtr const& reads,
               [](auto const& l, auto const& r) { return l.second > r.second; });
 
     auto n_singletons_lambda = [&vec]() -> std::uint64_t {
-        auto constexpr pivot = KMerCnt{{0, 0, 0}, 1};
+        auto constexpr pivot = KMerCnt{0, 1};
         auto it = std::lower_bound(
             vec.begin(), vec.end(), pivot,
             [](auto const& l, auto const& r) { return l.second > r.second; });
