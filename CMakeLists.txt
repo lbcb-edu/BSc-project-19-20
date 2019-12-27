@@ -12,6 +12,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS_DEBUG "-g -fsanitize=address")
 set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -DNDEBUG")
 
+find_package(Threads)
+
 configure_file(
   "${PROJECT_SOURCE_DIR}/cmake/config.hpp.in"
   "${PROJECT_BINARY_DIR}/include/config.hpp"
@@ -49,6 +51,8 @@ target_link_libraries(
   blue_alignment
   blue_common
   gtest
+  pthread
+  ${CMAKE_THREAD_LIBS_INIT}
 )
 
 target_include_directories(
@@ -65,6 +69,8 @@ target_link_libraries(
   blue_common
   blue_minimizers
   gtest
+  pthread
+  ${CMAKE_THREAD_LIBS_INIT}
 )
 
 target_include_directories(
