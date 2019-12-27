@@ -61,14 +61,14 @@ if __name__ == "__main__":
     # Comment out to override default params
     seq_len, k, win_len = map(int, input().split())
     
-    seq = gen_seq()
+    seq = gen_seq(seq_len)
     minimizers = find_minimizers(seq, k, win_len, 0, seq_len)
 
     for u in range(1, win_len):
         minimizers.extend(find_minimizers(seq, k, u, 0, u))
-    # if k < win_len:
-    #     for u in range(k, win_len):
-    #         minimizers.extend(find_minimizers(seq, k, u, seq_len - u, seq_len))
+    if k < win_len:
+        for u in range(k, win_len):
+            minimizers.extend(find_minimizers(seq, k, u, seq_len - u, seq_len))
 
     minimizers = sorted_and_unique(minimizers)
     

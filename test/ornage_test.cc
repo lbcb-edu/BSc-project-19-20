@@ -96,13 +96,26 @@ TEST(Minimizers, s64k16win32) {
     EXPECT_EQ(correct_ans, algo_ans);
 }
 
-TEST(Minimizers, s15k7win5) {
+TEST(Minimizers, s15k7win5_v1) {
     using namespace orange::minimizers;
 
     auto sequence = std::string{"AAAACAGATGGGGTT"};
     auto correct_ans =
         KMers{{24, 6, 1},   {98, 5, 1},   {395, 4, 1}, {1582, 3, 1},
               {2986, 0, 1}, {4102, 7, 1}, {5121, 8, 1}};
+
+    auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 7, 5);
+    std::sort(algo_ans.begin(), algo_ans.end());
+
+    EXPECT_EQ(correct_ans, algo_ans);
+}
+
+TEST(Minimizers, s15k7win5_v2) {
+    using namespace orange::minimizers;
+
+    auto sequence = std::string{"TGATGCCATCACGCA"};
+    auto correct_ans = KMers{{388, 5, 0},  {1555, 6, 0}, {6220, 7, 0},
+                             {6918, 2, 0}, {8497, 8, 0}, {11696, 0, 0}};
 
     auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 7, 5);
     std::sort(algo_ans.begin(), algo_ans.end());
@@ -136,6 +149,36 @@ TEST(Minimizers, s16k5w8) {
         KMers{{75, 5, 0}, {97, 8, 1}, {114, 0, 1}, {434, 10, 0}, {625, 11, 1}};
 
     auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 5, 8);
+    std::sort(algo_ans.begin(), algo_ans.end());
+
+    EXPECT_EQ(correct_ans, algo_ans);
+}
+
+TEST(Minimizers, s128k13w5) {
+    using namespace orange::minimizers;
+
+    auto sequence = std::string{
+        "AGCGACCGAGCAATAGTCTGGTGGACTCCAAAGTCAGCGGGGCTATTGACGAATTTGGCACCTTAACTCC"
+        "ACTATCAGTTATCCAGGTCCCAGCAGCACCCCTTCCTTGGTGTCATATCGGCAATTCC"};
+    auto correct_ans =
+        KMers{{164542, 98, 0},   {208170, 29, 1},   {465984, 88, 0},
+              {658171, 99, 0},   {832683, 28, 1},   {1078426, 11, 1},
+              {1204713, 68, 0},  {1418117, 45, 1},  {1434063, 27, 0},
+              {1562622, 97, 1},  {1863936, 89, 0},  {1910450, 8, 1},
+              {2064497, 82, 0},  {2632686, 100, 0}, {2705426, 60, 0},
+              {2879001, 104, 0}, {3106093, 74, 1},  {3566864, 108, 1},
+              {3610232, 5, 0},   {4204587, 96, 0},  {4363393, 58, 0},
+              {4818854, 69, 0},  {5672470, 44, 1},  {5881906, 35, 1},
+              {6700122, 113, 0}, {7405728, 93, 0},  {7601306, 34, 0},
+              {8020094, 75, 0},  {8257991, 83, 0},  {8463902, 66, 0},
+              {8478236, 25, 0},  {10143992, 3, 1},  {10146650, 42, 0},
+              {10821705, 61, 0}, {11263492, 20, 1}, {12514433, 17, 0},
+              {12534518, 80, 1}, {13687897, 2, 0},  {14069520, 49, 0},
+              {14771968, 38, 1}, {23785738, 51, 0}, {26800488, 114, 0},
+              {27144125, 12, 0}, {28034089, 52, 0}, {28086156, 1, 1},
+              {30215621, 0, 0},  {32079553, 55, 1}, {40093088, 115, 0}};
+
+    auto algo_ans = minimizers(sequence.c_str(), sequence.size(), 13, 5);
     std::sort(algo_ans.begin(), algo_ans.end());
 
     EXPECT_EQ(correct_ans, algo_ans);
