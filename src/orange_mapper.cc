@@ -349,7 +349,7 @@ auto printMinimizerStats(VecSeqPtr const& reads,
               [](auto const& l, auto const& r) { return l.second > r.second; });
 
     auto n_singletons_lambda = [&vec]() -> std::uint64_t {
-        auto constexpr pivot = KMerCnt{0, 1};
+        auto constexpr pivot = KMerCnt{{0, 0, 0}, 1};
         auto it = std::lower_bound(
             vec.begin(), vec.end(), pivot,
             [](auto const& l, auto const& r) { return l.second > r.second; });
