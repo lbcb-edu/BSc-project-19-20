@@ -26,16 +26,17 @@ enum FileType { kFasta, kFastq, kUnsupported };
 /**
  * Struct array representing long optins
  */
-struct option const long_options[] = {{"help", no_argument, NULL, 'h'},
-                                      {"version", no_argument, NULL, 'v'},
-                                      {"type", required_argument, NULL, 't'},
-                                      {"match", required_argument, 0, 'm'},
-                                      {"mismatch", required_argument, 0, 's'},
-                                      {"gap", required_argument, 0, 'g'},
-                                      {"kmer", required_argument, NULL, 'k'},
-                                      {"window", required_argument, NULL, 'w'},
-                                      {"frequency", required_argument, NULL, 'f'},
-                                      {NULL, 0, NULL, 0}};
+struct option const long_options[] = {
+    {"help", no_argument, NULL, 'h'},
+    {"version", no_argument, NULL, 'v'},
+    {"type", required_argument, NULL, 't'},
+    {"match", required_argument, 0, 'm'},
+    {"mismatch", required_argument, 0, 's'},
+    {"gap", required_argument, 0, 'g'},
+    {"kmer", required_argument, NULL, 'k'},
+    {"window", required_argument, NULL, 'w'},
+    {"frequency", required_argument, NULL, 'f'},
+    {NULL, 0, NULL, 0}};
 
 /**
  * @brief Holds FASTA/FASTQ sequecnes
@@ -133,10 +134,10 @@ auto printHelp() {
               << "Usage:\n\t orange_mapper <reads> <reference> "
               << "-t <alignment_type> -m <match> -s <mismatch> -g <gap>\n\n"
               << "Options:\n\t-h\thelp\n\t-v\tverions\n\n\t"
-                    "-t\talignment type\n\t-m\tmatch score\n\t"
-                    "-s\tmismatch score\n\t-g\tgap score\n\n\t"
-                    "-k\tk-mer size\n\t-w\twindow length\n\t"
-                    "-f\tignore top frequent minimizers\n";
+                 "-t\talignment type\n\t-m\tmatch score\n\t"
+                 "-s\tmismatch score\n\t-g\tgap score\n\n\t"
+                 "-k\tk-mer size\n\t-w\twindow length\n\t"
+                 "-f\tignore top frequent minimizers\n";
     std::exit(EXIT_SUCCESS);
 }
 
@@ -298,7 +299,8 @@ auto printStats(std::string_view const& origin, VecSeqPtr const& vec_seq) {
 
     std::for_each(begin(vec_seq), end(vec_seq),
                   [&avg_len, &min_len, &max_len](auto& seq_ptr) {
-                      auto const& seq_len = static_cast<std::uint32_t>(seq_ptr->seq_.size());
+                      auto const& seq_len =
+                          static_cast<std::uint32_t>(seq_ptr->seq_.size());
 
                       avg_len += seq_len;
                       min_len = std::min(min_len, seq_len);
@@ -321,8 +323,9 @@ auto printRngAlign(Sequence const& query, Sequence const& target,
     auto target_begin = std::uint32_t{};
 
     auto const align_score = alignment::pairwiseAlignment(
-        query.seq_.c_str(), query.seq_.size(), target.seq_.c_str(), target.seq_.size(), conf.type_,
-        conf.match_, conf.mismatch_, conf.gap_, cigar, target_begin);
+        query.seq_.c_str(), query.seq_.size(), target.seq_.c_str(),
+        target.seq_.size(), conf.type_, conf.match_, conf.mismatch_, conf.gap_,
+        cigar, target_begin);
 
     std::cerr << "Random alignment score: " << align_score << '\n'
               << "CIGAR:\n\t" << cigar << "\n\n";
@@ -344,9 +347,8 @@ auto printMinimizerStats(VecSeqPtr const& reads,
     std::cerr << "Number of distincs minimizers for reads: " << minims.size()
               << '\n';
 
-    auto vec = std::vector<KMerCnt>(
-        std::make_move_iterator(minims.begin()),
-        std::make_move_iterator(minims.end()));
+    auto vec = std::vector<KMerCnt>(std::make_move_iterator(minims.begin()),
+                                    std::make_move_iterator(minims.end()));
     std::sort(vec.begin(), vec.end(),
               [](auto const& l, auto const& r) { return l.second > r.second; });
 
@@ -434,4 +436,3 @@ int main(int argc, char* argv[]) {
 
     return EXIT_SUCCESS;
 }
-

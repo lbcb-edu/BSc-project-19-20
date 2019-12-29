@@ -91,36 +91,36 @@ KMers generateKMers(char const* sequence, std::uint32_t sequence_length,
 KMers minimizers(char const* sequence, std::uint32_t sequence_length,
                  std::uint32_t k, std::uint32_t window_length) {
     auto kmers = generateKMers(sequence, sequence_length, k);
-    auto minims = KMers{};
+    auto minimz = KMers{};
     auto i = std::size_t{1};
 
     // Fill imaginary min_queue
-    minims.push_back(kmers.front());
+    minimz.push_back(kmers.front());
     for (auto j = std::size_t{1}; j < window_length; ++j)
-        if (std::get<0>(minims.back()) > std::get<0>(kmers[i])) {
-            minims.push_back(std::move(kmers[i]));
+        if (std::get<0>(minimz.back()) > std::get<0>(kmers[i])) {
+            minimz.push_back(std::move(kmers[i]));
             i = j + 1;
         }
 
     /* clang-format off */
-    // Simulate min_queue on minims vector
-    auto prev_peek_pos = minims.size() - 1;
+    // Simulate min_queue on minimz vector
+    auto prev_peek_pos = minimz.size() - 1;
     while (i < kmers.size()) {
-        while (minims.back() != minims[prev_peek_pos] &&
-               std::get<0>(minims.back()) > std::get<0>(kmers[i]))
-            minims.pop_back();
-        minims.push_back(std::move(kmers[i++]));
+        while (minimz.back() != minimz[prev_peek_pos] &&
+               std::get<0>(minimz.back()) > std::get<0>(kmers[i]))
+            minimz.pop_back();
+        minimz.push_back(std::move(kmers[i++]));
 
-        if (std::get<0>(minims.back()) <
-            std::get<0>(minims[prev_peek_pos]))
-                prev_peek_pos = minims.size() - 1;
-        if (std::get<1>(minims.back()) -
-            std::get<1>(minims[prev_peek_pos]) == window_length)
+        if (std::get<0>(minimz.back()) <
+            std::get<0>(minimz[prev_peek_pos]))
+                prev_peek_pos = minimz.size() - 1;
+        if (std::get<1>(minimz.back()) -
+            std::get<1>(minimz[prev_peek_pos]) == window_length)
                 ++prev_peek_pos;
     }
     /* clang-format on */
 
-    return minims;
+    return minimz;
 }
 }  // namespace minimizers
 }  // namespace orange
