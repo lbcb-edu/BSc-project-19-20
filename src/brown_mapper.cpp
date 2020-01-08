@@ -161,7 +161,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  if (argc != 16) {
+  if (argc != 17) {
     fprintf(
         stderr,
         "Please provide 2 files in FASTA/FASTQ format along with "
@@ -170,6 +170,44 @@ int main(int argc, char **argv) {
         "types: 0 - local, 1 - global, 2 - semi_global\n");
     exit(EXIT_FAILURE);
   }
+  // reference genome parsing
+  if (has_suffix(convertToString(argv[16], strlen(argv[16])), ".fa")) {
+    vector<unique_ptr<FASTAfile>> fasta_objects;
+    string pathFa = convertToString(argv[16], strlen(argv[16]));
+    auto fasta_parser =
+        bioparser::createParser<bioparser::FastaParser, FASTAfile>(pathFa);
+    fasta_parser->parse(fasta_objects, -1);
+    string &query = fasta_objects[0]->sequence;
+    vector<tuple<unsigned int, unsigned int, bool>> minimizersListRef;
+    vector<tuple<unsigned int, unsigned int, bool>> minimizersListFinal;
+    minimizersListRef = brown::minimizers(query.c_str(), query.size(), k, w);
+    map<int, int> printListRef;
+    for (int i = 0; i < minimizersListRef.size(); i++) {
+      printListRef[get<0>(minimizersListRef[i])]++;
+    }
+    vector<pair<int, int>> kulRef;
+    copy(printListRef.begin(), printListRef.end(),
+         back_inserter<vector<pair<int, int>>>(kulRef));
+    sort(kulRef.begin(), kulRef.end(),
+         [](const pair<int, int> &l, const pair<int, int> &r) {
+           if (l.second != r.second) return l.second > r.second;
+
+           return l.first > r.first;
+         });
+    vector<int> frequent;
+    for (int i = 0; i < f; i++) {
+      frequent.push_back(kulRef[i].first);
+    }
+  } else {
+    fprintf(
+        stderr,
+        "Please provide 2 files in FASTA/FASTQ format along with "
+        "alignment type and match, mismatch and gap costs, k, window width and "
+        "number of top frequent minimizers not taken into acount\nAlignment "
+        "types: 0 - local, 1 - global, 2 - semi_global\n");
+    exit(EXIT_FAILURE);
+  }
+
   // parse 1st file as FASTA
   if (has_suffix(convertToString(argv[13], strlen(argv[13])), ".fasta") ||
       has_suffix(convertToString(argv[13], strlen(argv[13])), ".fa") ||
@@ -228,6 +266,7 @@ int main(int argc, char **argv) {
             "most frequent: "
          << kul[f].second << "\n";
     cout << "\n";
+
   }
 
   // parse 1st file as FASTQ
