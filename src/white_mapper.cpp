@@ -4,6 +4,7 @@
 // - write file statistics function
 // - restructure code to google C++ style
 // - move functions to classes where suitable
+// - reorder task exectution when valid files are given
 
 #include <iostream>
 #include <algorithm>
@@ -13,6 +14,7 @@
 #include "../white_alignment/white_alignment.hpp"
 #include "../white_minimizers/white_minimizers.hpp"
 #include <bioparser/bioparser.hpp>
+#include <map>
 
 
 class FASTAformat {
@@ -48,6 +50,10 @@ class FASTQformat {
 			this->quality_length = quality_length;
 		}
 };
+
+bool comparator(std::pair<std::tuple<unsigned int, unsigned int, bool>, int> a, std::pair<std::tuple<unsigned int, unsigned int, bool>, int> b) {
+	return a.second < b.second;
+}
 
 
 int main(int argc, char* argv[]) {
@@ -92,38 +98,77 @@ int main(int argc, char* argv[]) {
 				}
 				std::sort(sequence_calc.begin(), sequence_calc.end());
 				
-				// outputFileStatistics(first_file, fasta_objects.size(), sum, sequence_calc[0], sequence_calc[sequence_calc.size() - 1]);
+				outputFileStatistics(first_file, fasta_objects.size(), sum, sequence_calc[0], sequence_calc[sequence_calc.size() - 1]);
 			
-                // std::string Cigar;
-                // unsigned int t_begin;
-                // int firstInd = rand() % fasta_objects.size();
-                // int secondInd = rand() % fasta_objects.size();
-                // const char* seq1 = fasta_objects[firstInd]->sequence;
-                // const char* seq2 = fasta_objects[secondInd]->sequence;
-                // int lenght1 = fasta_objects[firstInd]->sequence_length;
-                // int length2 = fasta_objects[secondInd]->sequence_length;
-                // int optimalAlign = white::PairwiseAlignment(seq1, lenght1, seq2, length2, white::AlignmentType::kGlobal, 2, -1, -2, Cigar, t_begin);
-                // std::cout << Cigar << std::endl;
-                // break;
+                std::string Cigar;
+                unsigned int t_begin;
+                int firstInd = rand() % fasta_objects.size();
+                int secondInd = rand() % fasta_objects.size();
+                const char* seq1 = fasta_objects[firstInd]->sequence;
+                const char* seq2 = fasta_objects[secondInd]->sequence;
+                int lenght1 = fasta_objects[firstInd]->sequence_length;
+                int length2 = fasta_objects[secondInd]->sequence_length;
+                int optimalAlign = white::PairwiseAlignment(seq1, lenght1, seq2, length2, white::AlignmentType::kGlobal, 2, -1, -2, Cigar, t_begin);
+                std::cout << Cigar << std::endl;
+
 				
 				
-				// for (int i = 0; i < fasta_objects.size(); i++) {
-					std::vector<std::tuple<unsigned int, unsigned int, bool>> calc;
-					// std::cout << fasta_objects[0]->sequence_length;
-					// std::cout << fasta_objects[0]->sequence;
-					// return 0;
-					const char* seq = fasta_objects[0]->sequence;
-					int len = fasta_objects[0]->sequence_length;
-					calc = white::minimizers(seq, len, k, w);
-					std::cout << calc.size() << std::endl;
-					std::set<unsigned int> uni;
-					for (auto it : calc) {
-						uni.insert(std::get<0>(it));
+				std::vector<std::tuple<unsigned int, unsigned int, bool>> minimizers;
+				
+				for (int i = 0; i < fasta_objects.size(); i++) {
+					std::vector<std::tuple<unsigned int, unsigned int, bool>> minimizers_of_sequence = white::minimizers(fasta_objects[i]->sequence,
+																										(unsigned int)fasta_objects[i]->sequence_length,
+																										k,
+																										w);
+					for (auto minimizer : minimizers_of_sequence) {
+						minimizers.emplace_back(minimizer);
 					}
-					std::cout << uni.size();
-				// }
+				}
+
+				std::set<std::tuple<unsigned int, unsigned int, bool>> distinct_minimizers;
+				std::map<std::tuple<unsigned int, unsigned int, bool>, int> occurences_of_minimizers;
+
+				for (auto minimizer : minimizers) {
+					distinct_minimizers.insert(minimizer);
+					if (occurences_of_minimizers.count(minimizer)) {
+						occurences_of_minimizers[minimizer]++;
+					} else {
+						occurences_of_minimizers[minimizer] = 1;
+					}
+				}
+
+				std::vector<std::pair<std::tuple<unsigned int, unsigned int, bool>, int>> occurences_of_minimizers_vector;
+
+				for (auto it : occurences_of_minimizers) {
+					occurences_of_minimizers_vector.push_back(it);
+				}
+
+
+				sort(occurences_of_minimizers_vector.begin(), occurences_of_minimizers_vector.end(), comparator);
+
+				std::cout << "Number of distinct minimizers: " << distinct_minimizers.size() << std::endl;
+
+				int singletons = 0;
+				for (auto it : occurences_of_minimizers_vector) {
+					if (it.second == 1) {
+						singletons++;	
+					}
+					else {
+						break;
+					}
+				}
+
+				std::cout << "Fraction of singletons: " << (double)singletons / minimizers.size() << std::endl;
+
+				int skip = minimizers.size() * f;
+				// std::cout << skip << std::endl;
+				// std::cout << occurences_of_minimizers_vector.size() << std::endl;
+
+				std::cout << "Number of occurences of the most frequent  minimizer when the top "
+						 << f <<  " frequent minimizers are not taken in account: "
+							<< occurences_of_minimizers_vector[occurences_of_minimizers_vector.size() - skip - 1].second << std::endl;
 			}
-			
+
 			break;
 	}
 

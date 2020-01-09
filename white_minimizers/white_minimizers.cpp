@@ -3,62 +3,48 @@
 #include <iostream>
 #include <algorithm>
 #include <tuple>
+#include <set>
+#include <map>
 
 namespace white{
+
     std::vector<std::tuple<unsigned int, unsigned int, bool>> minimizers(const char* sequence, unsigned int sequence_length,
-                                                                         unsigned int k,
-                                                                         unsigned int window_length){
+                                                                         unsigned int k, unsigned int window_length) {
+        
         std::vector<std::tuple<unsigned int, unsigned int, bool>> ret;
 
-        std::string radni = sequence;
-        int l = window_length + k - 1;
+        std::set<std::tuple<unsigned int, unsigned int, bool>> minimizer_set;
+        std::map<char, int> val = {{'A', 1}, {'T', 2}, {'G', 3}, {'C', 0}};
+        std::map<char, int> rev_val = {{'A', 2}, {'T', 1}, {'G', 0}, {'C', 3}};
+
+        unsigned int len = k + window_length - 1;
+        std::tuple<unsigned int, unsigned int, bool> kmer, rev_kmer;
+
+        for (int i = 0, i_rev = sequence_length - 1; i <= sequence_length - len && i_rev  >= len - 1; i++, i_rev--) {
+
+            std::tuple<unsigned int, unsigned int, bool> minimal;
+            for (int j = i, j_rev = i_rev; j <= i + len - k && j_rev >= i_rev - k; j++, j_rev--) {
+                unsigned int k_mer = 0;
+                unsigned int k_mer_rev = 0;
+                for (unsigned int m = 0; m < k; m++) {
+                    k_mer |= val[sequence[j + m]];
+                    k_mer_rev |= rev_val[sequence[j_rev - m]];
+                    if (m + 1 < k) {
+                        k_mer <<= 2;
+                        k_mer_rev <<= 2;
+                    }
+                }
+                kmer = std::make_tuple(k_mer, j, true);
+                rev_kmer = std::make_tuple(k_mer_rev, j_rev, false);
+                minimal = std::min(kmer, rev_kmer);
+            }
+            minimizer_set.emplace(minimal);
+        }
+
+        for (auto minimizer : minimizer_set) {
+            ret.emplace_back(minimizer);
+        }
         
-        // pravi(numV) i reverse(numR)
-        std::vector<int> numV, numR;
-
-        for (auto it : radni) {
-            switch (it) {
-                case 'C':
-                    numV.push_back(0);
-                    numR.push_back(3);
-                case 'A':
-                    numV.push_back(1);
-                    numR.push_back(2);
-                case 'T':
-                    numV.push_back(2);
-                    numR.push_back(1);
-                case 'G':
-                    numV.push_back(3);
-                    numR.push_back(0);
-            }
-        }
-
-        for (int i = 0; i < sequence_length - window_length; i++) {
-            for (int j = i; j < i + window_length; j++) {
-                unsigned int tmp_low = 4294967295U, index_pos = 0;
-                std::vector<std::tuple<unsigned int, unsigned int, bool>> window_calc;
-                unsigned int kmer = 0, kmer_rev = 0;
-                for (int m = j; m < j + k; m++) {
-                    kmer |= numV[m];
-                    kmer_rev |= numR[m];
-                    kmer <<= 2;
-                    kmer_rev <<= 2;
-                }
-                kmer |= numV[numV.size() - 1];
-                kmer_rev |= numR[numR.size() - 1];
-                if (kmer < tmp_low) {
-                    tmp_low = kmer;
-                    index_pos = j;
-                    window_calc.push_back(std::make_tuple(kmer, index_pos, 1));
-                } else if (kmer_rev < tmp_low) {
-                    tmp_low = kmer_rev;
-                    index_pos = j;
-                    window_calc.push_back(std::make_tuple(kmer_rev, index_pos, 0));
-                }
-                std::sort(window_calc.begin(), window_calc.end());
-                ret.push_back(window_calc[0]);
-            }
-        }
         return ret;
     }
 }
