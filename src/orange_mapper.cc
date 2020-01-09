@@ -343,12 +343,10 @@ auto printRngAlign(Sequence const& query, Sequence const& target,
               << "CIGAR:\n\t" << cigar << "\n\n";
 }
 
-
 auto printMinimizerStats(VecSeqPtr const& reads,
                          minimizers::MinimizerConf const& conf) {
-    using KMerCnt = std::pair<minimizers::KMerVal, std::uint64_t>;
     using MinimzMap = std::unordered_map<minimizers::KMerVal, std::uint64_t>;
-    using MinimzIter = MinimzMap::iterator;
+    using MinimizerIter = MinimzMap::iterator;
 
     auto minimz = std::unordered_map<minimizers::KMerVal, std::uint64_t>{};
 
@@ -363,28 +361,27 @@ auto printMinimizerStats(VecSeqPtr const& reads,
     std::cerr << "Number of distincs minimizers for reads: " << minimz.size()
               << '\n';
 
-    auto cmp = [](MinimzIter const& l, MinimzIter const& r) {
+    auto cmp = [](MinimizerIter const& l, MinimizerIter const& r) {
         return l->second > r->second;
     };
 
     auto n_singletons = std::uint64_t{0};
     auto ignore_cnt = minimz.size() * conf.f_ + 1;
-    auto ignore_set = std::set<MinimzIter, decltype(cmp)>(cmp);
+    auto ignore_set = std::set<MinimizerIter, decltype(cmp)>(cmp);
 
     for (auto iter = minimz.begin(); iter != minimz.end(); ++iter) {
         ignore_set.insert(iter);
         if (ignore_set.size() > ignore_cnt)
             ignore_set.erase(std::prev(ignore_set.end()));
-        
-        if (iter -> second == 1)
+
+        if (iter->second == 1)
             ++n_singletons;
     }
 
-    auto most_freq = (*ignore_set.rbegin()) -> second;
+    auto most_freq = (*ignore_set.rbegin())->second;
 
     ignore_set.erase(std::prev(ignore_set.end()));
-    for (auto const& it: ignore_set)
-        minimz.erase(it);
+    for (auto const& it : ignore_set) minimz.erase(it);
     ignore_set.clear();
 
     std::cerr << "Fraction: " << 1.0 * n_singletons / most_freq << '\n';
@@ -393,13 +390,36 @@ auto printMinimizerStats(VecSeqPtr const& reads,
 /**
  * @brief Creates a minimizer index for the reference genome
  */
-auto createRefMinimzIndex(std::string const& ref,
+MinimizerIndex createRefMinimzIndex(std::string const& ref,
                           minimizers::MinimizerConf const& conf) {
     auto ref_index = MinimizerIndex{};
+    using MinimizerIter = MinimizerIndex::iterator;
+    
     for (auto const& [kmer, pos, org] : minimizers::minimizers(
              ref.c_str(), ref.size(), conf.k_, conf.win_len_)) {
         ref_index[kmer].emplace_back(pos, org);
     }
+
+    auto cmp = [](MinimizerIter const& l, MinimizerIter const& r) {
+        return l->second.size() > r->second.size();
+    };
+
+    auto ignore_cnt = ref_index.size() * conf.f_;
+    auto ignore_set = std::set<MinimizerIter, decltype(cmp)>(cmp);
+
+    for (auto iter = ref_index.begin(); iter != ref_index.end(); ++iter) {
+        ignore_set.insert(iter);
+        if (ignore_set.size() > ignore_cnt)
+            ignore_set.erase(std::prev(ignore_set.end()));
+    }
+
+    /* clang-format: off */
+    for (auto const& it : ignore_set) 
+        ref_index.erase(it);
+    ignore_set.clear();
+    /* clang-format: on */
+
+    return ref_index;
 }
 
 // clang-format: off
@@ -413,7 +433,7 @@ ingored 2.) Minimizer index for each fragment seperatelly, used for fniding
         the longest linear chain should represent the best candidate for a good
 alignment between the pair. 4.) Call the alignment procedure
 
-**/
+*/
 // clang-fromat: on
 
 }  // namespace mapper
