@@ -127,9 +127,9 @@ int GetCeilIndex(vector<pair<int, int>> &matches, vector<int> &T, int l, int r,
   return r;
 }
 
-// LIS algorithm (nlogn)
+// LIS algorithm (nlogn) but modified to suit needs
 // https://www.geeksforgeeks.org/construction-of-longest-monotonically-increasing-subsequence-n-log-n/
-int LongestIncreasingSubsequence(vector<pair<int, int>> &matches, int n) {
+int LongestIncreasingSubsequence(vector<pair<int, int>> &matches, int n, int &t_begin, int &t_end) {
   vector<int> tailIndices(n, 0);
   vector<int> prevIndices(n, -1);
 
@@ -153,11 +153,8 @@ int LongestIncreasingSubsequence(vector<pair<int, int>> &matches, int n) {
       tailIndices[pos] = i;
     }
   }
-
-  cout << "LIS of given input" << endl;
-  for (int i = tailIndices[len - 1]; i >= 0; i = prevIndices[i])
-    cout << matches[i].second << " ";
-  cout << endl;
+  t_begin = matches[prevIndices[1]].second;
+  t_end = matches[tailIndices[len - 1]].second;
 
   return len;
 }
@@ -319,9 +316,6 @@ int main(int argc, char **argv) {
 
            return l.first > r.first;
          });
-    // for (int i = 0; i < f; i++) {
-    //   frequent1.push_back(kul[i].first);
-    // }
 
     cout << "Number of occurences of the most frequent minimizer without f "
             "most frequent: "
@@ -340,8 +334,11 @@ int main(int argc, char **argv) {
           matches.push_back(make_pair(i, j));
       }
     }
-    cout << "size: " << LongestIncreasingSubsequence(matches, matches.size())
-         << "\n";
+    int t_begin;
+    int t_end;
+    int size = LongestIncreasingSubsequence(matches, matches.size(), t_begin, t_end);
+    cout << "Fragment start and end index: " << t_begin << " - " << t_end << "\n";
+    cout << "size: " << size << "\n";
   }
 
   // parse 1st file as FASTQ

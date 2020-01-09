@@ -12,6 +12,7 @@ configure_file (
 
 include_directories ("${PROJECT_BINARY_DIR}/vendor/bioparser/include")
 add_subdirectory (vendor/bioparser EXCLUDE_FROM_ALL)
+#add_subdirectory(vendor/thread_pool EXCLUDE_FROM_ALL)
 add_subdirectory (brown_alignment)
 add_subdirectory (brown_minimizers)
 option(brown_tests "tests" ON)
@@ -20,6 +21,7 @@ add_executable (Mapper src/brown_mapper.cpp)
 target_link_libraries (Mapper bioparser)
 target_link_libraries (Mapper brown_alignment)
 target_link_libraries (Mapper brown_minimizers)
+#target_link_libraries (Mapper thread_pool)
 target_include_directories(Mapper PUBLIC
                           "${PROJECT_BINARY_DIR}"
                           "${PROJECT_SOURCE_DIR}/brown_alignment"
