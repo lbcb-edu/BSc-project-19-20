@@ -22,6 +22,15 @@ using KMerOrigin = bool;
  */
 using KMer = std::tuple<KMerVal, KMerPos, KMerOrigin>;
 
+
+/**
+ * @brief std::pair cintains K-Mer location info
+ *      position on the strand, stran type (original or complement)
+ */
+using KMerLoc = std::pair<KMerPos, KMerOrigin>;
+
+using KMerLocs = std::vector<KMerLoc>;
+
 constexpr auto KMerValMax = std::numeric_limits<KMerVal>::max();
 constexpr auto KMerPosMax = std::numeric_limits<KMerPos>::max();
 constexpr auto DelimiterKMer = KMer{KMerValMax, KMerPosMax, 0};

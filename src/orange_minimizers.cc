@@ -95,7 +95,7 @@ KMers minimizers(char const* sequence, std::uint32_t sequence_length,
     auto i = std::size_t{1};
 
     // Fill imaginary min_queue
-    minimz.push_back(kmers.front());
+    minimz.push_back(std::move(kmers.front()));
     for (auto j = std::size_t{1}; j < window_length; ++j)
         if (std::get<0>(minimz.back()) > std::get<0>(kmers[i])) {
             minimz.push_back(std::move(kmers[i]));
@@ -114,7 +114,7 @@ KMers minimizers(char const* sequence, std::uint32_t sequence_length,
         if (std::get<0>(minimz.back()) <
             std::get<0>(minimz[prev_peek_pos]))
                 prev_peek_pos = minimz.size() - 1;
-        if (std::get<1>(minimz.back()) -
+        else if (std::get<1>(minimz.back()) -
             std::get<1>(minimz[prev_peek_pos]) == window_length)
                 ++prev_peek_pos;
     }

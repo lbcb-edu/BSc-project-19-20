@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <set>
 
 #include <bioparser/bioparser.hpp>
 
@@ -36,6 +37,8 @@ struct option const long_options[] = {
     {"kmer", required_argument, NULL, 'k'},
     {"window", required_argument, NULL, 'w'},
     {"frequency", required_argument, NULL, 'f'},
+    // TODO: Option for the number of threads
+    // TODO: Option for including the CIGAR in PAF
     {NULL, 0, NULL, 0}};
 
 /**
@@ -85,16 +88,23 @@ struct FastQ : public Sequence {
     std::uint32_t const quality_str_len_;
 };
 
+using MinimizerIndex =
+    std::unordered_map<minimizers::KMerVal, minimizers::KMerLocs>;
+
+using SequencePtr = std::unique_ptr<Sequence>;
+
+using FastQPtr = std::unique_ptr<FastQ>;
+
 /**
  * @brief Vector of pointers to parsed @ref orange::mapper::Sequence
  */
-using VecSeqPtr = std::vector<std::unique_ptr<Sequence>>;
+using VecSeqPtr = std::vector<SequencePtr>;
 
 /**
  * @brief Vector of pointers to parsed @ref orange::mapper::FastQ
  *
  */
-using VecFastQPtr = std::vector<std::unique_ptr<FastQ>>;
+using VecFastQPtr = std::vector<FastQPtr>;
 
 /**
  * @brief Simple intarface for creating @ref bioparser FASTA parser
@@ -209,6 +219,8 @@ auto parseOptions(int argc, char* argv[], alignment::AlignConf& a_conf,
             case 'w':
                 m_conf.win_len_ = std::atoi(optarg);
                 break;
+            case 'f':
+                m_conf.f_ = std::atoi(optarg);
 
             default:
                 throw std::invalid_argument(
@@ -331,44 +343,78 @@ auto printRngAlign(Sequence const& query, Sequence const& target,
               << "CIGAR:\n\t" << cigar << "\n\n";
 }
 
+
 auto printMinimizerStats(VecSeqPtr const& reads,
                          minimizers::MinimizerConf const& conf) {
-    auto minims = std::unordered_map<minimizers::KMerVal, std::uint64_t>{};
     using KMerCnt = std::pair<minimizers::KMerVal, std::uint64_t>;
+    using MinimzMap = std::unordered_map<minimizers::KMerVal, std::uint64_t>;
+    using MinimzIter = MinimzMap::iterator;
+
+    auto minimz = std::unordered_map<minimizers::KMerVal, std::uint64_t>{};
 
     for (auto const& it : reads) {
         auto& read = *it.get();
         for (auto const& minim : minimizers::minimizers(
                  read.seq_.c_str(), read.seq_.size(), conf.k_, conf.win_len_)) {
-            ++minims[std::get<0>(minim)];
+            ++minimz[std::get<0>(minim)];
         }
     }
 
-    std::cerr << "Number of distincs minimizers for reads: " << minims.size()
+    std::cerr << "Number of distincs minimizers for reads: " << minimz.size()
               << '\n';
 
-    auto vec = std::vector<KMerCnt>(std::make_move_iterator(minims.begin()),
-                                    std::make_move_iterator(minims.end()));
-    std::sort(vec.begin(), vec.end(),
-              [](auto const& l, auto const& r) { return l.second > r.second; });
-
-    auto n_singletons_lambda = [&vec]() -> std::uint64_t {
-        auto constexpr pivot = KMerCnt{0, 1};
-        auto it = std::lower_bound(
-            vec.begin(), vec.end(), pivot,
-            [](auto const& l, auto const& r) { return l.second > r.second; });
-
-        if (it == vec.end())
-            throw std::range_error("No singletons!");
-        else
-            return static_cast<std::uint64_t>(vec.end() - it);
+    auto cmp = [](MinimzIter const& l, MinimzIter const& r) {
+        return l->second > r->second;
     };
 
-    auto most_freq = vec[static_cast<std::size_t>(conf.f_ * vec.size())].second;
-    auto n_singletons = n_singletons_lambda();
+    auto n_singletons = std::uint64_t{0};
+    auto ignore_cnt = minimz.size() * conf.f_ + 1;
+    auto ignore_set = std::set<MinimzIter, decltype(cmp)>(cmp);
+
+    for (auto iter = minimz.begin(); iter != minimz.end(); ++iter) {
+        ignore_set.insert(iter);
+        if (ignore_set.size() > ignore_cnt)
+            ignore_set.erase(std::prev(ignore_set.end()));
+        
+        if (iter -> second == 1)
+            ++n_singletons;
+    }
+
+    auto most_freq = (*ignore_set.rbegin()) -> second;
+
+    ignore_set.erase(std::prev(ignore_set.end()));
+    for (auto const& it: ignore_set)
+        minimz.erase(it);
+    ignore_set.clear();
 
     std::cerr << "Fraction: " << 1.0 * n_singletons / most_freq << '\n';
 }
+
+/**
+ * @brief Creates a minimizer index for the reference genome
+ */
+auto createRefMinimzIndex(std::string const& ref,
+                          minimizers::MinimizerConf const& conf) {
+    auto ref_index = MinimizerIndex{};
+    for (auto const& [kmer, pos, org] : minimizers::minimizers(
+             ref.c_str(), ref.size(), conf.k_, conf.win_len_)) {
+        ref_index[kmer].emplace_back(pos, org);
+    }
+}
+
+// clang-format: off
+/* TODO:
+
+    1.) Minimizer index for the reference genom, too frequent minimizers are
+ingored 2.) Minimizer index for each fragment seperatelly, used for fniding
+            matches with the reference genome
+
+    3.) From the list of all matches for a pair of sequences,
+        the longest linear chain should represent the best candidate for a good
+alignment between the pair. 4.) Call the alignment procedure
+
+**/
+// clang-fromat: on
 
 }  // namespace mapper
 }  // namespace orange
@@ -425,8 +471,6 @@ int main(int argc, char* argv[]) {
         // Report end of file loading
         std::cout << "Finsihed loading files\n\n";
 
-        // Prinit minimizers stats for reads
-        std::cerr << "Procesing reads minimizers data...\n";
         mapper::printMinimizerStats(reads, m_conf);
 
     } catch (std::exception const& e) {
