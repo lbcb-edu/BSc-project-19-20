@@ -117,6 +117,10 @@ int main(int argc, char **argv) {
   bool flag = false;
   int match = 0, mismatch = 0, gap = 0, k = 15, w = 5;
   float f = 0.001;
+  vector<int> frequentRef;
+  vector<int> frequent1;
+  vector<int> frequent2;
+  vector<tuple<unsigned int, unsigned int, bool>> minimizersListRef;
 
   char opt;
   while ((opt = getopt_long(argc, argv, "hvm:x:g:k:w:f:", options, NULL)) !=
@@ -178,9 +182,12 @@ int main(int argc, char **argv) {
         bioparser::createParser<bioparser::FastaParser, FASTAfile>(pathFa);
     fasta_parser->parse(fasta_objects, -1);
     string &query = fasta_objects[0]->sequence;
-    vector<tuple<unsigned int, unsigned int, bool>> minimizersListRef;
-    vector<tuple<unsigned int, unsigned int, bool>> minimizersListFinal;
     minimizersListRef = brown::minimizers(query.c_str(), query.size(), k, w);
+    for (int i = 0; i < minimizersListRef.size(); i++)
+    {
+      get<1>(minimizersListRef[i]) = i;
+    }
+    
     map<int, int> printListRef;
     for (int i = 0; i < minimizersListRef.size(); i++) {
       printListRef[get<0>(minimizersListRef[i])]++;
@@ -194,9 +201,8 @@ int main(int argc, char **argv) {
 
            return l.first > r.first;
          });
-    vector<int> frequent;
     for (int i = 0; i < f; i++) {
-      frequent.push_back(kulRef[i].first);
+      frequentRef.push_back(kulRef[i].first);
     }
   } else {
     fprintf(
@@ -239,6 +245,10 @@ int main(int argc, char **argv) {
     cout << "Beginning: " << target_begin << "\n";
     vector<tuple<unsigned int, unsigned int, bool>> minimizersList;
     minimizersList = brown::minimizers(query.c_str(), query.size(), k, w);
+    for (int i = 0; i < minimizersList.size(); i++)
+    {
+      get<1>(minimizersList[i]) = i;
+    }
     map<int, int> printList;
     for (int i = 0; i < minimizersList.size(); i++) {
       printList[get<0>(minimizersList[i])]++;
@@ -261,6 +271,9 @@ int main(int argc, char **argv) {
 
            return l.first > r.first;
          });
+    for (int i = 0; i < f; i++) {
+      frequent1.push_back(kul[i].first);
+    }
 
     cout << "Number of occurences of the most frequent minimizer without f "
             "most frequent: "
@@ -307,6 +320,10 @@ int main(int argc, char **argv) {
     cout << "Beginning: " << target_begin << "\n";
     vector<tuple<unsigned int, unsigned int, bool>> minimizersList;
     minimizersList = brown::minimizers(query.c_str(), query.size(), k, w);
+    for (int i = 0; i < minimizersList.size(); i++)
+    {
+      get<1>(minimizersList[i]) = i;
+    }
     map<int, int> printList;
     for (int i = 0; i < minimizersList.size(); i++) {
       printList[get<0>(minimizersList[i])]++;
@@ -329,6 +346,9 @@ int main(int argc, char **argv) {
 
            return l.first > r.first;
          });
+    for (int i = 0; i < f; i++) {
+      frequent1.push_back(kul[i].first);
+    }
 
     cout << "Number of occurences of the most frequent minimizer without f "
             "most frequent: "

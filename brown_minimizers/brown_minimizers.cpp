@@ -55,7 +55,6 @@ vector<tuple<unsigned int, unsigned int, bool>> minimizers(
         if (i + 1 == window_length + k - 1) {
           mins.push_back(make_tuple(smallest, pos, true));
           previous = smallest;
-          smallPos = pos;
         }
       }
     } else {
@@ -78,7 +77,6 @@ vector<tuple<unsigned int, unsigned int, bool>> minimizers(
       if (smallest != previous) {
         mins.push_back(make_tuple(smallest, pos, true));
         previous = smallest;
-        smallPos = pos;
       }
     }
   }
