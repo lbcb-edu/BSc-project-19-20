@@ -113,61 +113,54 @@ string convertToString(char *a, int size) {
   return s;
 }
 
-// Binary search 
-int GetCeilIndex(int arr[], vector<int>& T, int l, int r, 
-                 int key) 
-{ 
-    while (r - l > 1) { 
-        int m = l + (r - l) / 2; 
-        if (arr[T[m]] >= key) 
-            r = m; 
-        else
-            l = m; 
-    } 
-  
-    return r; 
-} 
+// Binary search
+int GetCeilIndex(vector<pair<int, int>> &matches, vector<int> &T, int l, int r,
+                 int key) {
+  while (r - l > 1) {
+    int m = l + (r - l) / 2;
+    if (matches[T[m]].second >= key)
+      r = m;
+    else
+      l = m;
+  }
 
-//LIS algorithm (nlogn)
-//https://www.geeksforgeeks.org/construction-of-longest-monotonically-increasing-subsequence-n-log-n/
-int LongestIncreasingSubsequence(vector<pair<int, int>> matches, int n) 
-{ 
-    // Add boundary case, when array n is zero
-    // Depend on smart pointers
-  
-    vector<int> tailIndices(n, 0); // Initialized with 0
-    vector<int> prevIndices(n, -1); // initialized with -1
-  
-    int len = 1; // it will always point to empty location
-    for (int i = 1; i < n; i++) {
-        if (matches[i].second < matches[tailIndices[0]].second) {
-            // new smallest value 
-            tailIndices[0] = i; 
-        } 
-        else if (matches[i].second > matches[tailIndices[len - 1]].second) { 
-            // arr[i] wants to extend largest subsequence 
-            prevIndices[i] = tailIndices[len - 1]; 
-            tailIndices[len++] = i; 
-        } 
-        else { 
-            // arr[i] wants to be a potential condidate of 
-            // future subsequence 
-            // It will replace ceil value in tailIndices 
-            // int pos = GetCeilIndex(arr, tailIndices, -1, 
-            //                        len - 1, arr[i]); 
-  
-            // prevIndices[i] = tailIndices[pos - 1]; 
-            // tailIndices[pos] = i; 
-        } 
-    } 
-  
-    // cout << "LIS of given input" << endl; 
-    // for (int i = tailIndices[len - 1]; i >= 0; i = prevIndices[i]) 
-    //     cout << arr[i] << " "; 
-    // cout << endl; 
-  
-    // return len; 
-} 
+  return r;
+}
+
+// LIS algorithm (nlogn)
+// https://www.geeksforgeeks.org/construction-of-longest-monotonically-increasing-subsequence-n-log-n/
+int LongestIncreasingSubsequence(vector<pair<int, int>> &matches, int n) {
+  vector<int> tailIndices(n, 0);
+  vector<int> prevIndices(n, -1);
+
+  int len = 1;
+  for (int i = 1; i < n; i++) {
+    if (matches[i].second < matches[tailIndices[0]].second) {
+      // new smallest value
+      tailIndices[0] = i;
+    } else if (matches[i].second > matches[tailIndices[len - 1]].second) {
+      // matches[i].second wants to extend largest subsequence
+      prevIndices[i] = tailIndices[len - 1];
+      tailIndices[len++] = i;
+    } else {
+      // matches[i].second wants to be a potential condidate of
+      // future subsequence
+      // It will replace ceil value in tailIndices
+      int pos =
+          GetCeilIndex(matches, tailIndices, -1, len - 1, matches[i].second);
+
+      prevIndices[i] = tailIndices[pos - 1];
+      tailIndices[pos] = i;
+    }
+  }
+
+  cout << "LIS of given input" << endl;
+  for (int i = tailIndices[len - 1]; i >= 0; i = prevIndices[i])
+    cout << matches[i].second << " ";
+  cout << endl;
+
+  return len;
+}
 
 int main(int argc, char **argv) {
   bool flag = false;
@@ -239,11 +232,10 @@ int main(int argc, char **argv) {
     fasta_parser->parse(fasta_objects, -1);
     string &query = fasta_objects[0]->sequence;
     minimizersListRef = brown::minimizers(query.c_str(), query.size(), k, w);
-    for (int i = 0; i < minimizersListRef.size(); i++)
-    {
+    for (int i = 0; i < minimizersListRef.size(); i++) {
       get<1>(minimizersListRef[i]) = i;
     }
-    
+
     map<int, int> printListRef;
     for (int i = 0; i < minimizersListRef.size(); i++) {
       printListRef[get<0>(minimizersListRef[i])]++;
@@ -302,8 +294,7 @@ int main(int argc, char **argv) {
     cout << "Beginning: " << target_begin << "\n";
     vector<tuple<unsigned int, unsigned int, bool>> minimizersList;
     minimizersList = brown::minimizers(query.c_str(), query.size(), k, w);
-    for (int i = 0; i < minimizersList.size(); i++)
-    {
+    for (int i = 0; i < minimizersList.size(); i++) {
       get<1>(minimizersList[i]) = i;
     }
     map<int, int> printList;
@@ -328,23 +319,29 @@ int main(int argc, char **argv) {
 
            return l.first > r.first;
          });
-    for (int i = 0; i < f; i++) {
-      frequent1.push_back(kul[i].first);
-    }
+    // for (int i = 0; i < f; i++) {
+    //   frequent1.push_back(kul[i].first);
+    // }
 
     cout << "Number of occurences of the most frequent minimizer without f "
             "most frequent: "
          << kul[f].second << "\n";
     cout << "\n";
     vector<pair<int, int>> matches;
-    for (int i = 0; i < minimizersListRef.size(); i++)
-    {
-      for (int j = 0; j < minimizersList.size(); j++)
-      {
-        if (get<0>(minimizersListRef[i]) == get<0>(minimizersList[j])) matches.push_back(make_pair(i, j));
+    bool flag = false;
+    for (int i = 0; i < minimizersListRef.size(); i++) {
+      flag = false;
+      for (int k = 0; k < frequentRef.size(); k++) {
+        if (get<0>(minimizersListRef[i]) == frequentRef[k]) flag = true;
       }
-    }  
-    LongestIncreasingSubsequence(matches, matches.size());
+      if (flag == true) continue;
+      for (int j = 0; j < minimizersList.size(); j++) {
+        if (get<0>(minimizersListRef[i]) == get<0>(minimizersList[j]))
+          matches.push_back(make_pair(i, j));
+      }
+    }
+    cout << "size: " << LongestIncreasingSubsequence(matches, matches.size())
+         << "\n";
   }
 
   // parse 1st file as FASTQ
@@ -387,8 +384,7 @@ int main(int argc, char **argv) {
     cout << "Beginning: " << target_begin << "\n";
     vector<tuple<unsigned int, unsigned int, bool>> minimizersList;
     minimizersList = brown::minimizers(query.c_str(), query.size(), k, w);
-    for (int i = 0; i < minimizersList.size(); i++)
-    {
+    for (int i = 0; i < minimizersList.size(); i++) {
       get<1>(minimizersList[i]) = i;
     }
     map<int, int> printList;
