@@ -179,6 +179,9 @@ int main(int argc, char **argv) {
   vector<int> frequent1;
   vector<int> frequent2;
   vector<tuple<unsigned int, unsigned int, bool>> minimizersListRef;
+  string PAFPathQuery;
+  string PAFPathTarget1;
+  string PAFPathTarget2;
 
   char opt;
   while ((opt = getopt_long(argc, argv, "hvm:x:g:k:w:f:", options, NULL)) !=
@@ -236,6 +239,7 @@ int main(int argc, char **argv) {
   if (has_suffix(convertToString(argv[16], strlen(argv[16])), ".fa")) {
     vector<unique_ptr<FASTAfile>> fasta_objects;
     string pathFa = convertToString(argv[16], strlen(argv[16]));
+    PAFPathQuery = pathFa;
     auto fasta_parser =
         bioparser::createParser<bioparser::FastaParser, FASTAfile>(pathFa);
     fasta_parser->parse(fasta_objects, -1);
@@ -280,6 +284,7 @@ int main(int argc, char **argv) {
       has_suffix(convertToString(argv[13], strlen(argv[13])), ".fa.gz")) {
     vector<unique_ptr<FASTAfile>> fasta_objects;
     string path = convertToString(argv[13], strlen(argv[13]));
+    PAFPathTarget1 = path;
     brown::AlignmentType type;
     if (atoi(argv[15]) == 0) type = brown::AlignmentType::local;
     if (atoi(argv[15]) == 1) type = brown::AlignmentType::global;
@@ -448,6 +453,7 @@ int main(int argc, char **argv) {
       has_suffix(convertToString(argv[14], strlen(argv[14])), ".fa.gz")) {
     vector<unique_ptr<FASTAfile>> fasta_objects;
     string path = convertToString(argv[14], strlen(argv[14]));
+    PAFPathTarget2 = path;
     brown::AlignmentType type;
     if (atoi(argv[15]) == 0) type = brown::AlignmentType::local;
     if (atoi(argv[15]) == 1) type = brown::AlignmentType::global;
@@ -583,12 +589,41 @@ int main(int argc, char **argv) {
     q_end = q_end1;
     queryReference = queryReference.substr(q_begin, size);
     query1 = query1.substr(t_begin, size);
-    cout << "Alignment score: "
-         << brown::pairwise_alignment(
-                queryReference.c_str(), queryReference.size(), query1.c_str(),
-                query1.size(), brown::AlignmentType::local, match, mismatch,
-                gap, cigar, target_begin)
-         << '\n';
+    cout << PAFPathQuery << "\n";
+    cout << queryReference.size() << "\n";
+    cout << q_begin << "\n";
+    cout << q_end << "\n";
+    cout << "+"
+         << "\n";
+    cout << PAFPathTarget1 << "\n";
+    cout << query1.size() << "\n";
+    cout << t_begin << "\n";
+    cout << t_end << "\n";
+    brown::pairwise_alignment(queryReference.c_str(), queryReference.size(),
+                              query1.c_str(), query1.size(),
+                              brown::AlignmentType::local, match, mismatch, gap,
+                              cigar, target_begin);
+    string number;
+    int noOfMatches = 0;
+    int blockLength = 0;
+
+    for (char c : cigar) {
+      if (isdigit(c)) {
+        number += c;
+      } else if (c == '=') {
+        noOfMatches += stoi(number);
+        blockLength += stoi(number);
+        number = "";
+      } else {
+        blockLength += stoi(number);
+        number = "";
+      }
+    }
+    cout << noOfMatches << "\n";
+    cout << blockLength << "\n";
+    cout << "empty"
+         << "\n";
+    cout << "cg:Z:" << cigar << "\n";
   } else {
     size = size2;
     t_begin = t_begin2;
@@ -597,11 +632,40 @@ int main(int argc, char **argv) {
     q_end = q_end2;
     queryReference = queryReference.substr(q_begin, size);
     query2 = query2.substr(t_begin, size);
-    cout << "Final alignment score: "
-         << brown::pairwise_alignment(
-                queryReference.c_str(), queryReference.size(), query2.c_str(),
-                query2.size(), brown::AlignmentType::local, match, mismatch,
-                gap, cigar, target_begin)
-         << '\n';
+    cout << PAFPathQuery << "\n";
+    cout << queryReference.size() << "\n";
+    cout << q_begin << "\n";
+    cout << q_end << "\n";
+    cout << "+"
+         << "\n";
+    cout << PAFPathTarget2 << "\n";
+    cout << query2.size() << "\n";
+    cout << t_begin << "\n";
+    cout << t_end << "\n";
+    brown::pairwise_alignment(queryReference.c_str(), queryReference.size(),
+                              query2.c_str(), query2.size(),
+                              brown::AlignmentType::local, match, mismatch, gap,
+                              cigar, target_begin);
+    string number;
+    int noOfMatches = 0;
+    int blockLength = 0;
+
+    for (char c : cigar) {
+      if (isdigit(c)) {
+        number += c;
+      } else if (c == '=') {
+        noOfMatches += stoi(number);
+        blockLength += stoi(number);
+        number = "";
+      } else {
+        blockLength += stoi(number);
+        number = "";
+      }
+    }
+    cout << noOfMatches << "\n";
+    cout << blockLength << "\n";
+    cout << "empty"
+         << "\n";
+    cout << "cg:Z:" << cigar << "\n";
   }
 }
