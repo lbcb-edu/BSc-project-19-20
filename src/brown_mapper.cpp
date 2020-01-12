@@ -10,6 +10,7 @@
 #include "../brown_minimizers/brown_minimizers.hpp"
 #include "../vendor/bioparser/include/bioparser/bioparser.hpp"
 #include "MapperConfig.h"
+#include "omp.h"
 #define MAX 1000
 
 using namespace std;
@@ -113,7 +114,7 @@ string convertToString(char *a, int size) {
   return s;
 }
 
-// Binary search
+// binary search
 int GetCeilIndex(vector<pair<int, int>> &matches, vector<int> &T, int l, int r,
                  int key) {
   while (r - l > 1) {
@@ -129,7 +130,9 @@ int GetCeilIndex(vector<pair<int, int>> &matches, vector<int> &T, int l, int r,
 
 // LIS algorithm (nlogn) but modified to suit needs
 // https://www.geeksforgeeks.org/construction-of-longest-monotonically-increasing-subsequence-n-log-n/
-int LongestIncreasingSubsequence(vector<pair<int, int>> &matches, int n, int &t_begin, int &t_end) {
+int LongestIncreasingSubsequence(vector<pair<int, int>> &matches, int n,
+                                 int &t_begin, int &t_end, int &q_begin,
+                                 int &q_end) {
   vector<int> tailIndices(n, 0);
   vector<int> prevIndices(n, -1);
 
@@ -154,7 +157,9 @@ int LongestIncreasingSubsequence(vector<pair<int, int>> &matches, int n, int &t_
     }
   }
   t_begin = matches[prevIndices[1]].second;
+  q_begin = matches[prevIndices[1]].first;
   t_end = matches[tailIndices[len - 1]].second;
+  q_end = matches[tailIndices[len - 1]].first;
 
   return len;
 }
@@ -163,6 +168,13 @@ int main(int argc, char **argv) {
   bool flag = false;
   int match = 0, mismatch = 0, gap = 0, k = 15, w = 5;
   float f = 0.001;
+  int size1;
+  int size2;
+  int t_begin1, t_end1, q_begin1, q_end1;
+  int t_begin2, t_end2, q_begin2, q_end2;
+  string query1;
+  string query2;
+  string queryReference;
   vector<int> frequentRef;
   vector<int> frequent1;
   vector<int> frequent2;
@@ -228,6 +240,7 @@ int main(int argc, char **argv) {
         bioparser::createParser<bioparser::FastaParser, FASTAfile>(pathFa);
     fasta_parser->parse(fasta_objects, -1);
     string &query = fasta_objects[0]->sequence;
+    queryReference = query;
     minimizersListRef = brown::minimizers(query.c_str(), query.size(), k, w);
     for (int i = 0; i < minimizersListRef.size(); i++) {
       get<1>(minimizersListRef[i]) = i;
@@ -280,6 +293,7 @@ int main(int argc, char **argv) {
     int rand2 = rand() % fasta_objects.size();
     string &query = fasta_objects[rand1]->sequence;
     string &target = fasta_objects[rand2]->sequence;
+    query1 = query;
     string cigar;
     unsigned int target_begin;
     cout << "Alignment score: "
@@ -320,9 +334,9 @@ int main(int argc, char **argv) {
     cout << "Number of occurences of the most frequent minimizer without f "
             "most frequent: "
          << kul[f].second << "\n";
-    cout << "\n";
     vector<pair<int, int>> matches;
     bool flag = false;
+
     for (int i = 0; i < minimizersListRef.size(); i++) {
       flag = false;
       for (int k = 0; k < frequentRef.size(); k++) {
@@ -334,11 +348,15 @@ int main(int argc, char **argv) {
           matches.push_back(make_pair(i, j));
       }
     }
-    int t_begin;
-    int t_end;
-    int size = LongestIncreasingSubsequence(matches, matches.size(), t_begin, t_end);
-    cout << "Fragment start and end index: " << t_begin << " - " << t_end << "\n";
-    cout << "size: " << size << "\n";
+
+    size1 = LongestIncreasingSubsequence(matches, matches.size(), t_begin1,
+                                         t_end1, q_begin1, q_end1);
+    cout << "Fragment start and end index: " << t_begin1 << " - " << t_end1
+         << "\n";
+    cout << "Reference start and end index: " << q_begin1 << " - " << q_end1
+         << "\n";
+    cout << "size: " << size1 << "\n";
+    cout << "\n";
   }
 
   // parse 1st file as FASTQ
@@ -443,6 +461,7 @@ int main(int argc, char **argv) {
     int rand2 = rand() % fasta_objects.size();
     string &query = fasta_objects[rand1]->sequence;
     string &target = fasta_objects[rand2]->sequence;
+    query2 = query;
     string cigar;
     unsigned int target_begin;
     cout << "Alignment score: "
@@ -452,7 +471,59 @@ int main(int argc, char **argv) {
          << '\n';
     cout << "CIGAR string: " << cigar << '\n';
     cout << "Beginning: " << target_begin << "\n";
+    vector<tuple<unsigned int, unsigned int, bool>> minimizersList;
+    minimizersList = brown::minimizers(query.c_str(), query.size(), k, w);
+    for (int i = 0; i < minimizersList.size(); i++) {
+      get<1>(minimizersList[i]) = i;
+    }
+    map<int, int> printList;
+    for (int i = 0; i < minimizersList.size(); i++) {
+      printList[get<0>(minimizersList[i])]++;
+    }
+    int cnt = 0;
+    int singleton = 0;
+    cout << "Number of distinct minimizers: " << printList.size() << "\n";
+    for (map<int, int>::iterator itr = printList.begin();
+         itr != printList.end(); ++itr) {
+      if (itr->second == 1) singleton++;
+    }
+    cout << "Fraction of singletons: "
+         << (float)singleton / (float)printList.size() << "\n";
+    vector<pair<int, int>> kul;
+    copy(printList.begin(), printList.end(),
+         back_inserter<vector<pair<int, int>>>(kul));
+    sort(kul.begin(), kul.end(),
+         [](const pair<int, int> &l, const pair<int, int> &r) {
+           if (l.second != r.second) return l.second > r.second;
 
+           return l.first > r.first;
+         });
+
+    cout << "Number of occurences of the most frequent minimizer without f "
+            "most frequent: "
+         << kul[f].second << "\n";
+    vector<pair<int, int>> matches;
+    bool flag = false;
+
+    for (int i = 0; i < minimizersListRef.size(); i++) {
+      flag = false;
+      for (int k = 0; k < frequentRef.size(); k++) {
+        if (get<0>(minimizersListRef[i]) == frequentRef[k]) flag = true;
+      }
+      if (flag == true) continue;
+      for (int j = 0; j < minimizersList.size(); j++) {
+        if (get<0>(minimizersListRef[i]) == get<0>(minimizersList[j]))
+          matches.push_back(make_pair(i, j));
+      }
+    }
+    size2 = LongestIncreasingSubsequence(matches, matches.size(), t_begin2,
+                                         t_end2, q_begin2, q_end2);
+    cout << "Fragment start and end index: " << t_begin2 << " - " << t_end2
+         << "\n";
+    cout << "Reference start and end index: " << q_begin2 << " - " << q_end2
+         << "\n";
+    cout << "size: " << size2 << "\n";
+    cout << "\n";
   }
   // parse 2nd file as FASTQ
   else if (has_suffix(convertToString(argv[14], strlen(argv[14])), ".fastq") ||
@@ -498,5 +569,39 @@ int main(int argc, char **argv) {
         "number of top frequent minimizers not taken into acount\nAlignment "
         "types: 0 - local, 1 - global, 2 - semi_global\n");
     exit(EXIT_FAILURE);
+  }
+  int size;
+  int t_begin, t_end, q_begin, q_end;
+  string cigar;
+  unsigned int target_begin;
+
+  if (size1 > size2) {
+    size = size1;
+    t_begin = t_begin1;
+    t_end = t_end1;
+    q_begin = q_begin1;
+    q_end = q_end1;
+    queryReference = queryReference.substr(q_begin, size);
+    query1 = query1.substr(t_begin, size);
+    cout << "Alignment score: "
+         << brown::pairwise_alignment(
+                queryReference.c_str(), queryReference.size(), query1.c_str(),
+                query1.size(), brown::AlignmentType::local, match, mismatch,
+                gap, cigar, target_begin)
+         << '\n';
+  } else {
+    size = size2;
+    t_begin = t_begin2;
+    t_end = t_end2;
+    q_begin = q_begin2;
+    q_end = q_end2;
+    queryReference = queryReference.substr(q_begin, size);
+    query2 = query2.substr(t_begin, size);
+    cout << "Final alignment score: "
+         << brown::pairwise_alignment(
+                queryReference.c_str(), queryReference.size(), query2.c_str(),
+                query2.size(), brown::AlignmentType::local, match, mismatch,
+                gap, cigar, target_begin)
+         << '\n';
   }
 }
