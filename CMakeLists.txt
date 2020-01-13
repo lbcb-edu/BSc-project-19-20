@@ -24,6 +24,10 @@ add_subdirectory(
     vendor/bioparser EXCLUDE_FROM_ALL
 )
 
+add_subdirectory(
+    vendor/thread_pool EXCLUDE_FROM_ALL
+)
+
 add_library(
     pink_alignment src/pink_alignment.cpp
 )
@@ -38,6 +42,7 @@ target_link_libraries(
         bioparser
 	pink_alignment
 	pink_minimizers
+	thread_pool
 )
 
 if (pink_mapper_build_tests)
@@ -47,6 +52,6 @@ if (pink_mapper_build_tests)
 
     add_subdirectory(vendor/googletest/googletest EXCLUDE_FROM_ALL)
 
-    target_link_libraries(pink_mapper_test pink_alignment pink_minimizers gtest_main)
+    target_link_libraries(pink_mapper_test pink_alignment pink_minimizers thread_pool gtest_main)
 
 endif (pink_mapper_build_tests)
