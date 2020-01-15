@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <bitset>
+#include <functional>
 #include <memory>
 #include <ostream>
 #include <string>
@@ -9,6 +10,8 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+
+#include <iostream>
 
 #include <common/strong_type.hpp>
 
@@ -25,3 +28,27 @@ using WindowLength = StrongType<unsigned, struct WindowLengthTag>;
                                    WindowLength window_length);
 
 }  // namespace blue
+
+namespace std {
+
+template <>
+struct hash<::blue::KMerInfo> {
+  ::std::size_t operator()(const ::blue::KMerInfo& ki) const noexcept {
+    return ::std::apply([](auto&&... args) { return combine(0, args...); }, ki);
+  }
+
+ private:
+  template <typename T>
+  static ::std::size_t combine(const ::std::size_t seed, const T arg) noexcept {
+    return seed ^
+           (::std::hash<T>{}(arg) + 0x9e3779b9 + (seed << 6) + (seed >> 2));
+  }
+
+  template <typename T, typename... Args>
+  static ::std::size_t combine(const ::std::size_t seed, const T arg,
+                               Args&&... args) noexcept {
+    return combine(combine(seed, arg), args...);
+  }
+};
+
+}  // namespace std

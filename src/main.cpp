@@ -62,10 +62,9 @@ bool EndsWith(const ::std::string& str, const ::std::string& ext) noexcept {
   return ss.str();
 }
 
-using namespace ::mapper;
-
-::std::ostream& operator<<(::std::ostream& out,
-                           const Sequences<Sequence>& sequences) noexcept {
+::std::ostream& operator<<(
+    ::std::ostream& out,
+    const ::mapper::Sequences<::mapper::Sequence>& sequences) noexcept {
   ::std::size_t min = ::std::numeric_limits<::std::size_t>::max(), max = 0,
                 total = 0, temp;
 
@@ -131,7 +130,7 @@ int main(int argc, char** argv, char** env) {
     ::util::DisplayHelp(::std::cerr) << ::util::Terminator{EXIT_SUCCESS};
 
   // clang-format off
-  const ::std::unordered_set<::std::string> 
+  const ::std::unordered_set<::std::string>
     fasta_ext{".fasta", ".fasta.gz", ".fa", ".fa.gz"},
     fastq_ext{".fastq", ".fastq.gz", ".fq", ".fq.gz"};
   // clang-format on
@@ -206,113 +205,40 @@ int main(int argc, char** argv, char** env) {
   ::std::cerr << "Loaded reference."
               << "\n\n";
 
-  using ::util::operator<<;
-
-  ::std::cerr << "Fragment statistics: "
-              << "\n"
-              << fragments << "\n"
-              << "Reference statistics: "
-              << "\n"
-              << reference << "\n";
-
-  /*
-   *
-   * Sequence alignment.
-   *
-   */
-
-  auto source = *fragments[::util::Rnd(fragments.size())];
-  auto target = *fragments[::util::Rnd(fragments.size())];
-
-  auto source_length = static_cast<unsigned>(source.sequence.size());
-  auto target_length = static_cast<unsigned>(target.sequence.size());
-
-  reference.clear();
-  reference.shrink_to_fit();
-
-  ::std::cerr << "\n"
-              << "Aligning two random sequences, query length: "
-              << source_length << ", target length: " << target_length << "\n";
-
-  // there is much more memory that the program owns but does not use
-  // it is leftover from storing sequences
-  ::std::cerr << "Estimated (active) memory usage: "
-              << (8 * target_length * source_length) / (1 << 20)
-              << " megabytes."
+  ::std::cerr << "TODO..."
               << "\n";
-
-  ::std::string cigar;
-  unsigned target_begin;
-
-  using namespace ::blue;
-
-  auto score = PairwiseAlignment(
-      Query{source.sequence.c_str()}, QueryLength{source_length},
-      Target{target.sequence.c_str()}, TargetLength{target_length}, algorithm,
-      Match{match_cost}, Mismatch{mismatch_cost}, Gap{gap_cost}, cigar,
-      target_begin);
-
-  ::std::cerr << "Done."
-              << "\n";
-  ::std::cerr << "Alignment score: " << score << "\n";
-
-  ::std::cerr << "Cigar length is " << cigar.size() << "."
-              << " Do you want to print it (y/n)? ";
-
-  ::std::string response;
-  ::std::cin >> response;
-
-  if (::util::ToLower(response) == "y")
-    ::std::cerr << cigar << "\n";
-
-  // return 0;
-
-  ::std::cerr << "\nCalculating kMers..."
-              << "\n";
-
-  ::std::unordered_map<unsigned, unsigned> occurences;
-  occurences.reserve(50'000'000);
-
-  unsigned counter{0};
 
   auto k = argc >= 8 ? ::std::stoi(argv[7]) : 15;
   auto w = argc >= 9 ? ::std::stoi(argv[8]) : 5;
   auto f = argc >= 10 ? ::std::stod(argv[9]) : 0.001;
 
-  for (auto&& frag : fragments) {
-    for (auto&& [kmer, u, v] :
-         minimizers(frag->sequence.data(),
-                    blue::SequenceLength{
-                        static_cast<unsigned>(frag->sequence.length())},
-                    blue::KType{k}, blue::WindowLength{w}))
-      ++occurences[kmer];
-  }
+  ::std::vector<::std::vector<::blue::KMerInfo>> kmers;
+  kmers.reserve(fragments.size());
 
-  ::std::cout << "Number of distinct kmers: " << occurences.size() << ".\n";
+  for (auto&& frag : fragments)
+    kmers.emplace_back(minimizers(
+        frag->sequence.data(),
+        blue::SequenceLength{static_cast<unsigned>(frag->sequence.length())},
+        blue::KType{k}, blue::WindowLength{w}));
 
-  ::std::vector<::std::pair<unsigned, unsigned>> pairs(
+  ::std::unordered_map<::blue::KMerInfo, unsigned> occurences;
+
+  for (auto& kmer : minimizers(reference.front()->sequence.data(),
+                               blue::SequenceLength{static_cast<unsigned>(
+                                   reference.front()->sequence.length())},
+                               blue::KType{k}, blue::WindowLength{w}))
+    ++occurences[kmer];
+
+  ::std::vector<::std::pair<::blue::KMerInfo, unsigned>> reference_index(
       ::std::make_move_iterator(occurences.begin()),
       ::std::make_move_iterator(occurences.end()));
 
   occurences.clear();
 
-  fragments.clear();
-  fragments.shrink_to_fit();
+  ::std::sort(reference_index.begin(), reference_index.end(),
+              [](const auto& a, const auto& b) { return a.second < b.second; });
 
-  ::std::sort(pairs.begin(), pairs.end(),
-              [](auto const& a, auto const& b) { return a.second < b.second; });
-
-  unsigned singletons =
-      ::std::find_if(pairs.begin(), pairs.end(),
-                     [](auto const& p) { return p.second != 1; }) -
-      pairs.begin();
-
-  ::std::cout << "Singleton ratio: "
-              << static_cast<double>(singletons) / pairs.size() << ".\n";
-
-  ::std::cout
-      << "Number of occurences of most frequent minimizer (when top " << f
-      << " percent are ignored): "
-      << pairs[static_cast<unsigned>((1.0 - f) * pairs.size()) - 1].second
-      << "\n";
+  ::std::cerr << "Size before: " << reference_index.size() << "\n";
+  reference_index.resize((1.0 - f) * reference_index.size());
+  ::std::cerr << "Size after:  " << reference_index.size() << "\n";
 }
