@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <array>
 #include <set>
 
 #include <bioparser/bioparser.hpp>
@@ -63,6 +64,40 @@ struct Sequence {
 
     std::string seq_;
 };
+
+template <typename T>
+class VectorSlice {
+public:
+    using iterator = typename std::vector<T>::iterator;
+
+    VectorSlice(iterator begin, iterator end) : begin_{begin}, end_{end} {}
+
+    T& operator[](std::size_t pos) { return *(begin_ + pos); }
+
+    T const& at(std::size_t pos) const { return *(begin_ + pos); }
+
+    iterator begin() const { return begin_; }
+
+    iterator end() const { return end_; }
+
+    std::size_t size() const { return end_ - begin_; }
+
+private:
+    iterator begin_;
+    iterator end_;
+};
+
+/**
+ * @brief Represents matching of read K-Mer on reference K-Mer index
+ *
+ * @details <position on query, position on target>
+ *
+ */
+using KMerMatch = std::tuple<std::uint32_t, std::uint32_t>;
+
+using KMerMatches = std::vector<KMerMatch>;
+
+using MatchSlice = VectorSlice<KMerMatch>;
 
 /**
  * @brief FastA sequence alias.
@@ -414,11 +449,71 @@ MinimizerIndex createRefMinimzIndex(std::string const& ref,
     }
 
     /* clang-format off */
-    for (auto const& it : ignore_set) ref_index.erase(it);
+    for (auto const& it : ignore_set) 
+        ref_index.erase(it);
     ignore_set.clear();
     /* clang-format on */
 
     return ref_index;
+}
+
+/**
+ * @brief
+ *
+ * @details LIS is done on the reference position, 3rd argument of tuple
+ *
+ * @param slice
+ * @return auto
+ */
+auto LISAlgo(MatchSlice slice) {
+    /* Dynamic LIS building */
+    std::vector<std::size_t> heads{};
+
+    /**
+     * @brief Lamba expression used for binary search in LIS
+     */
+    auto cmp_lambda = [&slice](std::size_t const& a, std::size_t const& b) {
+        return std::get<2>(slice[a]) < std::get<2>(slice[b]);
+    };
+
+    auto b_search = [&heads, &cmp_lambda](std::size_t const pos) {
+        return std::lower_bound(heads.begin(), heads.end(), pos, cmp_lambda);
+    };
+
+    for (std::size_t i = 0; i < slice.size(); ++i) {
+        auto res = b_search(i);
+        if (res == heads.end())
+            heads.push_back(i);
+        else
+            *res = i;
+    }
+}
+
+auto generatePAF(KMerMatches matches) {
+
+}
+
+auto mapReads(VecSeqPtr const& reads, MinimizerIndex ref_index,
+              minimizers::MinimizerConf const& m_conf) {
+    for (auto const& read : reads) {
+        for (auto&& kmer : minimizers::minimizers(read.get()->seq_.c_str(),
+                                                  read.get()->seq_.size(),
+                                                  m_conf.k_, m_conf.win_len_)) {
+            
+            auto [kmer_val, kmer_pos, kmer_org] = kmer;
+            auto ref_kmer = ref_index.find(kmer_val);
+
+            std::array<KMerMatches, 2> matches; // 1 -> on the same strand, 0 -> differ
+
+            if (ref_kmer != ref_index.end()) {
+                auto ref_kmers = ref_kmer -> second;
+                for (auto [ref_pos, ref_org] : ref_kmers) 
+                    matches[kmer_org == ref_org].emplace_back(kmer_pos, ref_pos);
+            }
+        }
+
+        // auto paf = generatePAF(matches);
+    }
 }
 
 /* clang-format: off */
@@ -490,7 +585,8 @@ int main(int argc, char* argv[]) {
         // Report end of file loading
         std::cout << "Finsihed loading files\n\n";
 
-        mapper::printMinimizerStats(reads, m_conf);
+        auto ref_index =
+            mapper::createRefMinimzIndex(ref.front().get()->seq_, m_conf);
 
     } catch (std::exception const& e) {
         std::cerr << e.what() << '\n';

@@ -22,7 +22,6 @@ using KMerOrigin = bool;
  */
 using KMer = std::tuple<KMerVal, KMerPos, KMerOrigin>;
 
-
 /**
  * @brief std::pair cintains K-Mer location info
  *      position on the strand, stran type (original or complement)
