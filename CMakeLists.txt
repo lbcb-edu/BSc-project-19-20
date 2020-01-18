@@ -35,7 +35,7 @@ target_include_directories(
 		)
 
 add_executable(alignment_test tests/alignment_test.cpp)
-add_executable(minimizers_test tests/minimizers_test.cpp)
+#add_executable(minimizers_test tests/minimizers_test.cpp)
 
 target_link_libraries(alignment_test white_alignment gtest)
-target_link_libraries(minimizers_test white_minimizers gtest)
+#target_link_libraries(minimizers_test white_minimizers gtest)
