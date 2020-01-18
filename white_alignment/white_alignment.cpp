@@ -27,11 +27,14 @@ namespace white {
         };
     };
 
-    void matrixInit(int gap, int match, int mismatch,
+    int matrixInit(int gap, int match, int mismatch,
                     const char *query, const char *target,
                     Cell **matrix, int rowCnt, int columCnt,
-                    AlignmentType alignmentType) {
+                    AlignmentType alignmentType,
+                    int &rowIndex, int &colIndex) {
         int rowInd = 0, columnInd = 0;
+        int maxScore = 0;
+        rowIndex = 0, colIndex = 0;
 
         matrix[0][0] = {0, Direction::kNone};
 
@@ -54,66 +57,54 @@ namespace white {
         }
         for (rowInd = 1; rowInd < rowCnt; rowInd++) {
             for (columnInd = 1; columnInd < columCnt; columnInd++) {
-                int w = query[rowInd] == target[columnInd] ? match : mismatch;
+                int w = query[rowInd - 1] == target[columnInd - 1] ? match : mismatch;
                 int replacement = matrix[rowInd - 1][columnInd - 1].value + w;
 
                 int insertion = matrix[rowInd][columnInd - 1].value + gap;
                 int deletion = matrix[rowInd - 1][columnInd].value + gap;
                 Cell maxValue = std::max({
-                                                 Cell{replacement, Direction::kDiagonal},
-                                                 Cell{insertion, Direction::kLeft},
-                                                 Cell{deletion, Direction::kUp}
-                                         });
+                    Cell{replacement, Direction::kDiagonal},
+                    Cell{insertion, Direction::kLeft},
+                    Cell{deletion, Direction::kUp}
+                });
                 matrix[rowInd][columnInd] = maxValue;
                 if (alignmentType == AlignmentType::kLocal) {
                     if (maxValue.value < 0) {
                         matrix[rowInd][columnInd].value = 0;
                     }
-                }
-            }
-        }
-
-    };
-
-    int AlignmentEnd (int &rowIndex, int &colIndex, Cell** matrix,
-            int rowCount, int colCount, AlignmentType alignmentType) {
-        int maxScore = 0;
-        int row = 0, col = 0;
-        if (alignmentType == AlignmentType::kGlobal) {
-            row = rowCount - 1;
-            col = colCount - 1;
-            maxScore = matrix[row][col].value;
-        } else if (alignmentType == AlignmentType::kSemiGlobal) {
-            maxScore = matrix[1][colCount - 1].value;
-            row = 0, col = colCount - 1;
-            for (int i = 2; i < rowCount; i++) {
-                if (matrix[i][colCount - 1].value > maxScore) {
-                    maxScore = matrix[i][colCount - 1].value;
-                    row = i;
-                }
-            }
-            for (int j = 1; j < colCount; j++) {
-                if (matrix[rowCount - 1][j].value > maxScore) {
-                    maxScore = matrix[rowCount - 1][j].value;
-                    row = rowCount - 1;
-                    col = j;
-                }
-            }
-        } else { //local
-            row = 0, col = 0;
-            for (int i = 1; i < rowCount; i++) {
-                for (int j = 1; j < colCount; j++) {
-                    if (matrix[i][j].value > maxScore) {
-                        maxScore = matrix[i][j].value;
-                        row = i;
-                        col = j;
+                    if (maxValue.value > maxScore) {
+                        maxScore = matrix[rowInd][columnInd].value;
+                        rowIndex = rowInd;
+                        colIndex = columnInd;
                     }
                 }
             }
         }
-        rowIndex = row;
-        colIndex = col;
+        if (alignmentType == AlignmentType::kSemiGlobal) {
+            maxScore = matrix[1][columCnt - 1].value;
+            rowIndex = 0, colIndex = columCnt - 1;
+            for (int i = 2; i < rowCnt; i++) {
+                if (matrix[i][columCnt - 1].value > maxScore) {
+                    maxScore = matrix[i][columCnt - 1].value;
+                    rowIndex = i;
+                }
+            }
+            for (int j = 1; j < columCnt; j++) {
+                if (matrix[rowCnt - 1][j].value > maxScore) {
+                    maxScore = matrix[rowCnt - 1][j].value;
+                    rowIndex = rowCnt - 1;
+                    colIndex = j;
+                }
+            }
+        }
+        if (alignmentType == AlignmentType::kGlobal) {
+            maxScore = matrix[rowCnt - 1][columCnt - 1].value;
+            rowIndex = rowCnt - 1;
+            colIndex = columCnt - 1;
+        }
+
         return maxScore;
+
     }
 
     void next (int &rowIndex, int &colIndex, Direction dir) {
@@ -157,7 +148,7 @@ namespace white {
         std::string seq = "";
         int currentRow = rowIndex, currentCol = colIndex, noOfRep = 1;
         int nextRow = currentRow, nextCol = currentCol;
-        while (matrix[currentRow][currentCol].direction != Direction::kNone) {
+        while (matrix[currentRow][currentCol].direction != kNone) {
             next(nextRow, nextCol, matrix[currentRow][currentCol].direction);
             if (matrix[currentRow][currentCol].direction != matrix[nextRow][nextCol].direction) {
                 seq.append(cigarSegment(noOfRep, matrix[currentRow][currentCol].direction));
@@ -169,6 +160,7 @@ namespace white {
             currentCol = nextCol;
         }
         cigar = seq;
+        reverse(cigar.begin(), cigar.end());
 
         target_begin = currentCol;
 
@@ -186,12 +178,12 @@ namespace white {
         unsigned int t;
         int rowCount = query_length + 1;
         int colCount = target_length + 1;
+        int alignmentRow, alignmentCol, optimalAlignment;
         Cell **matrix = new Cell * [rowCount];
         for (int i = 0; i < rowCount; ++i)
             matrix[i] = new Cell[colCount];
-        matrixInit(gap, match, mismatch, query, target, matrix, rowCount, colCount, type);
-        int alignmentRow, alignmentCol;
-        int optimalAlignment = AlignmentEnd(alignmentRow, alignmentCol, matrix, rowCount, colCount, type);
+        optimalAlignment = matrixInit(gap, match, mismatch, query, target, matrix, rowCount, colCount, type, alignmentRow, alignmentCol);
+
         cigarCreate(query, target, Cigar, t, matrix, rowCount, colCount, alignmentRow, alignmentCol);
 
         for (int i = 0; i < rowCount; i++) {
@@ -214,12 +206,12 @@ namespace white {
 
         int rowCount = query_length + 1;
         int colCount = target_length + 1;
+        int alignmentRow, alignmentCol, optimalAlignment;
         Cell **matrix = new Cell * [rowCount];
         for (int i = 0; i < rowCount; ++i)
             matrix[i] = new Cell[colCount];
-        matrixInit(gap, match, mismatch, query, target, matrix, rowCount, colCount, type);
-        int alignmentRow, alignmentCol;
-        int optimalAlignment = AlignmentEnd(alignmentRow, alignmentCol, matrix, rowCount, colCount, type);
+        optimalAlignment = matrixInit(gap, match, mismatch, query, target, matrix, rowCount, colCount, type, alignmentRow, alignmentCol);
+
         cigarCreate(query, target, cigar, target_begin, matrix, rowCount, colCount, alignmentRow, alignmentCol);
 
         for (int i = 0; i < rowCount; i++) {

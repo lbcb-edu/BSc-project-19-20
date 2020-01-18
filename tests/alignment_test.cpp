@@ -10,7 +10,11 @@ TEST(PairwiseAlignment, globalType) {
 }
 
 TEST(PairwiseAlignment, globalType2) {
-    EXPECT_EQ(white::PairwiseAlignment("GCAT", 4, "GCT", 3, white::AlignmentType::kGlobal, 1, -1, -1), 2);
+    ::std::string cig2;
+    unsigned int tb2;
+    EXPECT_EQ(white::PairwiseAlignment("GCAT", 4, "GCT", 3, white::AlignmentType::kGlobal, 1, -1, -1, cig2, tb2), 2);
+    EXPECT_EQ(tb2, 0);
+    EXPECT_EQ(cig2, "2M1I1M");
 }
 
 TEST(PairwiseAlignment, localType) {
@@ -18,8 +22,29 @@ TEST(PairwiseAlignment, localType) {
 }
 
 TEST(PairwiseAlignment, semiGlobalType) {
-    EXPECT_EQ (white::PairwiseAlignment("TCCG", 4, "ACTCCGAT", 8, white::AlignmentType::kSemiGlobal, 4, -1, -2), 12);
+    std::string cig;
+    unsigned int tb;
+    EXPECT_EQ (white::PairwiseAlignment("TCCG", 4, "ACTCCGAT", 8, white::AlignmentType::kSemiGlobal, 4, -1, -2,
+            cig, tb), 16);
+    EXPECT_EQ (cig, "4M");
+    EXPECT_EQ (tb, 2);
 }
+
+TEST(PairwiseAlignment, globalTypeCigar) {
+    ::std::string cigarStr;
+    unsigned int tBegin;
+    int value = PairwiseAlignment("CAGCACTTGGATTCTCGG", 18,
+                          "CAGCGTGG", 8,
+                          white::AlignmentType::kGlobal,
+                          1,
+                          -1,
+                          -1,
+                          cigarStr,
+                          tBegin);
+    EXPECT_EQ (cigarStr, "3M2I1M3I1M4I1M1I2M");
+    EXPECT_EQ (tBegin, 0);
+}
+
 
 int main(int argc, char* argv[]) {
     testing::InitGoogleTest(&argc, argv);
