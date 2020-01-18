@@ -391,10 +391,10 @@ auto printMinimizerStats(VecSeqPtr const& reads,
  * @brief Creates a minimizer index for the reference genome
  */
 MinimizerIndex createRefMinimzIndex(std::string const& ref,
-                          minimizers::MinimizerConf const& conf) {
+                                    minimizers::MinimizerConf const& conf) {
     auto ref_index = MinimizerIndex{};
     using MinimizerIter = MinimizerIndex::iterator;
-    
+
     for (auto const& [kmer, pos, org] : minimizers::minimizers(
              ref.c_str(), ref.size(), conf.k_, conf.win_len_)) {
         ref_index[kmer].emplace_back(pos, org);
@@ -413,28 +413,27 @@ MinimizerIndex createRefMinimzIndex(std::string const& ref,
             ignore_set.erase(std::prev(ignore_set.end()));
     }
 
-    /* clang-format: off */
-    for (auto const& it : ignore_set) 
-        ref_index.erase(it);
+    /* clang-format off */
+    for (auto const& it : ignore_set) ref_index.erase(it);
     ignore_set.clear();
-    /* clang-format: on */
+    /* clang-format on */
 
     return ref_index;
 }
 
-// clang-format: off
+/* clang-format: off */
 /* TODO:
 
-    1.) Minimizer index for the reference genom, too frequent minimizers are
-ingored 2.) Minimizer index for each fragment seperatelly, used for fniding
+    2.) Minimizer index for each fragment seperatelly, used for fniding
             matches with the reference genome
 
     3.) From the list of all matches for a pair of sequences,
         the longest linear chain should represent the best candidate for a good
-alignment between the pair. 4.) Call the alignment procedure
+        alignment between the pair.
+    4.) Call the alignment procedure
 
 */
-// clang-fromat: on
+/* clang-format: on */
 
 }  // namespace mapper
 }  // namespace orange

@@ -32,6 +32,7 @@ find_package(Threads)
 
 add_subdirectory(vendor/bioparser EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/googletest EXCLUDE_FROM_ALL)
+add_subdirectory(vendor/thread_pool EXCLUDE_FROM_ALL)
 
 # Project subdirs 
 add_subdirectory(src)
