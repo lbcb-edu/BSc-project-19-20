@@ -1,2 +1,2 @@
 #define Mapper_VERSION_MAJOR 0
-#define Mapper_VERSION_MINOR 2
+#define Mapper_VERSION_MINOR 4
