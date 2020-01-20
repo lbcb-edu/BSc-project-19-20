@@ -4,3 +4,6 @@
 [submodule "googletest"]
 	path = vendor/googletest
 	url = https://github.com/google/googletest
+[submodule "vendor/thread_pool"]
+	path = vendor/thread_pool
+	url = https://github.com/rvaser/thread_pool

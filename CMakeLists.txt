@@ -20,6 +20,7 @@ configure_file(
 )
 
 add_subdirectory("vendor/bioparser" EXCLUDE_FROM_ALL)
+add_subdirectory("vendor/thread_pool" EXCLUDE_FROM_ALL)
 add_subdirectory("vendor/googletest" EXCLUDE_FROM_ALL)
 add_subdirectory("blue_alignment" EXCLUDE_FROM_ALL)
 add_subdirectory("blue_minimizers" EXCLUDE_FROM_ALL)
@@ -33,6 +34,7 @@ target_link_libraries(
   blue_common
   blue_minimizers
   bioparser
+  thread_pool
 )
 
 target_include_directories(
@@ -42,6 +44,7 @@ target_include_directories(
   "${PROJECT_BINARY_DIR}/blue_minimizers/include"
   "${PROJECT_BINARY_DIR}/include"
   "${PROJECT_BINARY_DIR}/vendor/bioparser/include"
+  "${PROJECT_BINARY_DIR}/vendor/thread_pool/include"
 )
 
 add_executable(alignment_tests "blue_alignment/test/alignment.t.cpp")
