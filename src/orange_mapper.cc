@@ -4,14 +4,17 @@
 #include <iostream>
 #include <unistd.h>
 #include <getopt.h>
+#include <iterator>
 #include <cstdlib>
 #include <memory>
 #include <string>
 #include <vector>
 #include <array>
+#include <cmath>
 #include <set>
 
 #include <bioparser/bioparser.hpp>
+#include <thread_pool/thread_pool.hpp>
 
 #include "orange_alignment.h"
 #include "orange_minimizers.h"
@@ -38,6 +41,7 @@ struct option const long_options[] = {
     {"kmer", required_argument, NULL, 'k'},
     {"window", required_argument, NULL, 'w'},
     {"frequency", required_argument, NULL, 'f'},
+    {"n_threads", required_argument, NULL, 'n'},
     // TODO: Option for the number of threads
     // TODO: Option for including the CIGAR in PAF
     {NULL, 0, NULL, 0}};
@@ -65,14 +69,24 @@ struct Sequence {
     std::string seq_;
 };
 
+/**
+ * @brief Represents a portion of a vector
+ *
+ * @tparam T
+ */
 template <typename T>
 class VectorSlice {
 public:
-    using iterator = typename std::vector<T>::iterator;
+    using vec_type = std::vector<T>;
+    using iterator = typename vec_type::const_iterator;
+
+    VectorSlice(vec_type const& vec, std::size_t l, std::size_t r)
+        : begin_{vec.begin()}, end_{vec.end()} {
+            std::advance(begin_, l);
+            std::advance(end_, r);
+        }
 
     VectorSlice(iterator begin, iterator end) : begin_{begin}, end_{end} {}
-
-    T& operator[](std::size_t pos) { return *(begin_ + pos); }
 
     T const& at(std::size_t pos) const { return *(begin_ + pos); }
 
@@ -136,10 +150,20 @@ using FastQPtr = std::unique_ptr<FastQ>;
 using VecSeqPtr = std::vector<SequencePtr>;
 
 /**
+ * @brief @ref orange::mapper::VectorSlice of @ref orange::mapper::VecSeqPtr
+ */
+using SliceSeqPtr = VectorSlice<SequencePtr>;
+
+/**
  * @brief Vector of pointers to parsed @ref orange::mapper::FastQ
- *
  */
 using VecFastQPtr = std::vector<FastQPtr>;
+
+/**
+ * @brief @ref orange::mapper::VectorSlice of @ref orange::mapper::VecFastQPtr
+ *
+ */
+using SliceFastQPtr = VectorSlice<FastQPtr>;
 
 /**
  * @brief Simple intarface for creating @ref bioparser FASTA parser
@@ -173,16 +197,18 @@ auto printVersion() {
  *      exits upon completion
  */
 auto printHelp() {
-    std::cerr << "Genome sequence mapper.\n"
-              << "Reads are supported in FASTA and FASTQ formats while "
-              << "reference is expected to be FASTA.\n\n"
-              << "Usage:\n\t orange_mapper <reads> <reference> "
-              << "-t <alignment_type> -m <match> -s <mismatch> -g <gap>\n\n"
-              << "Options:\n\t-h\thelp\n\t-v\tverions\n\n\t"
-                 "-t\talignment type\n\t-m\tmatch score\n\t"
-                 "-s\tmismatch score\n\t-g\tgap score\n\n\t"
-                 "-k\tk-mer size\n\t-w\twindow length\n\t"
-                 "-f\tignore top frequent minimizers\n";
+    std::cerr
+        << "Genome sequence mapper.\n"
+        << "Reads are supported in FASTA and FASTQ formats while "
+        << "reference is expected to be FASTA.\n\n"
+        << "Usage:\n\t orange_mapper <reads> <reference> "
+        << "-t <alignment_type> -m <match> -s <mismatch> -g <gap>\n\n"
+        << "Options:\n\t-h\thelp\n\t-v\tverions\n\n\t"
+           "-t\talignment type\n\t-m\tmatch score\n\t"
+           "-s\tmismatch score\n\t-g\tgap score\n\n\t"
+           "-k\tk-mer size\n\t-w\twindow length\n\t"
+           "-f\tignore top frequent minimizers\n"
+           "-tn\tspecify the number of threads for mapping (defaults to one)";
     std::exit(EXIT_SUCCESS);
 }
 
@@ -225,7 +251,7 @@ auto parseAlignType(char const* type) {
  * @return int index of first non-option element in argv
  */
 auto parseOptions(int argc, char* argv[], alignment::AlignConf& a_conf,
-                  minimizers::MinimizerConf& m_conf) {
+                  minimizers::MinimizerConf& m_conf, std::uint8_t& n_threads) {
     auto opt = int{};
     while ((opt = getopt_long(argc, argv, "hvm:s:g:t:", long_options, NULL)) !=
            -1) {
@@ -256,7 +282,10 @@ auto parseOptions(int argc, char* argv[], alignment::AlignConf& a_conf,
                 break;
             case 'f':
                 m_conf.f_ = std::atoi(optarg);
-
+                break;
+            case 'n':
+                n_threads = std::atoi(optarg);
+                break;
             default:
                 throw std::invalid_argument(
                     "Uknown option.\n\tUse: 'orange_mapper -h'");
@@ -465,7 +494,7 @@ MinimizerIndex createRefMinimzIndex(std::string const& ref,
  * @param slice
  * @return auto
  */
-auto LISAlgo(MatchSlice slice) {
+auto LISAlgo(MatchSlice const& slice) {
     /* Dynamic LIS building */
     std::vector<std::size_t> heads{};
 
@@ -473,7 +502,7 @@ auto LISAlgo(MatchSlice slice) {
      * @brief Lamba expression used for binary search in LIS
      */
     auto cmp_lambda = [&slice](std::size_t const& a, std::size_t const& b) {
-        return std::get<2>(slice[a]) < std::get<2>(slice[b]);
+        return std::get<1>(slice.at(a)) < std::get<1>(slice.at(b));
     };
 
     auto b_search = [&heads, &cmp_lambda](std::size_t const pos) {
@@ -489,31 +518,57 @@ auto LISAlgo(MatchSlice slice) {
     }
 }
 
-auto generatePAF(KMerMatches matches) {
+auto generatePAF(KMerMatches const& matches) {}
 
-}
-
-auto mapReads(VecSeqPtr const& reads, MinimizerIndex ref_index,
+void mapReads(SliceSeqPtr const&& reads, MinimizerIndex const& ref_index,
               minimizers::MinimizerConf const& m_conf) {
     for (auto const& read : reads) {
         for (auto&& kmer : minimizers::minimizers(read.get()->seq_.c_str(),
                                                   read.get()->seq_.size(),
                                                   m_conf.k_, m_conf.win_len_)) {
-            
             auto [kmer_val, kmer_pos, kmer_org] = kmer;
             auto ref_kmer = ref_index.find(kmer_val);
 
-            std::array<KMerMatches, 2> matches; // 1 -> on the same strand, 0 -> differ
+            std::array<KMerMatches, 2>
+                matches;  // 1 -> on the same strand, 0 -> differ
 
             if (ref_kmer != ref_index.end()) {
-                auto ref_kmers = ref_kmer -> second;
-                for (auto [ref_pos, ref_org] : ref_kmers) 
-                    matches[kmer_org == ref_org].emplace_back(kmer_pos, ref_pos);
+                auto ref_kmers = ref_kmer->second;
+                for (auto [ref_pos, ref_org] : ref_kmers)
+                    matches[kmer_org == ref_org].emplace_back(kmer_pos,
+                                                              ref_pos);
             }
         }
 
         // auto paf = generatePAF(matches);
     }
+}
+
+/**
+ * @brief Splits mapping procedure in thread blocks
+ *
+ * @return auto
+ */
+auto threadMapping(VecSeqPtr const& reads, MinimizerIndex const& ref_index,
+                   minimizers::MinimizerConf const& m_conf,
+                   std::uint8_t const n_threads) {
+    auto thread_pool = thread_pool::createThreadPool(n_threads);
+    auto futures = std::vector<std::future<void>>{};
+
+    futures.reserve(std::ceil(reads.size() / n_threads));
+
+    std::size_t block_start{0};
+    for (; block_start + n_threads < reads.size(); block_start += n_threads) {
+        auto const slice = SliceSeqPtr(reads, block_start, block_start + n_threads);
+        futures.push_back(thread_pool -> submit(
+            mapReads, std::ref(slice), std::ref(ref_index), std::ref(m_conf)
+        ));
+    }
+
+    // last VecSlice
+
+    std::for_each(futures.begin(), futures.end(),
+                  [](auto const& f) { f.wait(); });
 }
 
 /* clang-format: off */
@@ -545,11 +600,14 @@ int main(int argc, char* argv[]) {
     using namespace orange;
 
     try {
+        auto n_threads = std::uint8_t{1};
         // Alignment configuration
         auto a_conf = alignment::AlignConf{};
+        // Minimizer configuration
         auto m_conf = minimizers::MinimizerConf{};
 
-        auto arg_index = mapper::parseOptions(argc, argv, a_conf, m_conf);
+        auto arg_index =
+            mapper::parseOptions(argc, argv, a_conf, m_conf, n_threads);
 
         // Check number of passed arguments
         if (argc - arg_index < 2) {

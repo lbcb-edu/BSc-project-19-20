@@ -24,5 +24,6 @@ target_link_libraries(
             orange_mapper_conf
             orange_minimizers
             orange_alignment
+            thread_pool
             bioparser
 )
