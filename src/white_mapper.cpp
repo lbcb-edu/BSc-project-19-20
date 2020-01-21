@@ -161,8 +161,11 @@ int main(int argc, char* argv[]) {
 				std::cout << "Fraction of singletons: " << (double)singletons / minimizers.size() << std::endl;
 
 				int skip = minimizers.size() * f;
-				// std::cout << skip << std::endl;
-				// std::cout << occurences_of_minimizers_vector.size() << std::endl;
+				std::cout << skip << std::endl;
+				std::cout << occurences_of_minimizers_vector.size() << std::endl;
+
+				std::cout << occurences_of_minimizers_vector[1000].second << std::endl;
+				std::cout << occurences_of_minimizers_vector[5000].second << std::endl;
 
 				std::cout << "Number of occurences of the most frequent  minimizer when the top "
 						 << f <<  " frequent minimizers are not taken in account: "

@@ -3,49 +3,221 @@
 #include <iostream>
 #include <algorithm>
 #include <tuple>
-#include <set>
 #include <map>
 
-namespace white{
 
-    std::vector<std::tuple<unsigned int, unsigned int, bool>> minimizers(const char* sequence, unsigned int sequence_length,
-                                                                         unsigned int k, unsigned int window_length) {
-        
-        std::vector<std::tuple<unsigned int, unsigned int, bool>> ret;
+namespace white {
 
-        std::set<std::tuple<unsigned int, unsigned int, bool>> minimizer_set;
-        std::map<char, int> val = {{'A', 1}, {'T', 2}, {'G', 3}, {'C', 0}};
-        std::map<char, int> rev_val = {{'A', 2}, {'T', 1}, {'G', 0}, {'C', 3}};
+	std::vector<std::tuple<unsigned int, unsigned int, bool>> minimizers(const char* sequence, unsigned int sequence_length,
+																		unsigned int k, unsigned int window_length) {
 
-        unsigned int len = k + window_length - 1;
-        std::tuple<unsigned int, unsigned int, bool> kmer, rev_kmer;
+	std::vector<std::tuple<unsigned int, unsigned int, bool>> ret;
 
-        for (int i = 0, i_rev = sequence_length - 1; i <= sequence_length - len && i_rev  >= len - 1; i++, i_rev--) {
+	unsigned int current_kmer = 0;
+	unsigned int rev_current_kmer = 0;
+	unsigned int next_kmer = 0;
+	unsigned int rev_next_kmer = 0;
+	unsigned int mask = 0;
 
-            std::tuple<unsigned int, unsigned int, bool> minimal;
-            for (int j = i, j_rev = i_rev; j <= i + len - k && j_rev >= i_rev - k; j++, j_rev--) {
-                unsigned int k_mer = 0;
-                unsigned int k_mer_rev = 0;
-                for (unsigned int m = 0; m < k; m++) {
-                    k_mer |= val[sequence[j + m]];
-                    k_mer_rev |= rev_val[sequence[j_rev - m]];
-                    if (m + 1 < k) {
-                        k_mer <<= 2;
-                        k_mer_rev <<= 2;
-                    }
-                }
-                kmer = std::make_tuple(k_mer, j, true);
-                rev_kmer = std::make_tuple(k_mer_rev, j_rev, false);
-                minimal = std::min(kmer, rev_kmer);
-            }
-            minimizer_set.emplace(minimal);
-        }
+	for (int i = 0; i < k; i++) {
+		mask = (mask << 2) + 3;
+	}
 
-        for (auto minimizer : minimizer_set) {
-            ret.emplace_back(minimizer);
-        }
-        
-        return ret;
-    }
+	for (int i = 0; i < k; i++) {
+		switch (sequence[i]) {
+			case 'A':
+				current_kmer = (current_kmer << 2) & mask;
+				break;
+			case 'C':
+				current_kmer = ((current_kmer << 2) | 1) & mask;
+				break;
+			case 'G':
+				current_kmer = ((current_kmer << 2) | 2) & mask;
+				break;
+			case 'T':
+				current_kmer = ((current_kmer << 2) | 3) & mask;
+				break;
+		}
+
+		switch (sequence[sequence_length - 1 - i]) {
+			case 'A':
+				rev_current_kmer = ((rev_current_kmer << 2) | 3)& mask;
+				break;
+			case 'C':
+				rev_current_kmer = ((rev_current_kmer << 2) | 2) & mask;
+				break;
+			case 'G':
+				rev_current_kmer = ((rev_current_kmer << 2) | 1) & mask;
+				break;
+			case 'T':
+				rev_current_kmer = (rev_current_kmer << 2) & mask;
+				break;
+
+		}
+	}
+
+	unsigned int last_minimizer = 0;
+	long long int last_pos = -1;
+	bool origin = true;
+
+	for (long long int i = 0; i < sequence_length - (window_length - 1 + k) + 1; i++) { 
+		switch (sequence[i + k]) {
+			case 'A':
+				next_kmer = (current_kmer << 2) & mask;
+				break;
+			case 'C':
+				next_kmer = ((current_kmer << 2) | 1) & mask;
+				break;
+			case 'G':
+				next_kmer = ((current_kmer << 2) | 2) & mask;
+				break;
+			case 'T':
+				next_kmer = ((current_kmer << 2) | 3) & mask;
+				break;
+		}
+
+		switch (sequence[sequence_length - 1 - (i + k)]) {
+			case 'A':
+				rev_next_kmer = ((rev_current_kmer << 2) | 3) & mask;
+				break;
+			case 'C':
+				rev_next_kmer = ((rev_current_kmer << 2) | 2) & mask;
+				break;
+			case 'G':
+				rev_next_kmer = ((rev_current_kmer << 2) | 1) & mask;
+				break;
+			case 'T':
+				rev_next_kmer = (rev_current_kmer << 2) & mask;
+				break;
+		}
+
+		if ((origin && last_pos < i) || (!origin && last_pos > (sequence_length - 1) - i - (k - 1))) {
+		
+			if (current_kmer <= rev_current_kmer) {
+				last_minimizer = current_kmer;
+				last_pos = i;
+				origin = true;
+			}
+			else {
+				last_minimizer = rev_current_kmer;
+				last_pos = (sequence_length - 1) - i - (k - 1);
+				origin = false;
+			}
+
+			unsigned int end = i + k + window_length - 1;
+
+			for (unsigned int j = i + k; j < end; j++) {
+				switch (sequence[j]) {
+					case 'A':
+						current_kmer = (current_kmer << 2) & mask;
+						break;
+					case 'C':
+						current_kmer = ((current_kmer << 2) | 1) & mask;
+						break;
+					case 'G':
+						current_kmer = ((current_kmer << 2) | 2) & mask;
+						break;
+					case 'T':
+						current_kmer = ((current_kmer << 2) | 3) & mask;
+						break;
+				}
+
+				switch (sequence[sequence_length - 1 - j]) {
+					case 'A':
+						rev_current_kmer = ((rev_current_kmer << 2) | 3) & mask;
+						break;
+					case 'C':
+						rev_current_kmer = ((rev_current_kmer << 2) | 2) & mask;
+						break;
+					case 'G':
+						rev_current_kmer = ((rev_current_kmer << 2) | 1) & mask;
+						break;
+					case 'T':
+						rev_current_kmer = (rev_current_kmer << 2) & mask;
+						break;
+				}
+
+				if (last_minimizer >= current_kmer) {
+					last_minimizer = current_kmer;	
+					last_pos = j - (k - 1);
+					origin = true;
+				}
+				if (last_minimizer >= rev_current_kmer) {
+					last_minimizer = rev_current_kmer;
+					last_pos = (sequence_length - 1) - j;
+					origin = false;
+				}
+			}
+
+		}
+		
+		else {
+			current_kmer = 0;
+			rev_current_kmer = 0;
+
+			unsigned int start = i + window_length - 1; 
+			unsigned int end = i + k + window_length - 1; 
+
+			for (unsigned int j = start; j < end; j++) {
+				switch (sequence[j]) {
+					case 'A':
+						current_kmer = (current_kmer << 2) & mask;
+						break;
+					case 'C':
+						current_kmer = ((current_kmer << 2) | 1) & mask;
+						break;
+					case 'G':
+						current_kmer = ((current_kmer << 2) | 2) & mask;
+						break;
+					case 'T':
+						current_kmer = ((current_kmer << 2) | 3) & mask;
+						break;
+
+				}
+
+				switch (sequence[sequence_length - 1 - j]) {
+					case 'A':
+						rev_current_kmer = ((rev_current_kmer << 2) | 3) & mask;
+						break;
+					case 'C':
+						rev_current_kmer = ((rev_current_kmer << 2) | 2) & mask;
+						break;
+					case 'G':
+						rev_current_kmer = ((rev_current_kmer << 2) | 1) & mask;
+						break;
+					case 'T':
+						rev_current_kmer = (rev_current_kmer << 2) & mask;
+						break;
+				}
+			}
+
+			if (last_minimizer >= current_kmer) {
+				last_minimizer = current_kmer;
+				last_pos = start;
+				origin = true;
+			}
+			if (last_minimizer >= rev_current_kmer) {
+				last_minimizer = rev_current_kmer;
+				last_pos = (sequence_length - 1) - start - (k - 1);
+				origin = false;
+			}
+		}
+
+		current_kmer = next_kmer;
+		rev_current_kmer = rev_next_kmer;
+
+		std::tuple<unsigned int, unsigned int, bool> current_minimizer = std::make_tuple(last_minimizer, (unsigned int) last_pos, origin);
+
+		if (ret.empty())
+			ret.emplace_back(current_minimizer);
+
+		else if (ret[ret.size() - 1] != current_minimizer)
+			ret.emplace_back(current_minimizer);
+
+	}
+
+	return ret;
+	}
+
 }
 
