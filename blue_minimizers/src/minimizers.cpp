@@ -1,8 +1,5 @@
 #include "minimizers/minimizers.hpp"
 
-// TODO: delete
-#include <iostream>
-
 namespace blue {
 
 namespace detail {

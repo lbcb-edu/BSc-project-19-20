@@ -2,7 +2,9 @@
 
 #include <algorithm>
 #include <bitset>
+#include <common/strong_type.hpp>
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <ostream>
 #include <string>
@@ -10,10 +12,6 @@
 #include <tuple>
 #include <utility>
 #include <vector>
-
-#include <iostream>
-
-#include <common/strong_type.hpp>
 
 namespace blue {
 

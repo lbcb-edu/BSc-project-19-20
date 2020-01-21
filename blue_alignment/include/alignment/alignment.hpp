@@ -1,12 +1,11 @@
 #pragma once
 
 #include <algorithm>
+#include <common/strong_type.hpp>
 #include <functional>
 #include <memory>
 #include <string>
 #include <utility>
-
-#include <common/strong_type.hpp>
 
 namespace blue {
 

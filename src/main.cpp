@@ -1,18 +1,19 @@
 #include <algorithm>
+#include <alignment/alignment.hpp>
+#include <bioparser/bioparser.hpp>
+#include <cassert>
 #include <cctype>
 #include <iostream>
 #include <limits>
+#include <minimizers/minimizers.hpp>
+#include <queue>
 #include <random>
 #include <sstream>
 #include <string>
+#include <thread_pool/thread_pool.hpp>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-
-#include <bioparser/bioparser.hpp>
-
-#include <alignment/alignment.hpp>
-#include <minimizers/minimizers.hpp>
 
 #include "config.hpp"
 #include "mapper.hpp"
@@ -33,7 +34,7 @@ bool EndsWith(const ::std::string& str, const ::std::string& ext) noexcept {
   out << "Mapper that displays input genome statistics."
       << "\n"
       << "Arguments: [fragments] [reference] [alignmentType] [match] "
-         "[mismatch] [gap]."
+         "[mismatch] [gap] [threads] <cigar>"
       << "\n"
       << " - fragments: input file in a FASTA or FASTQ format"
       << "\n"
@@ -49,6 +50,11 @@ bool EndsWith(const ::std::string& str, const ::std::string& ext) noexcept {
       << " - mismatch: the cost of mismatching bases"
       << "\n"
       << " - gap: the cost of a gap in either source or target sequence"
+      << "\n"
+      << " - threads: number of threads to be used"
+      << "\n"
+      << " - cigar: optional argument, provide 'c' if you want cigar to be "
+         "printed"
       << "\n";
 
   return out;
@@ -112,7 +118,147 @@ IntegralType Rnd(const IntegralType bound) {
   return uniform(mt);
 }
 
+using ReferenceIndex =
+    ::std::unordered_map<unsigned, ::std::vector<::blue::KMerInfo>>;
+using FragmentIndex = ::std::vector<::blue::KMerInfo>;
+using Sequence = ::std::tuple<int, int, int>;
+
+ReferenceIndex CreateReferenceIndex(
+    const ::std::unique_ptr<::mapper::Sequence>& reference, const unsigned k,
+    const unsigned w, const double f) {
+  ::std::unordered_map<::blue::KMerInfo, unsigned> occurences;
+  for (auto& kmer : ::blue::minimizers(
+           reference->sequence.data(),
+           ::blue::SequenceLength{
+               static_cast<unsigned>(reference->sequence.length())},
+           ::blue::KType{k}, ::blue::WindowLength{w}))
+    ++occurences[kmer];
+
+  ::std::vector<::std::pair<::blue::KMerInfo, unsigned>> index(
+      ::std::make_move_iterator(occurences.begin()),
+      ::std::make_move_iterator(occurences.end()));
+
+  ::std::sort(index.begin(), index.end(),
+              [](const auto& a, const auto& b) { return a.second < b.second; });
+  index.resize(index.size() * (1.0 - f));
+
+  ::std::sort(index.begin(), index.end(), [](const auto& a, const auto& b) {
+    return ::std::get<1>(a.first) < ::std::get<1>(b.first);
+  });
+
+  ReferenceIndex ret;
+  for (auto& [kmer, _] : index)
+    ret[::std::get<0>(kmer)].emplace_back(::std::move(kmer));
+
+  return ret;
+}
+
+::std::vector<::blue::KMerInfo> CreateFragmentIndex(
+    const ::std::unique_ptr<::mapper::Sequence>& fragment, const unsigned k,
+    const unsigned w) {
+  return ::blue::minimizers(fragment->sequence.data(),
+                            ::blue::SequenceLength{static_cast<unsigned>(
+                                fragment->sequence.length())},
+                            ::blue::KType{k}, ::blue::WindowLength{w});
+}
+
+template <typename T, typename C>
+Sequence LIS(const ::std::vector<T>& v, const C& comp) {
+  ::std::vector<Sequence> sequences{{0, 0, 1}};
+  for (int i = 1; i < v.size(); ++i)
+    if (comp(v[i], v[::std::get<1>(sequences.front())])) {
+      sequences[0] = {i, i, 1};
+    } else if (auto [p, q, l] = sequences.back(); comp(v[q], v[i])) {
+      sequences.emplace_back(p, i, l + 1);
+    } else {
+      auto iter =
+          ::std::lower_bound(sequences.begin(), sequences.end(), v[i],
+                             [&v, &comp](auto const& tuple, auto const& value) {
+                               return comp(v[::std::get<1>(tuple)], value);
+                             });
+
+      if (iter == sequences.begin()) {
+        *iter = {i, i, 1};
+      } else {
+        auto [u, v, k] = *(iter - 1);
+        *iter = {u, i, k + 1};
+      }
+    }
+  return sequences.back();
+}
+
+using KMerMatch = ::std::pair<::blue::KMerInfo, ::blue::KMerInfo>;
+
+namespace detail {
+
+bool r(const KMerMatch& a, const KMerMatch& b) noexcept {
+  return ::std::get<1>(a.second) < ::std::get<1>(b.second);
+}
+
+bool i(const KMerMatch& a, const KMerMatch& b) noexcept {
+  return ::std::get<1>(a.second) > ::std::get<1>(b.second);
+}
+
+bool rr(const KMerMatch& a, const KMerMatch& b) noexcept {
+  return ::std::get<1>(a.first) < ::std::get<1>(b.first) &&
+         ::std::get<1>(a.second) < ::std::get<1>(b.second);
+}
+
+bool ri(const KMerMatch& a, const KMerMatch& b) noexcept {
+  return ::std::get<1>(a.first) < ::std::get<1>(b.first) &&
+         ::std::get<1>(a.second) > ::std::get<1>(b.second);
+}
+
+bool ir(const KMerMatch& a, const KMerMatch& b) noexcept {
+  return ::std::get<1>(a.first) > ::std::get<1>(b.first) &&
+         ::std::get<1>(a.second) < ::std::get<1>(b.second);
+}
+
+bool ii(const KMerMatch& a, const KMerMatch& b) noexcept {
+  return ::std::get<1>(a.first) > ::std::get<1>(b.first) &&
+         ::std::get<1>(a.second) > ::std::get<1>(b.second);
+}
+
+}  // namespace detail
+
+using Region = ::std::pair<KMerMatch, KMerMatch>;
+
+Region BestMatch(const ReferenceIndex& ri, FragmentIndex fi) {
+  ::std::vector<::std::vector<KMerMatch>> matches(2);
+  constexpr bool (*cmp[])(const KMerMatch&, const KMerMatch&) = {detail::r,
+                                                                 detail::i};
+
+  for (auto f_kmer : fi) {
+    auto iter = ri.find(::std::get<0>(f_kmer));
+    auto idx = ::std::get<2>(f_kmer) & 1;
+    if (iter != ri.end())
+      for (auto r_kmer : iter->second)
+        matches[idx ^ ::std::get<2>(r_kmer)].emplace_back(f_kmer, r_kmer);
+  }
+
+  Sequence best_seq = {0, 0, 0};
+  auto type = -1;
+
+  for (auto i = 0; i < matches.size(); ++i)
+    if (matches[i].size()) {
+      auto seq = LIS(matches[i], cmp[i]);
+      if (::std::get<2>(seq) > ::std::get<2>(best_seq))
+        best_seq = seq, type = i;
+    }
+
+  if (type == -1)
+    return {};
+
+  return {matches[type][::std::get<0>(best_seq)],
+          matches[type][::std::get<1>(best_seq)]};
+}
+
 }  // namespace util
+
+::std::ostream& operator<<(::std::ostream& out, const ::blue::KMerInfo k) {
+  out << ::std::get<0>(k) << " " << ::std::get<1>(k) << " " << ::std::get<2>(k);
+  return out;
+}
 
 int main(int argc, char** argv, char** env) {
   /*
@@ -200,45 +346,62 @@ int main(int argc, char** argv, char** env) {
   ::std::cerr << "Loaded fragments."
               << "\n";
 
-  auto reference = ::mapper::Parse<::mapper::Sequence>(dest);
+  auto reference =
+      ::std::move(::mapper::Parse<::mapper::Sequence>(dest).front());
 
   ::std::cerr << "Loaded reference."
               << "\n\n";
 
-  ::std::cerr << "TODO..."
-              << "\n";
-
-  auto k = argc >= 8 ? ::std::stoi(argv[7]) : 15;
-  auto w = argc >= 9 ? ::std::stoi(argv[8]) : 5;
+  unsigned k = argc >= 8 ? ::std::stoi(argv[7]) : 15;
+  unsigned w = argc >= 9 ? ::std::stoi(argv[8]) : 5;
   auto f = argc >= 10 ? ::std::stod(argv[9]) : 0.001;
 
-  ::std::vector<::std::vector<::blue::KMerInfo>> kmers;
-  kmers.reserve(fragments.size());
+  auto c = argc >= 12 && argv[11][0] == 'c';
+  auto t = ::std::stoi(argv[10]);
 
-  for (auto&& frag : fragments)
-    kmers.emplace_back(minimizers(
-        frag->sequence.data(),
-        blue::SequenceLength{static_cast<unsigned>(frag->sequence.length())},
-        blue::KType{k}, blue::WindowLength{w}));
+  ::std::cerr << "Creating minimizer index..."
+              << "\n";
 
-  ::std::unordered_map<::blue::KMerInfo, unsigned> occurences;
+  auto pool = ::thread_pool::createThreadPool(t);
 
-  for (auto& kmer : minimizers(reference.front()->sequence.data(),
-                               blue::SequenceLength{static_cast<unsigned>(
-                                   reference.front()->sequence.length())},
-                               blue::KType{k}, blue::WindowLength{w}))
-    ++occurences[kmer];
+  auto reference_index_f = pool->submit(::util::CreateReferenceIndex,
+                                        ::std::ref(reference), k, w, f);
 
-  ::std::vector<::std::pair<::blue::KMerInfo, unsigned>> reference_index(
-      ::std::make_move_iterator(occurences.begin()),
-      ::std::make_move_iterator(occurences.end()));
+  ::std::vector<::std::future<::std::vector<::blue::KMerInfo>>>
+      fragment_indices_f;
+  fragment_indices_f.reserve(fragments.size());
 
-  occurences.clear();
+  ::std::transform(
+      fragments.begin(), fragments.end(),
+      ::std::back_inserter(fragment_indices_f), [&](const auto& f) {
+        return pool->submit(::util::CreateFragmentIndex, ::std::ref(f), k, w);
+      });
 
-  ::std::sort(reference_index.begin(), reference_index.end(),
-              [](const auto& a, const auto& b) { return a.second < b.second; });
+  const auto reference_index = reference_index_f.get();
 
-  ::std::cerr << "Size before: " << reference_index.size() << "\n";
-  reference_index.resize((1.0 - f) * reference_index.size());
-  ::std::cerr << "Size after:  " << reference_index.size() << "\n";
+  ::std::vector<::std::future<::util::Region>> regions_f;
+  regions_f.reserve(fragment_indices_f.size());
+
+  ::std::transform(fragment_indices_f.begin(), fragment_indices_f.end(),
+                   ::std::back_inserter(regions_f),
+                   [&](auto& f) -> ::std::future<::util::Region> {
+                     return pool->submit(::util::BestMatch,
+                                         ::std::ref(reference_index), f.get());
+                   });
+
+  ::std::vector<::util::Region> regions;
+  regions.reserve(regions_f.size());
+
+  ::std::transform(regions_f.begin(), regions_f.end(),
+                   ::std::back_inserter(regions),
+                   [](auto& f) { return f.get(); });
+
+  for (auto [p, q] : regions) {
+    auto [pf, pr] = p;
+    auto [qf, qr] = q;
+
+    ::std::cout << pf << "; " << pr << "\n";
+    ::std::cout << qf << ", " << qr << "\n";
+    ::std::cout << "\n";
+  }
 }
