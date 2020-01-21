@@ -5,8 +5,10 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <iterator>
+#include <valarray>
 #include <cstdlib>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <vector>
 #include <array>
@@ -82,9 +84,9 @@ public:
 
     VectorSlice(vec_type const& vec, std::size_t l, std::size_t r)
         : begin_{vec.begin()}, end_{vec.end()} {
-            std::advance(begin_, l);
-            std::advance(end_, r);
-        }
+        std::advance(begin_, l);
+        std::advance(end_, r);
+    }
 
     VectorSlice(iterator begin, iterator end) : begin_{begin}, end_{end} {}
 
@@ -253,8 +255,8 @@ auto parseAlignType(char const* type) {
 auto parseOptions(int argc, char* argv[], alignment::AlignConf& a_conf,
                   minimizers::MinimizerConf& m_conf, std::uint8_t& n_threads) {
     auto opt = int{};
-    while ((opt = getopt_long(argc, argv, "hvm:s:g:t:", long_options, NULL)) !=
-           -1) {
+    while ((opt = getopt_long(argc, argv, "hvm:s:g:t:n:", long_options,
+                              NULL)) != -1) {
         switch (opt) {
             case 'v':
                 printVersion();
@@ -494,53 +496,100 @@ MinimizerIndex createRefMinimzIndex(std::string const& ref,
  * @param slice
  * @return auto
  */
-auto LISAlgo(MatchSlice const& slice) {
+auto LISAlgo(KMerMatches const& matches) {
     /* Dynamic LIS building */
-    std::vector<std::size_t> heads{};
+    std::vector<std::size_t> lis{};
 
     /**
      * @brief Lamba expression used for binary search in LIS
      */
-    auto cmp_lambda = [&slice](std::size_t const& a, std::size_t const& b) {
-        return std::get<1>(slice.at(a)) < std::get<1>(slice.at(b));
+    auto cmp_lambda = [&matches](std::size_t const& a, std::size_t const& b) {
+        return std::get<1>(matches.at(a)) < std::get<1>(matches.at(b));
     };
 
-    auto b_search = [&heads, &cmp_lambda](std::size_t const pos) {
-        return std::lower_bound(heads.begin(), heads.end(), pos, cmp_lambda);
+    auto b_search = [&lis, &cmp_lambda](std::size_t const pos) {
+        return std::lower_bound(lis.begin(), lis.end(), pos, cmp_lambda);
     };
 
-    for (std::size_t i = 0; i < slice.size(); ++i) {
+    for (std::size_t i = 0; i < matches.size(); ++i) {
         auto res = b_search(i);
-        if (res == heads.end())
-            heads.push_back(i);
+        if (res == lis.end())
+            lis.push_back(i);
         else
             *res = i;
     }
+
+    return std::make_pair(
+        std::make_pair(std::get<0>(matches[lis.front()]), std::get<0>(matches[lis.back()])),
+        std::make_pair(std::get<0>(matches[lis.front()]), std::get<0>(matches[lis.back()]))
+    );
 }
 
-auto generatePAF(KMerMatches const& matches) {}
+auto generatePAF(SequencePtr const& query, SequencePtr const& target,
+                 KMerMatches const& matches, char const rel_strand) {
 
-void mapReads(SliceSeqPtr const&& reads, MinimizerIndex const& ref_index,
+    auto [query_se, target_se] = LISAlgo(matches);
+
+    std::stringstream paf_ss;
+    auto gen_seq_data = [&paf_ss](SequencePtr const& seq, auto start_end) -> std::string {
+        paf_ss << seq.get() -> name_ << '\t';
+        paf_ss << seq.get() -> seq_.size() << '\t';
+        paf_ss << start_end.first << '\t';
+        paf_ss << start_end.second << '\t';
+    };
+
+    gen_seq_data(query, query_se);
+    paf_ss << rel_strand << '\t';
+    gen_seq_data(target, target_se);
+
+    
+}
+
+std::unordered_map<char,
+                   std::function<bool(KMerMatch const&, KMerMatch const&)>>
+    sort_dict{
+        // Reminder: KMerMatch(query_pos, target_pos)
+        {'-',
+         [](KMerMatch const& a, KMerMatch const& b) -> bool { return a < b; }},
+
+        {'+', [](KMerMatch const& a, KMerMatch const& b) -> bool {
+             if (std::get<0>(a) != std::get<0>(b))
+                 return std::get<0>(a) > std::get<0>(b);
+             return std::get<1>(a) < std::get<1>(b);
+         }}};
+
+void mapReads(std::shared_ptr<SliceSeqPtr> reads, SequencePtr const& target,
+              MinimizerIndex const& target_index,
               minimizers::MinimizerConf const& m_conf) {
-    for (auto const& read : reads) {
+    for (auto const& read : (*reads.get())) {
+        // One read -> One PAF mapping
+        std::array<KMerMatches, 2>
+            matches;  // 1 -> on the same strand, 0 -> differ
         for (auto&& kmer : minimizers::minimizers(read.get()->seq_.c_str(),
                                                   read.get()->seq_.size(),
                                                   m_conf.k_, m_conf.win_len_)) {
             auto [kmer_val, kmer_pos, kmer_org] = kmer;
-            auto ref_kmer = ref_index.find(kmer_val);
+            auto ref_kmer = target_index.find(kmer_val);
 
-            std::array<KMerMatches, 2>
-                matches;  // 1 -> on the same strand, 0 -> differ
-
-            if (ref_kmer != ref_index.end()) {
-                auto ref_kmers = ref_kmer->second;
-                for (auto [ref_pos, ref_org] : ref_kmers)
+            if (ref_kmer != target_index.end()) {
+                auto ref_data = ref_kmer->second;
+                for (auto [ref_pos, ref_org] : ref_data)
                     matches[kmer_org == ref_org].emplace_back(kmer_pos,
                                                               ref_pos);
             }
         }
 
-        // auto paf = generatePAF(matches);
+        auto genPAF = [&read, &target](KMerMatches& matches,
+                                       char const rel_strand) -> void {
+            generatePAF(read, target, matches, rel_strand);
+        };
+
+        std::valarray<char> strands{'-', '+'};
+        for (std::size_t i{0}; i < 2; ++i) {
+            std::sort(matches[i].begin(), matches[i].end(),
+                      sort_dict[strands[i]]);
+            genPAF(matches[i], strands[i]);
+        }
     }
 }
 
@@ -549,7 +598,7 @@ void mapReads(SliceSeqPtr const&& reads, MinimizerIndex const& ref_index,
  *
  * @return auto
  */
-auto threadMapping(VecSeqPtr const& reads, MinimizerIndex const& ref_index,
+void threadMapping(VecSeqPtr const& reads, SequencePtr const& reference,
                    minimizers::MinimizerConf const& m_conf,
                    std::uint8_t const n_threads) {
     auto thread_pool = thread_pool::createThreadPool(n_threads);
@@ -557,15 +606,24 @@ auto threadMapping(VecSeqPtr const& reads, MinimizerIndex const& ref_index,
 
     futures.reserve(std::ceil(reads.size() / n_threads));
 
+    auto jmp = static_cast<std::size_t>(reads.size() / n_threads);
+    auto ref_index = createRefMinimzIndex(reference.get()->seq_, m_conf);
+
     std::size_t block_start{0};
-    for (; block_start + n_threads < reads.size(); block_start += n_threads) {
-        auto const slice = SliceSeqPtr(reads, block_start, block_start + n_threads);
-        futures.push_back(thread_pool -> submit(
-            mapReads, std::ref(slice), std::ref(ref_index), std::ref(m_conf)
-        ));
+    for (; block_start + jmp < reads.size(); block_start += jmp) {
+        auto slice = std::make_shared<SliceSeqPtr>(reads, block_start,
+                                                   block_start + n_threads);
+        futures.push_back(
+            thread_pool->submit(mapReads, slice, std::ref(reference),
+                                std::ref(ref_index), std::ref(m_conf)));
     }
 
-    // last VecSlice
+    // Last slice
+    auto slice =
+        std::make_shared<SliceSeqPtr>(reads, block_start, reads.size());
+    futures.push_back(thread_pool->submit(mapReads, slice, std::ref(reference),
+                                          std::ref(ref_index),
+                                          std::ref(m_conf)));
 
     std::for_each(futures.begin(), futures.end(),
                   [](auto const& f) { f.wait(); });
@@ -574,13 +632,9 @@ auto threadMapping(VecSeqPtr const& reads, MinimizerIndex const& ref_index,
 /* clang-format: off */
 /* TODO:
 
-    2.) Minimizer index for each fragment seperatelly, used for fniding
-            matches with the reference genome
-
     3.) From the list of all matches for a pair of sequences,
-        the longest linear chain should represent the best candidate for a good
-        alignment between the pair.
-    4.) Call the alignment procedure
+        the longest linear chain should represent the best candidate for a
+   good alignment between the pair. 4.) Call the alignment procedure
 
 */
 /* clang-format: on */
@@ -631,20 +685,20 @@ int main(int argc, char* argv[]) {
 
         // Determine scan formats
         auto reads_type = mapper::parseFileType(path_to_reads);
-        auto ref_type = mapper::parseFileType(path_to_ref);
+        auto refs_type = mapper::parseFileType(path_to_ref);
 
         // Report start of file loading
         std::cout << "Started loading files\n";
 
         // Load and parse data from files
         auto reads = mapper::loadFile(path_to_reads, reads_type);
-        auto ref = mapper::loadFile(path_to_ref, ref_type);
+        auto refs = mapper::loadFile(path_to_ref, refs_type);
 
         // Report end of file loading
         std::cout << "Finsihed loading files\n\n";
 
-        auto ref_index =
-            mapper::createRefMinimzIndex(ref.front().get()->seq_, m_conf);
+        for (auto const& ref : refs)
+            mapper::threadMapping(reads, ref, m_conf, n_threads);
 
     } catch (std::exception const& e) {
         std::cerr << e.what() << '\n';
