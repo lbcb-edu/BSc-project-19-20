@@ -40,12 +40,11 @@ struct option const long_options[] = {
     {"match", required_argument, 0, 'm'},
     {"mismatch", required_argument, 0, 's'},
     {"gap", required_argument, 0, 'g'},
+    {"cigar", no_argument, NULL, 'v'},
     {"kmer", required_argument, NULL, 'k'},
     {"window", required_argument, NULL, 'w'},
     {"frequency", required_argument, NULL, 'f'},
     {"n_threads", required_argument, NULL, 'n'},
-    // TODO: Option for the number of threads
-    // TODO: Option for including the CIGAR in PAF
     {NULL, 0, NULL, 0}};
 
 /**
@@ -63,11 +62,9 @@ struct Sequence {
      */
     Sequence(char const* name, std::uint32_t name_len, char const* seq,
              std::uint32_t seq_len)
-        : name_{name}, name_len_{name_len}, seq_(seq, seq_len) {}
+        : name_(name, name_len), seq_(seq, seq_len) {}
 
-    char const* name_;              //<<< sequence name
-    std::uint32_t const name_len_;  //<<< sequence name length
-
+    std::string name_;
     std::string seq_;
 };
 
@@ -79,11 +76,11 @@ struct Sequence {
 template <typename T>
 class VectorSlice {
 public:
-    using vec_type = std::vector<T>;
+    using vec_type = std::vector<T> const;
     using iterator = typename vec_type::const_iterator;
 
     VectorSlice(vec_type const& vec, std::size_t l, std::size_t r)
-        : begin_{vec.begin()}, end_{vec.end()} {
+        : begin_{vec.cbegin()}, end_{vec.cbegin()} {
         std::advance(begin_, l);
         std::advance(end_, r);
     }
@@ -132,11 +129,9 @@ struct FastQ : public Sequence {
           std::uint32_t seq_len, char const* quality_str,
           std::uint32_t quality_str_len)
         : Sequence(name, name_len, seq, seq_len),
-          quality_str_{quality_str},
-          quality_str_len_{quality_str_len} {}
+          quality_str_(quality_str, quality_str_len) {}
 
-    char const* quality_str_;
-    std::uint32_t const quality_str_len_;
+    std::string quality_str_;
 };
 
 using MinimizerIndex =
@@ -210,7 +205,8 @@ auto printHelp() {
            "-s\tmismatch score\n\t-g\tgap score\n\n\t"
            "-k\tk-mer size\n\t-w\twindow length\n\t"
            "-f\tignore top frequent minimizers\n"
-           "-tn\tspecify the number of threads for mapping (defaults to one)";
+           "-\tinclude CIGAR string in PAF output\n"
+           "-tn\tspecify the number of threads for mapping (defaults to one)\n";
     std::exit(EXIT_SUCCESS);
 }
 
@@ -255,7 +251,7 @@ auto parseAlignType(char const* type) {
 auto parseOptions(int argc, char* argv[], alignment::AlignConf& a_conf,
                   minimizers::MinimizerConf& m_conf, std::uint8_t& n_threads) {
     auto opt = int{};
-    while ((opt = getopt_long(argc, argv, "hvm:s:g:t:n:", long_options,
+    while ((opt = getopt_long(argc, argv, "hvm:s:g:t:n:c", long_options,
                               NULL)) != -1) {
         switch (opt) {
             case 'v':
@@ -275,6 +271,9 @@ auto parseOptions(int argc, char* argv[], alignment::AlignConf& a_conf,
                 break;
             case 'g':
                 a_conf.gap_ = std::atoi(optarg);
+                break;
+            case 'c':
+                a_conf.cigar_ = true;
                 break;
             case 'k':
                 m_conf.k_ = std::atoi(optarg);
@@ -519,21 +518,23 @@ auto LISAlgo(KMerMatches const& matches) {
             *res = i;
     }
 
-    return std::make_pair(
-        std::make_pair(std::get<0>(matches[lis.front()]), std::get<0>(matches[lis.back()])),
-        std::make_pair(std::get<0>(matches[lis.front()]), std::get<0>(matches[lis.back()]))
-    );
+    return std::make_pair(std::make_pair(std::get<0>(matches[lis.front()]),
+                                         std::get<0>(matches[lis.back()])),
+                          std::make_pair(std::get<0>(matches[lis.front()]),
+                                         std::get<0>(matches[lis.back()])));
 }
 
 auto generatePAF(SequencePtr const& query, SequencePtr const& target,
-                 KMerMatches const& matches, char const rel_strand) {
-
-    auto [query_se, target_se] = LISAlgo(matches);
+                 KMerMatches const& matches, char const rel_strand,
+                 alignment::AlignConf const& a_conf,
+                 minimizers::MinimizerConf const& m_conf) {
+    auto const [query_se, target_se] = LISAlgo(matches);
 
     std::stringstream paf_ss;
-    auto gen_seq_data = [&paf_ss](SequencePtr const& seq, auto start_end) -> std::string {
-        paf_ss << seq.get() -> name_ << '\t';
-        paf_ss << seq.get() -> seq_.size() << '\t';
+    auto gen_seq_data = [&paf_ss](SequencePtr const& seq,
+                                  auto start_end) -> void {
+        paf_ss << seq.get()->name_ << '\t';
+        paf_ss << seq.get()->seq_.size() << '\t';
         paf_ss << start_end.first << '\t';
         paf_ss << start_end.second << '\t';
     };
@@ -541,8 +542,6 @@ auto generatePAF(SequencePtr const& query, SequencePtr const& target,
     gen_seq_data(query, query_se);
     paf_ss << rel_strand << '\t';
     gen_seq_data(target, target_se);
-
-    
 }
 
 std::unordered_map<char,
@@ -558,16 +557,19 @@ std::unordered_map<char,
              return std::get<1>(a) < std::get<1>(b);
          }}};
 
-void mapReads(std::shared_ptr<SliceSeqPtr> reads, SequencePtr const& target,
+void mapReads(SliceSeqPtr reads, SequencePtr const& target,
               MinimizerIndex const& target_index,
+              alignment::AlignConf const& a_conf,
               minimizers::MinimizerConf const& m_conf) {
-    for (auto const& read : (*reads.get())) {
+    for (auto const& read : reads) {
         // One read -> One PAF mapping
         std::array<KMerMatches, 2>
             matches;  // 1 -> on the same strand, 0 -> differ
-        for (auto&& kmer : minimizers::minimizers(read.get()->seq_.c_str(),
-                                                  read.get()->seq_.size(),
-                                                  m_conf.k_, m_conf.win_len_)) {
+
+
+        for (auto const& kmer : minimizers::minimizers(
+                 read.get()->seq_.c_str(), read.get()->seq_.size(), m_conf.k_,
+                 m_conf.win_len_)) {
             auto [kmer_val, kmer_pos, kmer_org] = kmer;
             auto ref_kmer = target_index.find(kmer_val);
 
@@ -579,13 +581,17 @@ void mapReads(std::shared_ptr<SliceSeqPtr> reads, SequencePtr const& target,
             }
         }
 
-        auto genPAF = [&read, &target](KMerMatches& matches,
-                                       char const rel_strand) -> void {
-            generatePAF(read, target, matches, rel_strand);
+        auto genPAF = [&read, &target, &a_conf, &m_conf](
+                          KMerMatches const& matches,
+                          char const rel_strand) -> void {
+            generatePAF(read, target, matches, rel_strand, a_conf, m_conf);
         };
 
         std::valarray<char> strands{'-', '+'};
         for (std::size_t i{0}; i < 2; ++i) {
+            if (matches[i].empty())
+                continue;
+
             std::sort(matches[i].begin(), matches[i].end(),
                       sort_dict[strands[i]]);
             genPAF(matches[i], strands[i]);
@@ -600,6 +606,7 @@ void mapReads(std::shared_ptr<SliceSeqPtr> reads, SequencePtr const& target,
  */
 void threadMapping(VecSeqPtr const& reads, SequencePtr const& reference,
                    minimizers::MinimizerConf const& m_conf,
+                   alignment::AlignConf const& a_conf,
                    std::uint8_t const n_threads) {
     auto thread_pool = thread_pool::createThreadPool(n_threads);
     auto futures = std::vector<std::future<void>>{};
@@ -611,18 +618,16 @@ void threadMapping(VecSeqPtr const& reads, SequencePtr const& reference,
 
     std::size_t block_start{0};
     for (; block_start + jmp < reads.size(); block_start += jmp) {
-        auto slice = std::make_shared<SliceSeqPtr>(reads, block_start,
-                                                   block_start + n_threads);
-        futures.push_back(
-            thread_pool->submit(mapReads, slice, std::ref(reference),
-                                std::ref(ref_index), std::ref(m_conf)));
+        auto slice = SliceSeqPtr(reads, block_start, block_start + jmp);
+        futures.push_back(thread_pool->submit(
+            mapReads, slice, std::ref(reference), std::ref(ref_index),
+            std::ref(a_conf), std::ref(m_conf)));
     }
 
     // Last slice
-    auto slice =
-        std::make_shared<SliceSeqPtr>(reads, block_start, reads.size());
+    auto const slice = SliceSeqPtr(reads, block_start, reads.size());
     futures.push_back(thread_pool->submit(mapReads, slice, std::ref(reference),
-                                          std::ref(ref_index),
+                                          std::ref(ref_index), std::ref(a_conf),
                                           std::ref(m_conf)));
 
     std::for_each(futures.begin(), futures.end(),
@@ -691,14 +696,15 @@ int main(int argc, char* argv[]) {
         std::cout << "Started loading files\n";
 
         // Load and parse data from files
-        auto reads = mapper::loadFile(path_to_reads, reads_type);
-        auto refs = mapper::loadFile(path_to_ref, refs_type);
+        auto const reads = mapper::loadFile(path_to_reads, reads_type);
+        auto const refs = mapper::loadFile(path_to_ref, refs_type);
 
         // Report end of file loading
         std::cout << "Finsihed loading files\n\n";
 
         for (auto const& ref : refs)
-            mapper::threadMapping(reads, ref, m_conf, n_threads);
+            mapper::threadMapping(reads, ref, m_conf,
+                                  a_conf, n_threads);
 
     } catch (std::exception const& e) {
         std::cerr << e.what() << '\n';

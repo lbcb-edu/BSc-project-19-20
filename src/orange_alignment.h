@@ -24,6 +24,8 @@ struct AlignConf {
     int match_;
     int mismatch_;
     int gap_;
+
+    bool cigar_ = false;
 };
 
 /**
