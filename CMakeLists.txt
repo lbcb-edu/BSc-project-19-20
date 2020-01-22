@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_CXX_FLAGS_DEBUG "-g -fsanitize=address")
-set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -g -fsanitize=address")
+set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -DNDEBUG")
 
 find_package(Threads)
 
@@ -26,7 +26,7 @@ add_subdirectory("blue_alignment" EXCLUDE_FROM_ALL)
 add_subdirectory("blue_minimizers" EXCLUDE_FROM_ALL)
 add_subdirectory("blue_common" EXCLUDE_FROM_ALL)
 
-add_executable(blue_mapper "src/main.cpp")
+add_executable(blue_mapper "src/main.cpp" "src/matcher.cpp")
 
 target_link_libraries(
   blue_mapper PUBLIC 
