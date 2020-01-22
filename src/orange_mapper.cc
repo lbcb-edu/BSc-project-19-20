@@ -25,6 +25,8 @@
 namespace orange {
 namespace mapper {
 
+auto constexpr kStrandGapLim = static_cast<std::uint32_t>(10e3);
+
 /**
  * @brief Supported genome file formats
  */
@@ -84,8 +86,6 @@ public:
         std::advance(begin_, l);
         std::advance(end_, r);
     }
-
-    VectorSlice(iterator begin, iterator end) : begin_{begin}, end_{end} {}
 
     T const& at(std::size_t pos) const { return *(begin_ + pos); }
 
@@ -495,7 +495,7 @@ MinimizerIndex createRefMinimzIndex(std::string const& ref,
  * @param slice
  * @return auto
  */
-auto LISAlgo(KMerMatches const& matches) {
+auto LISAlgo(MatchSlice const& matches) {
     /* Dynamic LIS building */
     std::vector<std::size_t> lis{};
 
@@ -518,30 +518,103 @@ auto LISAlgo(KMerMatches const& matches) {
             *res = i;
     }
 
-    return std::make_pair(std::make_pair(std::get<0>(matches[lis.front()]),
-                                         std::get<0>(matches[lis.back()])),
-                          std::make_pair(std::get<0>(matches[lis.front()]),
-                                         std::get<0>(matches[lis.back()])));
+    return std::make_tuple(std::make_pair(std::get<0>(matches.at(lis.front())),
+                                          std::get<0>(matches.at(lis.back()))),
+                           std::make_pair(std::get<0>(matches.at(lis.front())),
+                                          std::get<0>(matches.at(lis.back()))),
+                           lis.size());
 }
 
 auto generatePAF(SequencePtr const& query, SequencePtr const& target,
                  KMerMatches const& matches, char const rel_strand,
                  alignment::AlignConf const& a_conf,
                  minimizers::MinimizerConf const& m_conf) {
-    auto const [query_se, target_se] = LISAlgo(matches);
+    auto const [query_se, target_se, n_matches] = [&matches]() {
+        using StartEnd = std::pair<std::uint32_t, std::uint32_t>;
+        using LISResult = std::tuple<StartEnd, StartEnd, std::size_t>;
+
+        auto prev = 0;
+        auto ret = LISResult{matches.front(), matches.front(), 1};
+        for (std::size_t curr{1}; curr < matches.size(); ++curr) {
+            if (curr + 1 == matches.size() ||
+                std::get<0>(matches[curr]) - std::get<0>(matches[prev]) > kStrandGapLim) {
+                auto res = LISAlgo(std::move(MatchSlice(matches, prev, curr)));
+                if (std::get<2>(res) > std::get<2>(ret))
+                    ret = std::move(res);
+            }
+
+            prev = curr;
+        }
+
+        return ret;
+    }();
+
 
     std::stringstream paf_ss;
-    auto gen_seq_data = [&paf_ss](SequencePtr const& seq,
+    auto gen_seq_data = [&paf_ss, &m_conf](SequencePtr const& seq,
                                   auto start_end) -> void {
         paf_ss << seq.get()->name_ << '\t';
-        paf_ss << seq.get()->seq_.size() << '\t';
+        paf_ss << seq.get()->seq_.size() + m_conf.k_ << '\t';
         paf_ss << start_end.first << '\t';
         paf_ss << start_end.second << '\t';
     };
 
+
     gen_seq_data(query, query_se);
     paf_ss << rel_strand << '\t';
     gen_seq_data(target, target_se);
+
+    auto const& [query_start, query_end] = query_se;
+    auto const& [target_start, target_end] = target_se;
+
+    if (!a_conf.cigar_) {
+        paf_ss << m_conf.k_ * n_matches << '\t';
+        paf_ss << target_end - target_start + m_conf.k_ << '\t';
+        paf_ss << "255\t\n";
+    } else {
+
+        std::string cigar{};
+        std::uint32_t target_begin{0};
+
+        auto const& que = *query.get();
+        auto const& tar = *target.get();
+
+        alignment::pairwiseAlignment(
+            que.seq_.c_str() + query_start, query_end - query_start + m_conf.k_, 
+            tar.seq_.c_str() + target_start , target_end - target_start + m_conf.k_, 
+            a_conf.type_, a_conf.match_, a_conf.mismatch_, a_conf.gap_, 
+            cigar, target_begin);
+
+        auto nxt_num_in_cigar = [&cigar](auto& iter) {
+            std::string buff{};
+            while (iter < cigar.cend() && std::isdigit(*iter))
+                buff += *(iter++);
+            return std::stoi(buff);
+        };
+
+        std::uint32_t cigar_matches{0};
+        std::uint32_t alignment_len{0};
+
+        auto iter = cigar.cbegin();
+        while (iter < cigar.cend()) {
+            auto curr_char = *(iter++);
+            auto c_num = nxt_num_in_cigar(iter);
+            if (curr_char == 'I' || curr_char == 'M') {
+                alignment_len += c_num;
+                if (curr_char == 'M')
+                    cigar_matches += c_num;
+            } else alignment_len -= c_num;
+        }
+
+        paf_ss << cigar_matches << '\t';
+        paf_ss << alignment_len << '\t';
+        paf_ss << "\t\n";
+
+        paf_ss << cigar << '\n';
+    }
+
+
+    std::cout << paf_ss.str();;
 }
 
 std::unordered_map<char,
@@ -565,7 +638,6 @@ void mapReads(SliceSeqPtr reads, SequencePtr const& target,
         // One read -> One PAF mapping
         std::array<KMerMatches, 2>
             matches;  // 1 -> on the same strand, 0 -> differ
-
 
         for (auto const& kmer : minimizers::minimizers(
                  read.get()->seq_.c_str(), read.get()->seq_.size(), m_conf.k_,
@@ -703,8 +775,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Finsihed loading files\n\n";
 
         for (auto const& ref : refs)
-            mapper::threadMapping(reads, ref, m_conf,
-                                  a_conf, n_threads);
+            mapper::threadMapping(reads, ref, m_conf, a_conf, n_threads);
 
     } catch (std::exception const& e) {
         std::cerr << e.what() << '\n';
