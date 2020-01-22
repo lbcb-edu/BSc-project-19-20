@@ -143,12 +143,12 @@ ReferenceIndex CreateReferenceIndex(
   index.resize(index.size() * (1.0 - f));
 
   ::std::sort(index.begin(), index.end(), [](const auto& a, const auto& b) {
-    return ::std::get<1>(a.first) < ::std::get<1>(b.first);
+    return a.first.pos < b.first.pos;
   });
 
   ReferenceIndex ret;
   for (auto& [kmer, _] : index)
-    ret[::std::get<0>(kmer)].emplace_back(::std::move(kmer));
+    ret[kmer.kmer].emplace_back(::std::move(kmer));
 
   return ret;
 }
@@ -192,31 +192,11 @@ using KMerMatch = ::std::pair<::blue::KMerInfo, ::blue::KMerInfo>;
 namespace detail {
 
 bool r(const KMerMatch& a, const KMerMatch& b) noexcept {
-  return ::std::get<1>(a.second) < ::std::get<1>(b.second);
+  return a.second.pos < b.second.pos;
 }
 
 bool i(const KMerMatch& a, const KMerMatch& b) noexcept {
-  return ::std::get<1>(a.second) > ::std::get<1>(b.second);
-}
-
-bool rr(const KMerMatch& a, const KMerMatch& b) noexcept {
-  return ::std::get<1>(a.first) < ::std::get<1>(b.first) &&
-         ::std::get<1>(a.second) < ::std::get<1>(b.second);
-}
-
-bool ri(const KMerMatch& a, const KMerMatch& b) noexcept {
-  return ::std::get<1>(a.first) < ::std::get<1>(b.first) &&
-         ::std::get<1>(a.second) > ::std::get<1>(b.second);
-}
-
-bool ir(const KMerMatch& a, const KMerMatch& b) noexcept {
-  return ::std::get<1>(a.first) > ::std::get<1>(b.first) &&
-         ::std::get<1>(a.second) < ::std::get<1>(b.second);
-}
-
-bool ii(const KMerMatch& a, const KMerMatch& b) noexcept {
-  return ::std::get<1>(a.first) > ::std::get<1>(b.first) &&
-         ::std::get<1>(a.second) > ::std::get<1>(b.second);
+  return a.second.pos > b.second.pos;
 }
 
 }  // namespace detail
@@ -229,11 +209,11 @@ Region BestMatch(const ReferenceIndex& ri, FragmentIndex fi) {
                                                                  detail::i};
 
   for (auto f_kmer : fi) {
-    auto iter = ri.find(::std::get<0>(f_kmer));
-    auto idx = ::std::get<2>(f_kmer) & 1;
+    auto iter = ri.find(f_kmer.kmer);
+    auto idx = f_kmer.rc & 1;
     if (iter != ri.end())
       for (auto r_kmer : iter->second)
-        matches[idx ^ ::std::get<2>(r_kmer)].emplace_back(f_kmer, r_kmer);
+        matches[idx ^ r_kmer.rc].emplace_back(f_kmer, r_kmer);
   }
 
   Sequence best_seq = {0, 0, 0};
@@ -256,7 +236,7 @@ Region BestMatch(const ReferenceIndex& ri, FragmentIndex fi) {
 }  // namespace util
 
 ::std::ostream& operator<<(::std::ostream& out, const ::blue::KMerInfo k) {
-  out << ::std::get<0>(k) << " " << ::std::get<1>(k) << " " << ::std::get<2>(k);
+  out << k.kmer << " " << k.pos << " " << k.rc;
   return out;
 }
 

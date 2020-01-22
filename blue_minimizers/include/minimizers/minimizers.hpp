@@ -15,7 +15,7 @@
 
 namespace blue {
 
-using KMerInfo = ::std::tuple<unsigned, unsigned, bool>;
+struct KMerInfo;
 
 using SequenceLength = StrongType<unsigned, struct SequenceLengthTag>;
 using KType = StrongType<unsigned, struct KTypeTag>;
@@ -25,6 +25,33 @@ using WindowLength = StrongType<unsigned, struct WindowLengthTag>;
                                    SequenceLength sequence_length, KType k,
                                    WindowLength window_length);
 
+//
+
+struct KMerInfo {
+  unsigned kmer;
+  unsigned pos;
+  bool rc;
+
+  KMerInfo() noexcept = default;
+  KMerInfo(unsigned kmer, unsigned pos, bool rc) noexcept
+      : kmer(kmer), pos(pos), rc(rc) {}
+
+  friend bool operator<(const KMerInfo& a, const KMerInfo& b) noexcept {
+    return a.kmer < b.kmer;
+  }
+
+  friend bool operator==(const KMerInfo& a, const KMerInfo& b) noexcept {
+    return a.kmer == b.kmer && a.pos == b.pos && a.rc == b.rc;
+  }
+
+  friend void swap(KMerInfo& a, KMerInfo& b) noexcept {
+    using ::std::swap;
+    swap(a.kmer, b.kmer);
+    swap(a.pos, b.pos);
+    swap(a.rc, b.rc);
+  }
+};
+
 }  // namespace blue
 
 namespace std {
@@ -32,20 +59,11 @@ namespace std {
 template <>
 struct hash<::blue::KMerInfo> {
   ::std::size_t operator()(const ::blue::KMerInfo& ki) const noexcept {
-    return ::std::apply([](auto&&... args) { return combine(0, args...); }, ki);
-  }
-
- private:
-  template <typename T>
-  static ::std::size_t combine(const ::std::size_t seed, const T arg) noexcept {
-    return seed ^
-           (::std::hash<T>{}(arg) + 0x9e3779b9 + (seed << 6) + (seed >> 2));
-  }
-
-  template <typename T, typename... Args>
-  static ::std::size_t combine(const ::std::size_t seed, const T arg,
-                               Args&&... args) noexcept {
-    return combine(combine(seed, arg), args...);
+    ::std::hash<unsigned> uh;
+    ::std::size_t seed = uh(ki.kmer) + 0x9e3779b9;
+    seed += uh(ki.pos) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    seed += ::std::hash<bool>{}(ki.rc) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    return seed;
   }
 };
 

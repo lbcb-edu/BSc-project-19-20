@@ -62,7 +62,7 @@ template <typename T>
   ::std::vector<int> s{0};
 
   for (auto i = 1; i < sz; ++i) {
-    while (s.size() && v[s.back()] > v[i])
+    while (s.size() && v[i] < v[s.back()])
       mins[s.back()] = i - 1, s.pop_back();
 
     s.push_back(i);

@@ -1,13 +1,13 @@
-#include <iostream>
-#include <vector>
-
 #include <gtest/gtest.h>
+
+#include <iostream>
 #include <minimizers/minimizers.hpp>
+#include <vector>
 
 // clang-format off
 
 #define VECTOR_OF_KMERS(var, ...) \
-  ::std::vector<::std::tuple<unsigned, unsigned, bool>> var{__VA_ARGS__};
+  ::std::vector<::blue::KMerInfo> var{__VA_ARGS__};
 
 #define BLOAT(seq, k, w, ...)            \
   VECTOR_OF_KMERS(name, __VA_ARGS__)     \
