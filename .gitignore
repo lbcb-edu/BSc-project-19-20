@@ -8,6 +8,7 @@ include/config.hpp
 
 **/vendor/googletest
 **/vendor/bioparser
+**/vendor/thread_pool
 
 blue_mapper
 alignment_tests
