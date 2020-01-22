@@ -545,7 +545,6 @@ auto generatePAF(SequencePtr const& query, SequencePtr const& target,
             if (curr + 1 == matches.size() ||
                 unsigned_dif(std::get<0>(matches[curr]),
                              std::get<0>(matches[prev])) > kStrandGapLim) {
-
                 auto res = LISAlgo(std::move(MatchSlice(matches, prev, curr)));
                 if (std::get<2>(res) > std::get<2>(ret))
                     ret = std::move(res);
@@ -585,9 +584,9 @@ auto generatePAF(SequencePtr const& query, SequencePtr const& target,
         auto const& tar = *target.get();
 
         alignment::pairwiseAlignment(
-            que.seq_.c_str() + query_start, query_end - query_start +
-            m_conf.k_, tar.seq_.c_str() + target_start, target_end -
-            target_start + m_conf.k_, a_conf.type_, a_conf.match_,
+            que.seq_.c_str() + query_start, query_end - query_start + m_conf.k_,
+            tar.seq_.c_str() + target_start,
+            target_end - target_start + m_conf.k_, a_conf.type_, a_conf.match_,
             a_conf.mismatch_, a_conf.gap_, cigar, target_begin);
 
         auto nxt_num_in_cigar = [&cigar](auto& iter) {
@@ -664,14 +663,11 @@ void mapReads(SliceSeqPtr reads, SequencePtr const& target,
             generatePAF(read, target, matches, rel_strand, a_conf, m_conf);
         };
 
-        std::valarray<char> strands{'-', '+'};
-        for (std::size_t i{0}; i < 2; ++i) {
-            if (matches[i].empty())
-                continue;
-
-            std::sort(matches[i].begin(), matches[i].end(),
-                      sort_dict[strands[i]]);
-            genPAF(matches[i], strands[i]);
+        if (!matches[1].empty())
+            genPAF(matches[1], '-');
+        if (!matches[0].empty()) {
+            std::sort(matches[0].begin(), matches[0].end(), sort_dict['+']);
+            genPAF(matches[0], '+');
         }
     }
 }
