@@ -520,8 +520,9 @@ auto LISAlgo(MatchSlice const& matches) {
 
     return std::make_tuple(std::make_pair(std::get<0>(matches.at(lis.front())),
                                           std::get<0>(matches.at(lis.back()))),
-                           std::make_pair(std::get<0>(matches.at(lis.front())),
-                                          std::get<0>(matches.at(lis.back()))),
+
+                           std::make_pair(std::get<1>(matches.at(lis.front())),
+                                          std::get<1>(matches.at(lis.back()))),
                            lis.size());
 }
 
@@ -533,32 +534,37 @@ auto generatePAF(SequencePtr const& query, SequencePtr const& target,
         using StartEnd = std::pair<std::uint32_t, std::uint32_t>;
         using LISResult = std::tuple<StartEnd, StartEnd, std::size_t>;
 
+        auto unsigned_dif = [](std::uint32_t const& a,
+                               std::uint32_t const& b) -> std::uint32_t {
+            return a > b ? a - b : b - a;
+        };
+
         auto prev = 0;
-        auto ret = LISResult{matches.front(), matches.front(), 1};
+        auto ret = LISResult{{0, 0}, {0, 0}, std::size_t{1}};
         for (std::size_t curr{1}; curr < matches.size(); ++curr) {
             if (curr + 1 == matches.size() ||
-                std::get<0>(matches[curr]) - std::get<0>(matches[prev]) > kStrandGapLim) {
+                unsigned_dif(std::get<0>(matches[curr]),
+                             std::get<0>(matches[prev])) > kStrandGapLim) {
+
                 auto res = LISAlgo(std::move(MatchSlice(matches, prev, curr)));
                 if (std::get<2>(res) > std::get<2>(ret))
                     ret = std::move(res);
-            }
 
-            prev = curr;
+                prev = curr;
+            }
         }
 
         return ret;
     }();
 
-
     std::stringstream paf_ss;
     auto gen_seq_data = [&paf_ss, &m_conf](SequencePtr const& seq,
-                                  auto start_end) -> void {
+                                           auto start_end) -> void {
         paf_ss << seq.get()->name_ << '\t';
         paf_ss << seq.get()->seq_.size() + m_conf.k_ << '\t';
         paf_ss << start_end.first << '\t';
         paf_ss << start_end.second << '\t';
     };
-
 
     gen_seq_data(query, query_se);
     paf_ss << rel_strand << '\t';
@@ -572,7 +578,6 @@ auto generatePAF(SequencePtr const& query, SequencePtr const& target,
         paf_ss << target_end - target_start + m_conf.k_ << '\t';
         paf_ss << "255\t\n";
     } else {
-
         std::string cigar{};
         std::uint32_t target_begin{0};
 
@@ -580,10 +585,10 @@ auto generatePAF(SequencePtr const& query, SequencePtr const& target,
         auto const& tar = *target.get();
 
         alignment::pairwiseAlignment(
-            que.seq_.c_str() + query_start, query_end - query_start + m_conf.k_, 
-            tar.seq_.c_str() + target_start , target_end - target_start + m_conf.k_, 
-            a_conf.type_, a_conf.match_, a_conf.mismatch_, a_conf.gap_, 
-            cigar, target_begin);
+            que.seq_.c_str() + query_start, query_end - query_start +
+            m_conf.k_, tar.seq_.c_str() + target_start, target_end -
+            target_start + m_conf.k_, a_conf.type_, a_conf.match_,
+            a_conf.mismatch_, a_conf.gap_, cigar, target_begin);
 
         auto nxt_num_in_cigar = [&cigar](auto& iter) {
             std::string buff{};
@@ -603,7 +608,8 @@ auto generatePAF(SequencePtr const& query, SequencePtr const& target,
                 alignment_len += c_num;
                 if (curr_char == 'M')
                     cigar_matches += c_num;
-            } else alignment_len -= c_num;
+            } else
+                alignment_len -= c_num;
         }
 
         paf_ss << cigar_matches << '\t';
@@ -613,8 +619,7 @@ auto generatePAF(SequencePtr const& query, SequencePtr const& target,
         paf_ss << cigar << '\n';
     }
 
-
-    std::cout << paf_ss.str();;
+    std::cout << paf_ss.str();
 }
 
 std::unordered_map<char,
@@ -705,16 +710,6 @@ void threadMapping(VecSeqPtr const& reads, SequencePtr const& reference,
     std::for_each(futures.begin(), futures.end(),
                   [](auto const& f) { f.wait(); });
 }
-
-/* clang-format: off */
-/* TODO:
-
-    3.) From the list of all matches for a pair of sequences,
-        the longest linear chain should represent the best candidate for a
-   good alignment between the pair. 4.) Call the alignment procedure
-
-*/
-/* clang-format: on */
 
 }  // namespace mapper
 }  // namespace orange
