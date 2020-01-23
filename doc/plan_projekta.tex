@@ -67,7 +67,7 @@
 					
 					Voditelji: 
 					\item[-] Prof. dr. sc. Mile Šikić
-					\item[-] Mag. ing. Robert Vaser
+					\item[-] Mag. ing. Rober Vaser
 				\end{itemize}
 				
 			}
@@ -242,6 +242,18 @@
 	sekvence i odgovarajući \href {https://samtools.github.io/hts-specs/SAMv1.pdf}{CIGAR} string.
 	
 	\subsubsection{DNA Minimizeri}
+	Slijedeći korak je bio implementirati "minimizere", mali substringovi koje često zovemo k-meri. K-meri se koriste za brz pronalazak regija koje treba poravnati. Pošto sekvenciranje samo po sebi zauzima velike količine priručne memorije, ovom metodom se to može znantno smanjiti. To radimo na način da slijed nukleinskim baza izrežemo na manje dijeove duljine k, i među svakih 2 (window) baza spremimo najmanji. To je pobliže opisano u ovom radu: \href{https://academic.oup.com/bioinformatics/article/20/18/3363/202143} Funkcija koja to treba obavljati je zadana:
+	
+	\begin{lstlisting}
+	std::vector<
+	std::tuple<
+	unsigned int, unsigned int, bool>> minimizers(
+	const char* sequence, unsigned int sequence_length,
+	unsigned int k,
+	unsigned int window_length);
+	\end{lstlisting}
+	
+	Osim toga, moramo i ispisati broj različitih minimizera, postotak unikatnih minimizera i broj pojavljivanja najčešćeg minimizera kada top f nije uzeto u obzir. Moramo dodati opcionalne argumente \colorbox{gray!30}{k}, \colorbox{gray!30}{w} i \colorbox{gray!30}{f}. Predodređne vrijednosti za \colorbox{gray!30}{k, w, f} bi trebale biti \colorbox{gray!30}{15, 5, 0.001}.
 	\subsubsection{Mapiranje sekvenci}
 	Posljednji zadatak bio je poravnati ulazne fragmente s danim referentnim genomom.
 	Nakon kreiranja indeksa minimizera iz referentnog genoma i uklanjanja f najčešćih minimizera, za svaki fragment zasebno pronalaze se poklapanja minimizera fragmenta i referentnog genoma. Iz liste poklapanja, najduži lanac najbolji je kandidat za dobro poravnanje. Tu regiju (lanac) najlakše je pronaći rješavanjem problema najdužeg rastućeg podniza (eng. \href{https://en.wikipedia.org/wiki/Longest_increasing_subsequence}{longest increasing subsequence problem}) nad listom minimizera koji se poklapaju. 
@@ -250,6 +262,7 @@
 	Dodatno, argumentom \colorbox{gray!30}{t} unosi se broj dretvi koje maper koristi. Za ovaj dio zadatka studenti mogu koristiti \href{https://www.openmp.org/}{OpenMP} ili \href{https://github.com/rvaser/thread_pool}{thread\_pool}.
 	
 	\subsection{Rezultati}
+	Konačni cilj je bio poravnati 2 zadana fragmenta na referencu E. coli.
 	
 	\section{Literatura}
 	
