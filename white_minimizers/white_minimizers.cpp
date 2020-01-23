@@ -8,7 +8,14 @@
 
 namespace white {
 
-	std::vector<std::tuple<unsigned int, unsigned int, bool>> minimizers(const char* sequence, unsigned int sequence_length,
+	int num_val(char c, bool from) {
+		if (c == 'A') return from == 0 ? 0 : 3;
+		else if (c == 'C') return from == 0 ? 1 : 2;
+		else if (c == 'G') return from == 0 ? 2 : 1;
+		else if (c == 'T') return from == 0 ? 3 : 0;
+	}
+
+	std::vector<std::tuple<unsigned int, unsigned int, bool>> minimizers(const char* sequence, unsigned int sequence_length, 
 																		unsigned int k, unsigned int window_length) {
 
 	std::vector<std::tuple<unsigned int, unsigned int, bool>> ret;
@@ -24,74 +31,19 @@ namespace white {
 	}
 
 	for (int i = 0; i < k; i++) {
-		switch (sequence[i]) {
-			case 'A':
-				current_kmer = (current_kmer << 2) & mask;
-				break;
-			case 'C':
-				current_kmer = ((current_kmer << 2) | 1) & mask;
-				break;
-			case 'G':
-				current_kmer = ((current_kmer << 2) | 2) & mask;
-				break;
-			case 'T':
-				current_kmer = ((current_kmer << 2) | 3) & mask;
-				break;
-		}
-
-		switch (sequence[sequence_length - 1 - i]) {
-			case 'A':
-				rev_current_kmer = ((rev_current_kmer << 2) | 3)& mask;
-				break;
-			case 'C':
-				rev_current_kmer = ((rev_current_kmer << 2) | 2) & mask;
-				break;
-			case 'G':
-				rev_current_kmer = ((rev_current_kmer << 2) | 1) & mask;
-				break;
-			case 'T':
-				rev_current_kmer = (rev_current_kmer << 2) & mask;
-				break;
-
-		}
+		current_kmer = ((current_kmer << 2) | num_val(sequence[i], 0)) & mask;
+		rev_current_kmer = ((rev_current_kmer << 2) | num_val(sequence[sequence_length - i - 1], 1)) & mask;
 	}
 
 	unsigned int last_minimizer = 0;
 	long long int last_pos = -1;
 	bool origin = true;
-
+	
 	for (long long int i = 0; i < sequence_length - (window_length - 1 + k) + 1; i++) { 
-		switch (sequence[i + k]) {
-			case 'A':
-				next_kmer = (current_kmer << 2) & mask;
-				break;
-			case 'C':
-				next_kmer = ((current_kmer << 2) | 1) & mask;
-				break;
-			case 'G':
-				next_kmer = ((current_kmer << 2) | 2) & mask;
-				break;
-			case 'T':
-				next_kmer = ((current_kmer << 2) | 3) & mask;
-				break;
-		}
+		next_kmer = ((current_kmer << 2) | num_val(sequence[i + k], 0)) & mask;
+		rev_next_kmer = ((rev_current_kmer << 2) | num_val(sequence[sequence_length - i - k - 1], 1)) & mask;
 
-		switch (sequence[sequence_length - 1 - (i + k)]) {
-			case 'A':
-				rev_next_kmer = ((rev_current_kmer << 2) | 3) & mask;
-				break;
-			case 'C':
-				rev_next_kmer = ((rev_current_kmer << 2) | 2) & mask;
-				break;
-			case 'G':
-				rev_next_kmer = ((rev_current_kmer << 2) | 1) & mask;
-				break;
-			case 'T':
-				rev_next_kmer = (rev_current_kmer << 2) & mask;
-				break;
-		}
-
-		if ((origin && last_pos < i) || (!origin && last_pos > (sequence_length - 1) - i - (k - 1))) {
+		if ((origin && last_pos < i) || (!origin && last_pos > sequence_length - i - k)) {
 		
 			if (current_kmer <= rev_current_kmer) {
 				last_minimizer = current_kmer;
@@ -100,42 +52,15 @@ namespace white {
 			}
 			else {
 				last_minimizer = rev_current_kmer;
-				last_pos = (sequence_length - 1) - i - (k - 1);
+				last_pos = sequence_length - i - k;
 				origin = false;
 			}
 
 			unsigned int end = i + k + window_length - 1;
 
 			for (unsigned int j = i + k; j < end; j++) {
-				switch (sequence[j]) {
-					case 'A':
-						current_kmer = (current_kmer << 2) & mask;
-						break;
-					case 'C':
-						current_kmer = ((current_kmer << 2) | 1) & mask;
-						break;
-					case 'G':
-						current_kmer = ((current_kmer << 2) | 2) & mask;
-						break;
-					case 'T':
-						current_kmer = ((current_kmer << 2) | 3) & mask;
-						break;
-				}
-
-				switch (sequence[sequence_length - 1 - j]) {
-					case 'A':
-						rev_current_kmer = ((rev_current_kmer << 2) | 3) & mask;
-						break;
-					case 'C':
-						rev_current_kmer = ((rev_current_kmer << 2) | 2) & mask;
-						break;
-					case 'G':
-						rev_current_kmer = ((rev_current_kmer << 2) | 1) & mask;
-						break;
-					case 'T':
-						rev_current_kmer = (rev_current_kmer << 2) & mask;
-						break;
-				}
+				current_kmer = ((current_kmer << 2) | num_val(sequence[j], 0)) & mask;
+				rev_current_kmer = ((rev_current_kmer << 2) | num_val(sequence[sequence_length - j - 1], 1)) & mask;
 
 				if (last_minimizer >= current_kmer) {
 					last_minimizer = current_kmer;	
@@ -149,9 +74,7 @@ namespace white {
 				}
 			}
 
-		}
-		
-		else {
+		} else {
 			current_kmer = 0;
 			rev_current_kmer = 0;
 
@@ -159,36 +82,8 @@ namespace white {
 			unsigned int end = i + k + window_length - 1; 
 
 			for (unsigned int j = start; j < end; j++) {
-				switch (sequence[j]) {
-					case 'A':
-						current_kmer = (current_kmer << 2) & mask;
-						break;
-					case 'C':
-						current_kmer = ((current_kmer << 2) | 1) & mask;
-						break;
-					case 'G':
-						current_kmer = ((current_kmer << 2) | 2) & mask;
-						break;
-					case 'T':
-						current_kmer = ((current_kmer << 2) | 3) & mask;
-						break;
-
-				}
-
-				switch (sequence[sequence_length - 1 - j]) {
-					case 'A':
-						rev_current_kmer = ((rev_current_kmer << 2) | 3) & mask;
-						break;
-					case 'C':
-						rev_current_kmer = ((rev_current_kmer << 2) | 2) & mask;
-						break;
-					case 'G':
-						rev_current_kmer = ((rev_current_kmer << 2) | 1) & mask;
-						break;
-					case 'T':
-						rev_current_kmer = (rev_current_kmer << 2) & mask;
-						break;
-				}
+				current_kmer = ((current_kmer << 2) | num_val(sequence[j], 0)) & mask;
+				rev_current_kmer = ((rev_current_kmer << 2) | num_val(sequence[sequence_length - j - 1], 1)) & mask;
 			}
 
 			if (last_minimizer >= current_kmer) {
@@ -198,7 +93,7 @@ namespace white {
 			}
 			if (last_minimizer >= rev_current_kmer) {
 				last_minimizer = rev_current_kmer;
-				last_pos = (sequence_length - 1) - start - (k - 1);
+				last_pos = sequence_length - start - k;
 				origin = false;
 			}
 		}
@@ -208,16 +103,14 @@ namespace white {
 
 		std::tuple<unsigned int, unsigned int, bool> current_minimizer = std::make_tuple(last_minimizer, (unsigned int) last_pos, origin);
 
-		if (ret.empty())
+		if (ret.empty()) {
 			ret.emplace_back(current_minimizer);
-
-		else if (ret[ret.size() - 1] != current_minimizer)
+		} else if (ret[ret.size() - 1] != current_minimizer) {
 			ret.emplace_back(current_minimizer);
-
+		}
 	}
-
+	
 	return ret;
 	}
-
 }
 
