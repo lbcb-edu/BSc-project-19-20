@@ -532,7 +532,7 @@ auto LISAlgo(MatchSlice const& matches) {
     return std::make_tuple(std::make_pair(std::get<0>(matches.at(org.back())),
                                           std::get<0>(matches.at(lis.back()))),
 
-                           std::make_pair(std::get<1>(matches.at(org.front())),
+                           std::make_pair(std::get<1>(matches.at(org.back())),
                                           std::get<1>(matches.at(lis.back()))),
                            lis.size());
 }
