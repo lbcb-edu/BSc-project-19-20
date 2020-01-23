@@ -28,6 +28,7 @@
 #define CIGAR false
 #define BAND_WIDTH 10000
 #define DEFAULT_QUALITY 255
+#define T 1
 
 std::string extensions_a[]{".fasta", ".fa", ".fasta.gz", ".fa.gz"};
 std::string extensions_q[]{".fastq", ".fq", ".fastq.gz", ".fq.gz"};
@@ -66,7 +67,7 @@ void errorMessage() {
     exit(1);
 }
 
-bool is_extension_ok(std::string argument, char type) {
+bool is_extension_ok(std::string const& argument, char type) {
     std::size_t extension_start = argument.find_last_of('.');
     std::string extension = argument.substr(extension_start);
     if (extension == ".gz") {
@@ -114,7 +115,7 @@ public:
             quality{std::string(quality, quality_length)} {}
 };
 
-std::vector<std::unique_ptr<Fast>> parse_fasta(std::string fastaFile) {
+std::vector<std::unique_ptr<Fast>> parse_fasta(std::string const& fastaFile) {
     std::vector<std::unique_ptr<Fast>> fasta_objects;
     auto fasta_parser = bioparser::createParser<bioparser::FastaParser, Fast>(fastaFile);
     // read the whole file
@@ -123,14 +124,14 @@ std::vector<std::unique_ptr<Fast>> parse_fasta(std::string fastaFile) {
     return fasta_objects;
 }
 
-std::vector<std::unique_ptr<Fast>> parse_fastq(std::string fastqFile) {
+std::vector<std::unique_ptr<Fast>> parse_fastq(std::string const& fastqFile) {
     std::vector<std::unique_ptr<Fast>> fastq_objects;
     auto fastq_parser = bioparser::createParser<bioparser::FastqParser, Fast>(fastqFile);
     // read a predefined size of bytes
     std::uint64_t size_in_bytes = 500 * 1024 * 1024; // 500 MB
     while (true) {
         auto status = fastq_parser->parse(fastq_objects, size_in_bytes);
-        if (status == false) {
+        if (!status) {
             break;
         }
     }
@@ -138,7 +139,7 @@ std::vector<std::unique_ptr<Fast>> parse_fastq(std::string fastqFile) {
     return fastq_objects;
 }
 
-void print_statistics(std::string file) {
+void print_statistics(std::string const& file) {
     std::vector<std::unique_ptr<Fast>> fast_objects;
     if (is_extension_ok(file, 'a')) {
         fast_objects = parse_fasta(file);
@@ -189,12 +190,50 @@ auto comparator_by_query_position_descending = [](std::tuple<unsigned int, unsig
     return std::get<0>(a) > std::get<0>(b);
 };
 
-void create_reference_genome_minimizer_index(const std::vector<std::unique_ptr<Fast>> &fast_objects,
-                                        unsigned int k, unsigned int w, double f,
-                                        std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> &target_minimizer_index) {
+void create_reference_genome_minimizer_index(std::vector<std::unique_ptr<Fast>> const& fast_objects,
+                                             unsigned int k, unsigned int w, double f,
+                                             std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> &target_minimizer_index) {
+
+    std::cout << "Creating refernce genome minimizer index" << std::endl;
 
     std::vector<std::tuple<unsigned int, unsigned int, bool>> minimizers = pink::minimizers(
             (fast_objects.front()->sequence).c_str(), (fast_objects.front()->sequence).length(), k, w);
+
+    // key is minimizer itself, value is vector of all locations and strands where that minimizer appears
+    std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> counter;
+    std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>>::iterator counter_iterator;
+
+    for (auto minimizer : minimizers) {
+        counter_iterator = counter.find(std::get<0>(minimizer));
+
+        if (counter_iterator == counter.end()) {
+            std::vector<std::pair<unsigned int, bool>> locations_strands;
+            locations_strands.emplace_back(std::make_pair(std::get<1>(minimizer), std::get<2>(minimizer)));
+            counter.insert(std::make_pair(std::get<0>(minimizer), locations_strands));
+        } else {
+            (counter_iterator->second).emplace_back(std::make_pair(std::get<1>(minimizer), std::get<2>(minimizer)));
+        }
+    }
+
+    std::vector<std::pair<unsigned int, std::vector<std::pair<unsigned int, bool>>>> pairs(counter.begin(), counter.end());
+
+    sort(pairs.begin(), pairs.end(), comparator_by_amount);
+    unsigned int ignore = std::round(counter.size() * f);
+    pairs.resize(minimizers.size() - ignore);
+    pairs.shrink_to_fit();
+
+    for (auto current : pairs) {
+        target_minimizer_index.insert(current);
+    }
+
+    std::cout << "Reference genome minimizer index done!" << std::endl;
+}
+
+void create_fragment_minimizer_index(std::unique_ptr<Fast> const& fast_objects_i, unsigned int k, unsigned int w,
+                                std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> &fragment_minimizer_index) {
+
+    std::vector<std::tuple<unsigned int, unsigned int, bool>> minimizers = pink::minimizers(
+            (fast_objects_i->sequence).c_str(), (fast_objects_i->sequence).length(), k, w);
 
     // key is minimizer itself, value is vector of all locations and strands where that minimizer appears
     std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> counter;
@@ -216,51 +255,18 @@ void create_reference_genome_minimizer_index(const std::vector<std::unique_ptr<F
                                                                                            counter.end());
 
     sort(pairs.begin(), pairs.end(), comparator_by_amount);
-    unsigned int ignore = std::round(counter.size() * f);
-    pairs.resize(minimizers.size() - ignore);
-    pairs.shrink_to_fit();
-
-    for (auto current : pairs) {
-        target_minimizer_index.insert(current);
-    }
-}
-
-void
-create_fragment_minimizer_index(const std::unique_ptr<Fast> &fast_objects_i, unsigned int k, unsigned int w,
-                                std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> &fragment_minimizer_index) {
-
-    std::vector<std::tuple<unsigned int, unsigned int, bool>> minimizers = pink::minimizers((fast_objects_i->sequence).c_str(), (fast_objects_i->sequence).length(), k, w);
-
-    // key is minimizer itself, value is vector of all locations and strands where that minimizer appears
-    std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> counter;
-    std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>>::iterator counter_iterator;
-
-    for (auto minimizer : minimizers) {
-        counter_iterator = counter.find(std::get<0>(minimizer));
-
-        if (counter_iterator == counter.end()) {
-            std::vector<std::pair<unsigned int, bool>> locations_strands;
-            locations_strands.emplace_back(std::make_pair(std::get<1>(minimizer), std::get<2>(minimizer)));
-            counter.insert(std::make_pair(std::get<0>(minimizer), locations_strands));
-        } else {
-            (counter_iterator->second).emplace_back(std::make_pair(std::get<1>(minimizer), std::get<2>(minimizer)));
-        }
-    }
-
-    std::vector<std::pair<unsigned int, std::vector<std::pair<unsigned int, bool>>>> pairs(counter.begin(), counter.end());
-
-    sort(pairs.begin(), pairs.end(), comparator_by_amount);
     for (auto current : pairs) {
         fragment_minimizer_index.insert(current);
     }
 }
 
-void make_match_groups(std::vector<std::tuple<unsigned int, unsigned int, bool>> matches,
+void make_match_groups(std::vector<std::tuple<unsigned int, unsigned int, bool>> const& matches,
                        std::vector<std::vector<std::tuple<unsigned int, unsigned int, bool>>> &match_groups) {
     std::vector<std::tuple<unsigned int, unsigned int, bool>> match_group;
+
     match_group.emplace_back(matches[0]);
     for (int i = 1; i < matches.size(); i++) {
-        if (abs(std::get<0>(matches[i]) - std::get<0>(matches[i-1])) > BAND_WIDTH){
+        if (abs(std::get<0>(matches[i]) - std::get<0>(matches[i - 1])) > BAND_WIDTH) {
             match_groups.emplace_back(match_group);
             match_group.clear();
             match_group.emplace_back(matches[i]);
@@ -268,11 +274,12 @@ void make_match_groups(std::vector<std::tuple<unsigned int, unsigned int, bool>>
             match_group.emplace_back(matches[i]);
         }
     }
+    match_groups.emplace_back(match_group);
 
 }
 
-void find_matches(std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> fragment_minimizer_index,
-                  std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> target_minimizer_index,
+void find_matches(std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> const& fragment_minimizer_index,
+                  std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> const& target_minimizer_index,
                   std::vector<std::vector<std::tuple<unsigned int, unsigned int, bool>>> &match_groups) {
 
     std::vector<std::tuple<unsigned int, unsigned int, bool>> matches;
@@ -282,54 +289,40 @@ void find_matches(std::map<unsigned int, std::vector<std::pair<unsigned int, boo
         if (it != target_minimizer_index.end()) {
             for (auto location_strand_query : minimizer.second) {
                 for (auto location_strand_target : it->second) {
-                        matches.emplace_back(std::make_tuple(location_strand_query.first, location_strand_target.first, location_strand_query.second ^ location_strand_target.second));
+                    matches.emplace_back(std::make_tuple(location_strand_query.first, location_strand_target.first,
+                                                         location_strand_query.second ^ location_strand_target.second));
                 }
             }
         }
     }
 
-    if(!matches.empty()) {
+    if (!matches.empty()) {
         std::vector<std::tuple<unsigned int, unsigned int, bool>> matches_same_strand;
         std::vector<std::tuple<unsigned int, unsigned int, bool>> matches_opposite_strand;
 
-        for(auto match : matches){
-            if(std::get<2>(match)){
+        for (auto match : matches) {
+            if (std::get<2>(match)) {
                 matches_opposite_strand.emplace_back(match);
             } else {
                 matches_same_strand.emplace_back(match);
             }
         }
 
-        if(!matches_same_strand.empty()) {
+        if (!matches_same_strand.empty()) {
             std::sort(matches_same_strand.begin(), matches_same_strand.end(), comparator_by_query_position_ascending);
             make_match_groups(matches_same_strand, match_groups);
         }
 
-        if(!matches_opposite_strand.empty()) {
-            std::sort(matches_opposite_strand.begin(), matches_opposite_strand.end(), comparator_by_query_position_descending);
+        if (!matches_opposite_strand.empty()) {
+            std::sort(matches_opposite_strand.begin(), matches_opposite_strand.end(),
+                      comparator_by_query_position_descending);
             make_match_groups(matches_opposite_strand, match_groups);
         }
     }
 
 }
 
-int CeilIndex(std::vector<std::tuple<unsigned int, unsigned int>> &v, std::vector<unsigned int> &T, int start, int end,
-              std::tuple<unsigned int, unsigned int> key) {
-    while (end - start > 1) {
-        int middle = start + (end - start) / 2;
-        // pazi da ti ostane lokacija 2
-        if (std::get<1>(v[T[middle]]) >= std::get<1>(key))
-            end = middle;
-        else
-            start = middle;
-    }
-
-    return end;
-}
-
-
-std::vector<std::tuple<unsigned int, unsigned int, bool>> longest_increasing_subsequence(
-        std::vector<std::tuple<unsigned int, unsigned int, bool>> matches) {
+std::vector<std::tuple<unsigned int, unsigned int, bool>> longest_increasing_subsequence(std::vector<std::tuple<unsigned int, unsigned int, bool>> const& matches) {
     unsigned int n = matches.size();
     std::vector<unsigned int> tail_indexes(n, 0); // Initialized with 0
     std::vector<unsigned int> prev_indexes(n, -1); // initialized with -1
@@ -352,26 +345,6 @@ std::vector<std::tuple<unsigned int, unsigned int, bool>> longest_increasing_sub
             int pos = std::distance(b, it);
             prev_indexes[i] = tail_indexes[pos - 1];
         }
-
-//        if (std::get<1>(matches[i]) < std::get<1>(matches[tail_indexes[0]])) {
-//            // new smallest value
-//            tail_indexes[0] = i;
-//        } else if (std::get<1>(matches[i]) > std::get<1>(matches[tail_indexes[length - 1]])) {
-//            // arr[i] wants to extend largest subsequence
-//            prev_indexes[i] = tail_indexes[length - 1];
-//            tail_indexes[length++] = i;
-//        } else {
-//            // arr[i] wants to be a potential candidate of
-//            // future subsequence
-//            // It will replace ceil value in tailIndices
-//
-//            int pos = CeilIndex(matches, tail_indexes, -1,
-//                                length - 1, matches[i]);
-//
-//            prev_indexes[i] = tail_indexes[pos - 1];
-//            tail_indexes[pos] = i;
-//        }
-
     }
 
     std::vector<std::tuple<unsigned int, unsigned int, bool>> result;
@@ -379,40 +352,41 @@ std::vector<std::tuple<unsigned int, unsigned int, bool>> longest_increasing_sub
     for (int i = tail_indexes[length - 1]; i >= 0; i = prev_indexes[i])
         result.emplace_back(matches[i]);
 
-    std::reverse(result.begin(), result.end());
-
     return result;
 }
 
-std::tuple<unsigned int, unsigned int, unsigned int, unsigned int, bool> find_region(std::vector<std::vector<std::tuple<unsigned int, unsigned int, bool>>> match_groups) {
+std::tuple<unsigned int, unsigned int, unsigned int, unsigned int, bool> find_region(std::vector<std::vector<std::tuple<unsigned int, unsigned int, bool>>> const& match_groups) {
     std::vector<std::vector<std::tuple<unsigned int, unsigned int, bool>>> candidate_group;
 
-    for(auto vec : match_groups) {
+    for (auto const& vec : match_groups) {
         std::vector<std::tuple<unsigned int, unsigned int, bool>> candidate = longest_increasing_subsequence(vec);
+        //jako puno kopiram podatke
         candidate_group.emplace_back(candidate);
     }
 
     int max_length = 0;
     int index_of_max_length = 0;
-    for(int i = 0; i < candidate_group.size(); i++){
-        if(candidate_group[i].size() > max_length) {
+    for (int i = 0; i < candidate_group.size(); i++) {
+        if (candidate_group[i].size() > max_length) {
             max_length = candidate_group[i].size();
             index_of_max_length = i;
         }
     }
 
     std::tuple<unsigned int, unsigned int, unsigned int, unsigned int, bool> region = std::make_tuple(
-            std::get<0>(candidate_group[index_of_max_length].front()), std::get<0>(candidate_group[index_of_max_length].back()),
-            std::get<1>(candidate_group[index_of_max_length].front()), std::get<1>(candidate_group[index_of_max_length].back()),
+            std::get<0>(candidate_group[index_of_max_length].back()),
+            std::get<0>(candidate_group[index_of_max_length].front()),
+            std::get<1>(candidate_group[index_of_max_length].back()),
+            std::get<1>(candidate_group[index_of_max_length].front()),
             std::get<2>(candidate_group[index_of_max_length].front()));
 
     return region;
 }
 
-std::string paf_string(std::string query, const char *query_name, unsigned int query_length,
-                       std::string target, const char *target_name, unsigned int target_length,
+std::string paf_string(std::string const& query, const char *query_name, unsigned int query_length,
+                       std::string const& target, const char *target_name, unsigned int target_length,
                        pink::AlignmentType type, int match, int mismatch, int gap, bool include_cigar,
-                       std::tuple<unsigned int, unsigned int, unsigned int, unsigned int, bool> region) {
+                       std::tuple<unsigned int, unsigned int, unsigned int, unsigned int, bool> const& region) {
 
     std::string ret = std::string(query_name) + '\t' +
                       std::to_string(query_length) + '\t' +
@@ -460,22 +434,30 @@ std::string paf_string(std::string query, const char *query_name, unsigned int q
     return ret;
 }
 
-int work_with_fragments(const std::vector<std::unique_ptr<Fast>> &fast_objects1, const std::vector<std::unique_ptr<Fast>> &fast_objects2,
-                    std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> target_minimizer_index,
-                    unsigned int k, unsigned int w, pink::AlignmentType type, int match, int mismatch, int gap,
-                    bool include_cigar,
-                    int thread_begin, int thread_end) {
+int work_with_fragments(std::vector<std::unique_ptr<Fast>> const & fast_objects1,
+                        std::vector<std::unique_ptr<Fast>> const& fast_objects2,
+                        std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> const& target_minimizer_index,
+                        unsigned int k, unsigned int w, pink::AlignmentType type, int match, int mismatch, int gap,
+                        bool include_cigar,
+                        int thread_begin, int thread_end) {
     for (int i = thread_begin; i < thread_end; i++) {
         std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> fragment_minimizer_index;
         create_fragment_minimizer_index(fast_objects1[i], k, w, fragment_minimizer_index);
 
+//        std::cout << i << ":    Fragment minimizer index done!" << std::endl;
+
         std::vector<std::vector<std::tuple<unsigned int, unsigned int, bool>>> match_groups;
         find_matches(fragment_minimizer_index, target_minimizer_index, match_groups);
 
-        if (match_groups.empty())
+//        std::cout << i << ":    Matches found!" << std::endl;
+
+        if (match_groups.empty()) {
             continue;
+        }
 
         std::tuple<unsigned int, unsigned int, unsigned int, unsigned int, bool> candidate = find_region(match_groups);
+
+        std::cout << i << ": Candidate found!" << std::endl;
 
         const char *query = (fast_objects1[i]->sequence).c_str();
         const char *target = (fast_objects2.front()->sequence).c_str();
@@ -505,7 +487,7 @@ int main(int argc, char *argv[]) {
     int w = W;
     double f = F;
     bool include_cigar = CIGAR;
-    int t = 0;
+    int t = T;
     while ((opt = getopt(argc, argv, ":hvt:m:s:g:")) != -1) {
         switch (opt) {
             case 'h':
