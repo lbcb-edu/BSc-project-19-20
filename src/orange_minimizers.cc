@@ -106,8 +106,8 @@ KMers minimizers(char const* sequence, std::uint32_t sequence_length,
     // Simulate min_queue on minimz vector
     auto prev_peek_pos = minimz.size() - 1;
     while (i < kmers.size()) {
-        while (minimz.back() != minimz[prev_peek_pos] &&
-               std::get<0>(minimz.back()) > std::get<0>(kmers[i]))
+        while (std::get<0>(minimz.back()) > std::get<0>(kmers[i]) &&
+                minimz.back() != minimz[prev_peek_pos])
             minimz.pop_back();
         minimz.push_back(std::move(kmers[i++]));
 

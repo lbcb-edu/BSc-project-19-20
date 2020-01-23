@@ -497,7 +497,9 @@ MinimizerIndex createRefMinimzIndex(std::string const& ref,
  */
 auto LISAlgo(MatchSlice const& matches) {
     /* Dynamic LIS building */
-    std::vector<std::size_t> lis{};
+    std::vector<std::size_t> lis{0u};  //<<< Current max lis sequence
+    std::vector<std::size_t> org{
+        0u};  //<<< for each element, remembers the positon of seuqence start
 
     /**
      * @brief Lamba expression used for binary search in LIS
@@ -507,21 +509,30 @@ auto LISAlgo(MatchSlice const& matches) {
     };
 
     auto b_search = [&lis, &cmp_lambda](std::size_t const pos) {
-        return std::lower_bound(lis.begin(), lis.end(), pos, cmp_lambda);
+        return std::upper_bound(lis.begin(), lis.end(), pos, cmp_lambda);
     };
 
-    for (std::size_t i = 0; i < matches.size(); ++i) {
+    for (std::size_t i = 1; i < matches.size(); ++i) {
         auto res = b_search(i);
-        if (res == lis.end())
+        if (res == lis.end()) {
+            org.push_back(org.back());
             lis.push_back(i);
-        else
+        } else {
+            if (res == lis.begin())
+                org[0] = i;
+            else {
+                auto pos = std::distance(lis.begin(), res);
+                org[pos] = org[pos - 1];
+            }
+
             *res = i;
+        }
     }
 
-    return std::make_tuple(std::make_pair(std::get<0>(matches.at(lis.front())),
+    return std::make_tuple(std::make_pair(std::get<0>(matches.at(org.back())),
                                           std::get<0>(matches.at(lis.back()))),
 
-                           std::make_pair(std::get<1>(matches.at(lis.front())),
+                           std::make_pair(std::get<1>(matches.at(org.front())),
                                           std::get<1>(matches.at(lis.back()))),
                            lis.size());
 }
