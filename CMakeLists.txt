@@ -9,7 +9,7 @@ set(BLUE_MAPPER_VERSION_PATCH 0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_CXX_FLAGS_DEBUG "-g -fsanitize=address")
+set(CMAKE_CXX_FLAGS_DEBUG "-Ofast -g -fsanitize=address")
 set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -DNDEBUG")
 
 find_package(Threads)

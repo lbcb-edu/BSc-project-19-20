@@ -1,7 +1,10 @@
 #pragma once
 
 #include <alignment/alignment.hpp>
+#include <cassert>
+#include <memory>
 #include <minimizers/minimizers.hpp>
+#include <string>
 #include <vector>
 
 #include "mapper.hpp"
@@ -46,6 +49,13 @@ ReferenceIndex CreateReferenceIndex(
     const unsigned w);
 
 Region BestMatch(const ReferenceIndex& ri, FragmentIndex fi);
+
+::std::string Align(const ::mapper::Sequence& ref,
+                    const ::mapper::Sequence& frag, const Region r,
+                    const bool c, const unsigned k,
+                    const ::blue::AlignmentType at);
+
+//
 
 template <typename T, typename C>
 Sequence LIS(const ::std::vector<T>& v, const C& comp) {

@@ -90,14 +90,14 @@ int main(int argc, char** argv, char** env) {
   ::std::cerr << "Starting with sequence loading."
               << "\n";
 
-  auto fragments = using_fasta ? ::mapper::Parse<::mapper::Sequence>(src)
-                               : ::mapper::Parse<::mapper::QSequence>(src);
+  auto fragments = using_fasta ? ::mapper::Parse<::bioparser::FastaParser>(src)
+                               : ::mapper::Parse<::bioparser::FastqParser>(src);
 
   ::std::cerr << "Loaded fragments."
               << "\n";
 
   auto reference =
-      ::std::move(::mapper::Parse<::mapper::Sequence>(dest).front());
+      ::std::move(::mapper::Parse<::bioparser::FastaParser>(dest).front());
 
   ::std::cerr << "Loaded reference."
               << "\n\n";
@@ -136,6 +136,9 @@ int main(int argc, char** argv, char** env) {
 
   const auto reference_index = reference_index_f.get();
 
+  ::std::cerr << "Finding good alignment candidates and aligning..."
+              << "\n";
+
   ::std::vector<::std::future<::matcher::Region>> regions_f;
   regions_f.reserve(fragment_indices_f.size());
 
@@ -146,19 +149,30 @@ int main(int argc, char** argv, char** env) {
                                          ::std::ref(reference_index), f.get());
                    });
 
-  ::std::vector<::matcher::Region> regions;
-  regions.reserve(regions_f.size());
+  ::std::vector<::std::future<::std::string>> PAFs;
+  PAFs.reserve(regions_f.size());
 
-  ::std::transform(regions_f.begin(), regions_f.end(),
-                   ::std::back_inserter(regions),
-                   [](auto& f) { return f.get(); });
+  for (int i = 0; i < regions_f.size(); ++i)
+    PAFs.push_back(pool->submit(::matcher::Align, ::std::ref(*reference),
+                                ::std::ref(*fragments[i]), regions_f[i].get(),
+                                c, k, algorithm));
 
-  for (auto [p, q] : regions) {
-    auto [pf, pr] = p;
-    auto [qf, qr] = q;
+  ::std::ios_base::sync_with_stdio(false);
+  ::std::cerr << "Found alignments:"
+              << "\n\n";
 
-    ::std::cout << pf << "; " << pr << "\n";
-    ::std::cout << qf << "; " << qr << "\n";
-    ::std::cout << "\n";
+  auto too_large = 0;
+  auto no_match = 0;
+  for (int i = 0; i < PAFs.size(); ++i) {
+    auto str = PAFs[i].get();
+    if (str == "tl")
+      ++too_large;
+    else if (str == "nm")
+      ++no_match;
+    else
+      ::std::cerr << str << "\n";
   }
+
+  ::std::cerr << "\nSequences with too large alignment region: " << too_large
+              << "\nSequences with no match: " << no_match << "\n";
 }

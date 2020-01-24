@@ -82,4 +82,86 @@ Region BestMatch(const ReferenceIndex& ri, FragmentIndex fi) {
   return {matches[type][best_seq.begin], matches[type][best_seq.end]};
 }
 
+namespace detail {
+
+char complement(const char c) noexcept {
+  constexpr char map[] = {'T',  '\0', 'G',  '\0', '\0', '\0', 'C',
+                          '\0', '\0', '\0', '\0', '\0', '\0', '\0',
+                          '\0', '\0', '\0', '\0', '\0', 'A'};
+  return map[c - 'A'];
+}
+
+}  // namespace detail
+
+::std::string Align(const ::mapper::Sequence& ref,
+                    const ::mapper::Sequence& frag, const Region r,
+                    const bool c, const unsigned k,
+                    const ::blue::AlignmentType at) {
+  if (r.begin.frag.pos == r.end.frag.pos)
+    return "nm";
+
+  auto rc = r.begin.frag.rc != r.begin.ref.rc;
+  auto flen = r.end.frag.pos - r.begin.frag.pos + k;
+  auto rlen = ((rc ? -1 : 1) * (static_cast<int>(r.end.ref.pos) -
+                                static_cast<int>(r.begin.ref.pos))) +
+              k;
+
+  if (rlen >= 100'000 || flen * rlen >= 100'000'000)
+    return "tl";
+
+  ::std::unique_ptr<char[]> frag_rc;
+  if (rc) {
+    frag_rc.reset(new char[flen]);
+    for (auto i = 0; i < flen; ++i)
+      frag_rc[i] = detail::complement(
+          frag.sequence[frag.sequence.length() - 1 - r.end.frag.pos]);
+  }
+
+  ::std::string cigar;
+  unsigned target_begin;
+
+  using namespace ::blue;
+
+  auto score = c ? PairwiseAlignment(
+                       Query{rc ? frag_rc.get()
+                                : (frag.sequence.data() + r.begin.frag.pos)},
+                       QueryLength{flen},
+                       Target{ref.sequence.data() +
+                              (rc ? r.end.ref.pos : r.begin.ref.pos)},
+                       TargetLength{rlen}, at, Match{1}, Mismatch{1}, Gap{1},
+                       cigar, target_begin)
+                 : PairwiseAlignment(
+                       Query{rc ? frag_rc.get()
+                                : (frag.sequence.data() + r.begin.frag.pos)},
+                       QueryLength{flen},
+                       Target{ref.sequence.data() +
+                              (rc ? r.end.ref.pos : r.begin.ref.pos)},
+                       TargetLength{rlen}, at, Match{1}, Mismatch{1}, Gap{1});
+
+  ::std::string ret = frag.name;
+  ret += "\t" + ::std::to_string(frag.sequence.length());
+  ret += "\t" + ::std::to_string(r.begin.frag.pos);
+  ret += "\t" + ::std::to_string(r.end.frag.pos + k);
+
+  ret += rc ? "\t-" : "\t+";
+
+  ret += "\t" + ref.name;
+  ret += "\t" + ::std::to_string(ref.sequence.length());
+  ret += "\t" +
+         ::std::to_string(rc ? (rlen - 1 - r.begin.ref.pos) : r.begin.ref.pos);
+  ret += "\t" + ::std::to_string(
+                    (rc ? (rlen - 1 - r.end.ref.pos) : r.end.ref.pos) + k);
+
+  ret += "\t0";
+  ret += "\t" + ::std::to_string(score);
+  // TODO:
+  ret += "\t" + ref.quality;
+
+  if (c) {
+    ret += "\tcg:Z:" + cigar;
+  }
+
+  return ret;
+}
+
 }  // namespace matcher

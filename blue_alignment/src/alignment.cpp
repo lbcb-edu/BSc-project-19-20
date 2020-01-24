@@ -1,5 +1,8 @@
 #include "alignment/alignment.hpp"
 
+#include <iostream>
+#include <mutex>
+
 namespace blue {
 namespace detail {
 
@@ -186,6 +189,8 @@ void ConstructCigar(const detail::Contiguous2DArray<detail::Cell>& alignment,
 
 }  // namespace detail
 
+::std::mutex m;
+
 int PairwiseAlignment(Query query, QueryLength query_length, Target target,
                       TargetLength target_length, AlignmentType type,
                       Match match, Mismatch mismatch, Gap gap) {
@@ -199,7 +204,7 @@ int PairwiseAlignment(Query query, QueryLength query_length, Target target,
   auto ret = type == AlignmentType::kSmithWaterman ? detail::SmithWaterman(ai)
                                                    : detail::Overlap(ai);
 
-  return ret.first[ret.second.first][ret.second.first].score;
+  return ret.first[ret.second.first][ret.second.second].score;
 }
 
 int PairwiseAlignment(Query query, QueryLength query_length, Target target,
@@ -231,4 +236,4 @@ int PairwiseAlignment(Query query, QueryLength query_length, Target target,
   return start.score;
 }
 
-}  // namespace algn
+}  // namespace blue
