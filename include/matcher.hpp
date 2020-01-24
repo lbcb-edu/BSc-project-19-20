@@ -5,6 +5,7 @@
 #include <memory>
 #include <minimizers/minimizers.hpp>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "mapper.hpp"
