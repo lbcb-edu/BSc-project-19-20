@@ -105,8 +105,6 @@ char complement(const char c) noexcept {
                                 static_cast<int>(r.begin.ref.pos))) +
               k;
 
-  rlen = ::std::min(1'000'000u / flen, rlen);
-
   ::std::unique_ptr<char[]> frag_rc;
   if (rc) {
     frag_rc.reset(new char[flen]);
@@ -115,26 +113,7 @@ char complement(const char c) noexcept {
           frag.sequence[frag.sequence.length() - 1 - r.end.frag.pos]);
   }
 
-  ::std::string cigar;
-  unsigned target_begin;
-
   using namespace ::blue;
-
-  auto score = c ? PairwiseAlignment(
-                       Query{rc ? frag_rc.get()
-                                : (frag.sequence.data() + r.begin.frag.pos)},
-                       QueryLength{flen},
-                       Target{ref.sequence.data() +
-                              (rc ? r.end.ref.pos : r.begin.ref.pos)},
-                       TargetLength{rlen}, at, Match{1}, Mismatch{1}, Gap{1},
-                       cigar, target_begin)
-                 : PairwiseAlignment(
-                       Query{rc ? frag_rc.get()
-                                : (frag.sequence.data() + r.begin.frag.pos)},
-                       QueryLength{flen},
-                       Target{ref.sequence.data() +
-                              (rc ? r.end.ref.pos : r.begin.ref.pos)},
-                       TargetLength{rlen}, at, Match{1}, Mismatch{1}, Gap{1});
 
   ::std::string ret = frag.name;
   ret += "\t" + ::std::to_string(frag.sequence.length());
@@ -150,14 +129,28 @@ char complement(const char c) noexcept {
   ret += "\t" + ::std::to_string(
                     (rc ? (rlen - 1 - r.end.ref.pos) : r.end.ref.pos) + k);
 
-  ret += "\t0";
-  ret += "\t" + ::std::to_string(score);
+  ret += "\t" + ::std::to_string(flen);
+
+  ::std::string cigar;
+  unsigned unused;
+
+  if (c)
+    rlen = ::std::min(1'000'000u / flen, rlen),
+    ret += "\t" + ::std::to_string(PairwiseAlignment(
+                      Query{rc ? frag_rc.get()
+                               : (frag.sequence.data() + r.begin.frag.pos)},
+                      QueryLength{flen},
+                      Target{ref.sequence.data() +
+                             (rc ? r.end.ref.pos : r.begin.ref.pos)},
+                      TargetLength{rlen}, at, Match{1}, Mismatch{1}, Gap{1},
+                      cigar, unused));
+  else
+    ret += "\t" + ::std::to_string(::std::max(flen, rlen));
 
   ret += "\t" + ref.quality;
 
-  if (c) {
+  if (c)
     ret += "\tcg:Z:" + cigar;
-  }
 
   return ret;
 }
