@@ -55,6 +55,10 @@ bool comparator(std::pair<std::tuple<unsigned int, unsigned int, bool>, int> a, 
 	return a.second < b.second;
 }
 
+bool mapComparatorByPosition(std::pair<std::tuple<unsigned int, unsigned int, bool>, int> val1, std::pair<std::tuple<unsigned int, unsigned int, bool>, int> val2) {
+    return std::get<1>(val1.first) < std::get<1>(val2.first);
+}
+
 
 int main(int argc, char* argv[]) {
 	unsigned int k = 15, w = 5;
@@ -85,17 +89,21 @@ int main(int argc, char* argv[]) {
 			}
 			
 			std::vector<std::unique_ptr<FASTAformat>> fasta_objects;
+            std::vector<std::unique_ptr<FASTAformat>> reference_genome;
 			std::vector<std::unique_ptr<FASTQformat>> fastq_objects;
 			
 			if (fasta_file_formats.count(first_file_extension)) {
 				auto fasta_parser = bioparser::createParser<bioparser::FastaParser, FASTAformat>(first_file);
 				fasta_parser->parse(fasta_objects, -1);
+                auto fasta_parser2 = bioparser::createParser<bioparser::FastaParser, FASTAformat>(second_file);
+                fasta_parser2->parse(reference_genome, -1);
 				std::vector<int> sequence_calc;
 				long long sum = 0;
 				for (int i = 0; i < fasta_objects.size(); i++) {
 					sequence_calc.push_back(fasta_objects[i]->sequence_length);
 					sum += fasta_objects[i]->sequence_length;
 				}
+
 				std::sort(sequence_calc.begin(), sequence_calc.end());
 				
 				outputFileStatistics(first_file, fasta_objects.size(), sum, sequence_calc[0], sequence_calc[sequence_calc.size() - 1]);
@@ -112,10 +120,10 @@ int main(int argc, char* argv[]) {
                 std::cout << Cigar << std::endl;
 
 				
-				
 				std::vector<std::tuple<unsigned int, unsigned int, bool>> minimizers;
-				
-				for (int i = 0; i < fasta_objects.size(); i++) {
+
+
+                for (int i = 0; i < fasta_objects.size(); i++) {
 					std::vector<std::tuple<unsigned int, unsigned int, bool>> minimizers_of_sequence = white::minimizers(fasta_objects[i]->sequence,
 																										(unsigned int)fasta_objects[i]->sequence_length,
 																										k,
@@ -151,7 +159,7 @@ int main(int argc, char* argv[]) {
 				int singletons = 0;
 				for (auto it : occurences_of_minimizers_vector) {
 					if (it.second == 1) {
-						singletons++;	
+						singletons++;
 					}
 					else {
 						break;
@@ -170,7 +178,82 @@ int main(int argc, char* argv[]) {
 				std::cout << "Number of occurences of the most frequent  minimizer when the top "
 						 << f <<  " frequent minimizers are not taken in account: "
 							<< occurences_of_minimizers_vector[occurences_of_minimizers_vector.size() - skip - 1].second << std::endl;
-			}
+
+                std::vector<std::tuple<unsigned int, unsigned int, bool>> reference_minimizers = white::minimizers(reference_genome[1]->sequence,
+                                                                                                                   (unsigned int)reference_genome[1]->sequence_length,
+                                                                                                                   k,
+                                                                                                                   w);
+                std::set<std::tuple<unsigned int, unsigned int, bool>> distinct_reference_minimizers;
+                std::map<std::tuple<unsigned int, unsigned int, bool>, int> occurences_of_reference_minimizers;
+                std::vector<std::pair<std::tuple<unsigned int, unsigned int, bool>, int>> occurences_of_reference_minimizers_vector;
+
+                for (auto eachMini : reference_minimizers) {
+                    distinct_reference_minimizers.insert(eachMini);
+                    if (occurences_of_reference_minimizers.count(eachMini)) {
+                        occurences_of_reference_minimizers[eachMini]++;
+                    } else {
+                        occurences_of_reference_minimizers[eachMini] = 1;
+                    }
+                }
+                for (auto oc : occurences_of_reference_minimizers) {
+                    occurences_of_reference_minimizers_vector.push_back(oc);
+                }
+
+//                for (auto eachMin : distinct_reference_minimizers){
+//                    std::cout << "min: " << std::get<0>(eachMin) << ", position: " << std::get<1>(eachMin) << std::endl;
+//				}
+
+                sort(occurences_of_reference_minimizers_vector.begin(), occurences_of_reference_minimizers_vector.end(), comparator);
+                std::cout << "size: " << occurences_of_reference_minimizers_vector.size() << std::endl;
+
+                int not_taken_in_account = distinct_reference_minimizers.size() * f;
+                occurences_of_reference_minimizers_vector.erase(occurences_of_reference_minimizers_vector.begin(),
+                                                                occurences_of_reference_minimizers_vector.begin() + not_taken_in_account);
+                std::cout << "size: " << occurences_of_reference_minimizers_vector.size() << std::endl;
+
+                //sort occurences of reference minimizers vector by position
+                sort(occurences_of_reference_minimizers_vector.begin(), occurences_of_reference_minimizers_vector.end(), mapComparatorByPosition);
+
+
+                for (int i = 0; i < fasta_objects.size(); i++) {
+                    std::vector<std::tuple<unsigned int, unsigned int, bool>> minimizers_of_sequence = white::minimizers(fasta_objects[i]->sequence,
+                                                                                                                         (unsigned int)fasta_objects[i]->sequence_length,
+                                                                                                                         k,
+                                                                                                                         w);
+                    std::set<std::tuple<unsigned int, unsigned int, bool>> distinct_mins;
+                    std::map<std::tuple<unsigned int, unsigned int, bool>, int> occurences_of_minimizers;
+
+                    for (auto minim : minimizers_of_sequence) {
+                       distinct_mins.insert(minim);
+                        if (occurences_of_minimizers.count(minim)) {
+                            occurences_of_minimizers[minim]++;
+                        } else {
+                            occurences_of_minimizers[minim] = 1;
+                        }
+                    }
+                    std::vector<std::tuple <unsigned int, unsigned int>> matches;
+                    for (auto min_ref : occurences_of_reference_minimizers_vector){
+                        for (auto min : distinct_mins){
+                            if (std::get<0>(min) == std::get<0>(min_ref.first)){
+                                matches.push_back(std::make_tuple(std::get<1>(min), std::get<1>(min_ref.first)));
+                            }
+                        }
+                    }
+                    std::cout << fasta_objects[i]->name << "\t" <<
+                    fasta_objects[i]->sequence_length << "\t" <<
+                    "q_start" << "\t" <<
+                    "q_end" << "\t" <<
+                    "relative_strand" << "\t" <<
+                    reference_genome[1]->name << "\t" <<
+                    reference_genome[1]->sequence_length << "\t" <<
+                    "t_start" << "\t" <<
+                    "t_end" << "\t" <<
+                    "number_of_matches" << "\t" <<
+                    "alignment_length" << "\t" <<
+                    "255" << std::endl;
+                }
+
+            }
 
 			break;
 	}
