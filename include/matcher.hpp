@@ -48,12 +48,11 @@ ReferenceIndex CreateReferenceIndex(
     const ::std::unique_ptr<::mapper::Sequence>& fragment, const unsigned k,
     const unsigned w);
 
-Region BestMatch(const ReferenceIndex& ri, FragmentIndex fi);
+Region BestMatch(const ReferenceIndex& ri, FragmentIndex&& fi);
 
 ::std::string Align(const ::mapper::Sequence& ref,
-                    const ::mapper::Sequence& frag, const Region r,
-                    const bool c, const unsigned k,
-                    const ::blue::AlignmentType at);
+                    const ::mapper::Sequence& frag, Region&& r, const bool c,
+                    const unsigned k, const ::blue::AlignmentType at);
 
 //
 

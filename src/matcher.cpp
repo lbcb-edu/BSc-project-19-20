@@ -53,7 +53,7 @@ bool i(const KMerMatch& a, const KMerMatch& b) noexcept {
 
 }  // namespace detail
 
-Region BestMatch(const ReferenceIndex& ri, FragmentIndex fi) {
+Region BestMatch(const ReferenceIndex& ri, FragmentIndex&& fi) {
   ::std::vector<::std::vector<KMerMatch>> matches(2);
   constexpr bool (*cmp[])(const KMerMatch&, const KMerMatch&) = {detail::r,
                                                                  detail::i};
@@ -94,11 +94,10 @@ char complement(const char c) noexcept {
 }  // namespace detail
 
 ::std::string Align(const ::mapper::Sequence& ref,
-                    const ::mapper::Sequence& frag, const Region r,
-                    const bool c, const unsigned k,
-                    const ::blue::AlignmentType at) {
+                    const ::mapper::Sequence& frag, Region&& r, const bool c,
+                    const unsigned k, const ::blue::AlignmentType at) {
   if (r.begin.frag.pos == r.end.frag.pos)
-    return "nm";
+    return {};
 
   auto rc = r.begin.frag.rc != r.begin.ref.rc;
   auto flen = r.end.frag.pos - r.begin.frag.pos + k;
@@ -106,8 +105,7 @@ char complement(const char c) noexcept {
                                 static_cast<int>(r.begin.ref.pos))) +
               k;
 
-  if (rlen >= 100'000 || flen * rlen >= 100'000'000)
-    return "tl";
+  rlen = ::std::min(1'000'000u / flen, rlen);
 
   ::std::unique_ptr<char[]> frag_rc;
   if (rc) {
@@ -154,7 +152,7 @@ char complement(const char c) noexcept {
 
   ret += "\t0";
   ret += "\t" + ::std::to_string(score);
-  // TODO:
+
   ret += "\t" + ref.quality;
 
   if (c) {

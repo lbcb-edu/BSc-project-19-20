@@ -120,59 +120,44 @@ int main(int argc, char** argv, char** env) {
 
   auto pool = ::thread_pool::createThreadPool(t);
 
-  auto reference_index_f = pool->submit(::matcher::CreateReferenceIndex,
-                                        ::std::ref(reference), k, w, f);
+  auto reference_index = pool->submit(::matcher::CreateReferenceIndex,
+                                      ::std::ref(reference), k, w, f)
+                             .get();
 
   ::std::vector<::std::future<::std::vector<::blue::KMerInfo>>>
       fragment_indices_f;
   fragment_indices_f.reserve(fragments.size());
 
-  ::std::transform(fragments.begin(), fragments.end(),
-                   ::std::back_inserter(fragment_indices_f),
-                   [&](const auto& f) {
-                     return pool->submit(::matcher::CreateFragmentIndex,
-                                         ::std::ref(f), k, w);
-                   });
-
-  const auto reference_index = reference_index_f.get();
-
-  ::std::cerr << "Finding good alignment candidates and aligning..."
-              << "\n";
-
   ::std::vector<::std::future<::matcher::Region>> regions_f;
-  regions_f.reserve(fragment_indices_f.size());
+  regions_f.reserve(fragments.size());
 
-  ::std::transform(fragment_indices_f.begin(), fragment_indices_f.end(),
-                   ::std::back_inserter(regions_f),
-                   [&](auto& f) -> ::std::future<::matcher::Region> {
-                     return pool->submit(::matcher::BestMatch,
-                                         ::std::ref(reference_index), f.get());
-                   });
+  ::std::vector<::std::future<::std::string>> pafs_f;
+  pafs_f.reserve(fragments.size());
 
-  ::std::vector<::std::future<::std::string>> PAFs;
-  PAFs.reserve(regions_f.size());
+  for (int i = 0; i < fragments.size(); i += t) {
+    ::std::vector<::std::vector<::blue::KMerInfo>> f_index(t);
+    for (int j = 0; j < t && i + j < fragments.size(); ++j)
+      fragment_indices_f.push_back(pool->submit(
+          ::matcher::CreateFragmentIndex, ::std::ref(fragments[i + j]), k, w));
 
-  for (int i = 0; i < regions_f.size(); ++i)
-    PAFs.push_back(pool->submit(::matcher::Align, ::std::ref(*reference),
-                                ::std::ref(*fragments[i]), regions_f[i].get(),
-                                c, k, algorithm));
+    for (int j = 0; j < t && i + j < fragments.size(); ++j)
+      regions_f.push_back(pool->submit([&, idx = i + j] {
+        return ::matcher::BestMatch(reference_index,
+                                    fragment_indices_f[idx].get());
+      }));
+
+    for (int j = 0; j < t && i + j < fragments.size(); ++j)
+      pafs_f.push_back(pool->submit([&, idx = i + j] {
+        return ::matcher::Align(*reference, *fragments[idx],
+                                regions_f[idx].get(), c, k, algorithm);
+      }));
+  }
 
   ::std::ios_base::sync_with_stdio(false);
   ::std::cerr << "Found alignments:"
               << "\n\n";
 
-  auto too_large = 0;
-  auto no_match = 0;
-  for (int i = 0; i < PAFs.size(); ++i) {
-    auto str = PAFs[i].get();
-    if (str == "tl")
-      ++too_large;
-    else if (str == "nm")
-      ++no_match;
-    else
+  for (auto& f : pafs_f)
+    if (auto str = f.get(); str.length())
       ::std::cerr << str << "\n";
-  }
-
-  ::std::cerr << "\nSequences with too large alignment region: " << too_large
-              << "\nSequences with no match: " << no_match << "\n";
 }

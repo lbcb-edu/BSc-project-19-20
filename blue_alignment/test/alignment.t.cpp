@@ -16,10 +16,12 @@ TEST(ContiguousArrayTest, IndexingTest) {
   ASSERT_EQ(3, int_arr.cols);
 
   for (auto i = 0; i < int_arr.rows; ++i)
-    for (auto j = 0; j < int_arr.cols; ++j) int_arr[i][j] = i * j;
+    for (auto j = 0; j < int_arr.cols; ++j)
+      int_arr[i][j] = i * j;
 
   for (auto i = 0; i < int_arr.rows; ++i)
-    for (auto j = 0; j < int_arr.cols; ++j) ASSERT_EQ(i * j, int_arr[i][j]);
+    for (auto j = 0; j < int_arr.cols; ++j)
+      ASSERT_EQ(i * j, int_arr[i][j]);
 
   auto const c_arr = ::std::move(int_arr);
 
@@ -27,7 +29,8 @@ TEST(ContiguousArrayTest, IndexingTest) {
   ASSERT_EQ(3, c_arr.cols);
 
   for (auto i = 0; i < c_arr.rows; ++i)
-    for (auto j = 0; j < c_arr.cols; ++j) ASSERT_EQ(i * j, c_arr[i][j]);
+    for (auto j = 0; j < c_arr.cols; ++j)
+      ASSERT_EQ(i * j, c_arr[i][j]);
 }
 
 // examples taken from
@@ -45,6 +48,11 @@ TEST(NeedleWunschTest, GeneralTest) {
   ASSERT_EQ(0, target_begin);
   ASSERT_EQ("1D1=1X1=1X1I2=", cigar);
   ASSERT_EQ(4, score);
+
+  ASSERT_EQ(score, PairwiseAlignment(Query{"TGCATAT"}, QueryLength{7},
+                                     Target{"ATCCGAT"}, TargetLength{7},
+                                     AlignmentType::kNeedlemanWunsch, Match{2},
+                                     Mismatch{-1}, Gap{-1}));
 }
 
 TEST(SmithWatermanTest, GeneralTest) {
@@ -59,6 +67,11 @@ TEST(SmithWatermanTest, GeneralTest) {
   ASSERT_EQ(2, target_begin);
   ASSERT_EQ(6, score);
   ASSERT_EQ("1=1D2=", cigar);
+
+  ASSERT_EQ(score, PairwiseAlignment(Query{"ACCTAAGG"}, QueryLength{8},
+                                     Target{"GGCTCAATCA"}, TargetLength{10},
+                                     AlignmentType::kSmithWaterman, Match{2},
+                                     Mismatch{-1}, Gap{-2}));
 }
 
 TEST(OverlapTest, GeneralTest) {
@@ -73,10 +86,15 @@ TEST(OverlapTest, GeneralTest) {
   ASSERT_EQ(2, target_begin);
   ASSERT_EQ(16, score);
   ASSERT_EQ("4=", cigar);
+
+  ASSERT_EQ(score,
+            PairwiseAlignment(Query{"TCCG"}, QueryLength{4}, Target{"ACTCCGAT"},
+                              TargetLength{8}, AlignmentType::kOverlap,
+                              Match{4}, Mismatch{-1}, Gap{-2}));
 }
 
 }  // namespace
-}  // namespace algn
+}  // namespace blue
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);

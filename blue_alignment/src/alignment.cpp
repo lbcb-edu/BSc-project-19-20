@@ -70,6 +70,33 @@ R Align(const AlignmentContext& ai,
   return compute_return(::std::forward<decltype(alignment)>(alignment));
 }
 
+template <typename R>
+R SlimAlign(
+    const AlignmentContext& ai,
+    ::std::function<void(::std::vector<int>&)> init,  // allowed to be emtpy
+    ::std::function<int(int)> update,
+    ::std::function<void(::std::vector<int>&, int)> update_row,
+    ::std::function<int(::std::vector<int>&)> compute_return) {
+  ::std::vector<::std::vector<int>> alignment(
+      2, ::std::vector<int>(ai.target_length + 1, 0));
+
+  if (init)
+    init(alignment[0]);
+
+  for (int i = 1; i <= ai.query_length; ++i) {
+    update_row(alignment[i % 2], i);
+    for (int j = 1; j <= ai.target_length; ++j) {
+      bool is_match = ai.query[i - 1] == ai.target[j - 1];
+      alignment[i % 2][j] = update(::std::max(
+          {alignment[(i - 1) % 2][j - 1] + (is_match ? ai.match : ai.mismatch),
+           alignment[i % 2][j - 1] + ai.gap,
+           alignment[(i - 1) % 2][j] + ai.gap}));
+    }
+  }
+
+  return compute_return(alignment[ai.query_length % 2]);
+}
+
 Contiguous2DArray<Cell> NeedlemanWunsch(const AlignmentContext& ai) {
   return Align<Contiguous2DArray<Cell>>(
       ai,
@@ -83,7 +110,19 @@ Contiguous2DArray<Cell> NeedlemanWunsch(const AlignmentContext& ai) {
       [](auto&& alignment) {
         return ::std::forward<decltype(alignment)>(alignment);
       });
-}  // namespace detail
+}
+
+int SlimNeedlemanWunsch(const AlignmentContext& ai) {
+  return SlimAlign<int>(
+      ai,
+      [&ai](auto& alignment) {
+        for (int j = 1; j < alignment.size(); ++j)
+          alignment[j] = j * ai.gap;
+      },
+      [](auto i) { return i; },
+      [&ai](auto& alignment, auto row) { alignment[0] = row * ai.gap; },
+      [](auto&& alignment) { return alignment.back(); });
+}
 
 MaxCell SmithWaterman(const AlignmentContext& ai) {
   ::std::pair<int, Position> best_cell{0, {0, 0}};
@@ -100,6 +139,19 @@ MaxCell SmithWaterman(const AlignmentContext& ai) {
         return MaxCell{::std::forward<decltype(alignment)>(alignment),
                        best_cell.second};
       });
+}
+
+int SlimSmithWaterman(const AlignmentContext& ai) {
+  int best_score = 0;
+
+  return SlimAlign<int>(
+      ai, [](auto&) {},
+      [&best_score](auto score) {
+        if (score > best_score)
+          best_score = score;
+        return ::std::max(score, 0);
+      },
+      [](auto&, auto) {}, [&best_score](auto&&) { return best_score; });
 }
 
 MaxCell Overlap(const AlignmentContext& ai) {
@@ -120,6 +172,19 @@ MaxCell Overlap(const AlignmentContext& ai) {
           }
 
         return MaxCell{::std::move(alignment), best_cell.second};
+      });
+}
+
+int SlimOverlap(const AlignmentContext& ai) {
+  return SlimAlign<int>(
+      ai, [&ai](auto& alignment) {}, [](auto cell) { return cell; },
+      [&ai](auto& v, auto pos) { v[0] = pos * ai.gap; },
+      [](auto&& alignment) {
+        int max = 0;
+        for (int i = 1; i < alignment.size(); ++i)
+          if (alignment[i] > max)
+            max = alignment[i];
+        return max;
       });
 }
 
@@ -199,12 +264,10 @@ int PairwiseAlignment(Query query, QueryLength query_length, Target target,
       match.get(), mismatch.get(),     gap.get()};
 
   if (type == AlignmentType::kNeedlemanWunsch)
-    return detail::NeedlemanWunsch(ai).last().score;
+    return detail::SlimNeedlemanWunsch(ai);
 
-  auto ret = type == AlignmentType::kSmithWaterman ? detail::SmithWaterman(ai)
-                                                   : detail::Overlap(ai);
-
-  return ret.first[ret.second.first][ret.second.second].score;
+  return type == AlignmentType::kSmithWaterman ? detail::SlimSmithWaterman(ai)
+                                               : detail::SlimOverlap(ai);
 }
 
 int PairwiseAlignment(Query query, QueryLength query_length, Target target,
