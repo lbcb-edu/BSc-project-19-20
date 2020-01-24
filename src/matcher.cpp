@@ -105,14 +105,6 @@ char complement(const char c) noexcept {
                                 static_cast<int>(r.begin.ref.pos))) +
               k;
 
-  ::std::unique_ptr<char[]> frag_rc;
-  if (rc) {
-    frag_rc.reset(new char[flen]);
-    for (auto i = 0; i < flen; ++i)
-      frag_rc[i] = detail::complement(
-          frag.sequence[frag.sequence.length() - 1 - r.end.frag.pos]);
-  }
-
   using namespace ::blue;
 
   ::std::string ret = frag.name;
@@ -134,8 +126,16 @@ char complement(const char c) noexcept {
   ::std::string cigar;
   unsigned unused;
 
-  if (c)
-    rlen = ::std::min(1'000'000u / flen, rlen),
+  if (c) {
+    ::std::unique_ptr<char[]> frag_rc;
+    if (rc) {
+      frag_rc.reset(new char[flen]);
+      for (auto i = 0; i < flen; ++i)
+        frag_rc[i] = detail::complement(
+            frag.sequence[frag.sequence.length() - 1 - r.end.frag.pos]);
+    }
+
+    rlen = ::std::min(1'000'000u / flen, rlen);
     ret += "\t" + ::std::to_string(PairwiseAlignment(
                       Query{rc ? frag_rc.get()
                                : (frag.sequence.data() + r.begin.frag.pos)},
@@ -144,8 +144,9 @@ char complement(const char c) noexcept {
                              (rc ? r.end.ref.pos : r.begin.ref.pos)},
                       TargetLength{rlen}, at, Match{1}, Mismatch{1}, Gap{1},
                       cigar, unused));
-  else
+  } else {
     ret += "\t" + ::std::to_string(::std::max(flen, rlen));
+  }
 
   ret += "\t" + ref.quality;
 
