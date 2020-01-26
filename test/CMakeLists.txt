@@ -13,7 +13,6 @@ target_include_directories(
 
 target_link_libraries(
     orange_test
-        Threads::Threads
         gtest_main
 
         orange_alignment

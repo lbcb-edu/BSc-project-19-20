@@ -25,7 +25,7 @@
 namespace orange {
 namespace mapper {
 
-auto constexpr kStrandGapLim = static_cast<std::uint32_t>(10e3);
+auto constexpr kStrandGapLim = static_cast<std::uint32_t>(500);
 
 /**
  * @brief Supported genome file formats
@@ -431,8 +431,8 @@ auto printMinimizerStats(VecSeqPtr const& reads,
     };
 
     auto n_singletons = std::uint64_t{0};
-    auto ignore_cnt = minimz.size() * conf.f_ + 1;
-    auto ignore_set = std::set<MinimizerIter, decltype(cmp)>(cmp);
+    auto ignore_set = std::multiset<MinimizerIter, decltype(cmp)>(cmp);
+    auto ignore_cnt = static_cast<std::size_t>(minimz.size() * conf.f_ + 1);
 
     for (auto iter = minimz.begin(); iter != minimz.end(); ++iter) {
         ignore_set.insert(iter);
@@ -470,7 +470,7 @@ MinimizerIndex createRefMinimzIndex(std::string const& ref,
     };
 
     auto ignore_cnt = ref_index.size() * conf.f_;
-    auto ignore_set = std::set<MinimizerIter, decltype(cmp)>(cmp);
+    auto ignore_set = std::multiset<MinimizerIter, decltype(cmp)>(cmp);
 
     for (auto iter = ref_index.begin(); iter != ref_index.end(); ++iter) {
         ignore_set.insert(iter);
@@ -567,11 +567,15 @@ auto generatePAF(SequencePtr const& query, SequencePtr const& target,
         return ret;
     }();
 
+    // Ignore insignificat
+    if (n_matches <= 4)
+        return;
+
     std::stringstream paf_ss;
-    auto gen_seq_data = [&paf_ss, &m_conf](SequencePtr const& seq,
+    auto gen_seq_data = [&paf_ss](SequencePtr const& seq,
                                            auto start_end) -> void {
         paf_ss << seq.get()->name_ << '\t';
-        paf_ss << seq.get()->seq_.size() + m_conf.k_ << '\t';
+        paf_ss << seq.get()->seq_.size() << '\t';
         paf_ss << start_end.first << '\t';
         paf_ss << start_end.second << '\t';
     };
@@ -583,22 +587,21 @@ auto generatePAF(SequencePtr const& query, SequencePtr const& target,
     auto const& [query_start, query_end] = query_se;
     auto const& [target_start, target_end] = target_se;
 
+    auto const& que = *query.get();
+    auto const& tar = *target.get();
+
     if (!a_conf.cigar_) {
-        paf_ss << m_conf.k_ * n_matches << '\t';
-        paf_ss << target_end - target_start + m_conf.k_ << '\t';
+        paf_ss << n_matches << '\t';
+        paf_ss << target_end - target_start << '\t';
         paf_ss << "255\t\n";
     } else {
         std::string cigar{};
         std::uint32_t target_begin{0};
 
-        auto const& que = *query.get();
-        auto const& tar = *target.get();
-
         alignment::pairwiseAlignment(
             que.seq_.c_str() + query_start, query_end - query_start + m_conf.k_,
-            tar.seq_.c_str() + target_start,
-            target_end - target_start + m_conf.k_, a_conf.type_, a_conf.match_,
-            a_conf.mismatch_, a_conf.gap_, cigar, target_begin);
+            tar.seq_.c_str() + target_start, target_end - target_start + m_conf.k_,
+            a_conf.type_, a_conf.match_, a_conf.mismatch_, a_conf.gap_, cigar, target_begin);
 
         auto nxt_num_in_cigar = [&cigar](auto& iter) {
             std::string buff{};
@@ -612,8 +615,8 @@ auto generatePAF(SequencePtr const& query, SequencePtr const& target,
 
         auto iter = cigar.cbegin();
         while (iter < cigar.cend()) {
-            auto curr_char = *(iter++);
             auto c_num = nxt_num_in_cigar(iter);
+            auto curr_char = *(iter++);
             if (curr_char == 'I' || curr_char == 'M') {
                 alignment_len += c_num;
                 if (curr_char == 'M')
@@ -636,10 +639,10 @@ std::unordered_map<char,
                    std::function<bool(KMerMatch const&, KMerMatch const&)>>
     sort_dict{
         // Reminder: KMerMatch(query_pos, target_pos)
-        {'-',
+        {'+',
          [](KMerMatch const& a, KMerMatch const& b) -> bool { return a < b; }},
 
-        {'+', [](KMerMatch const& a, KMerMatch const& b) -> bool {
+        {'-', [](KMerMatch const& a, KMerMatch const& b) -> bool {
              if (std::get<0>(a) != std::get<0>(b))
                  return std::get<0>(a) > std::get<0>(b);
              return std::get<1>(a) < std::get<1>(b);
@@ -675,10 +678,10 @@ void mapReads(SliceSeqPtr reads, SequencePtr const& target,
         };
 
         if (!matches[1].empty())
-            genPAF(matches[1], '-');
+            genPAF(matches[1], '+');
         if (!matches[0].empty()) {
-            std::sort(matches[0].begin(), matches[0].end(), sort_dict['+']);
-            genPAF(matches[0], '+');
+            std::sort(matches[0].begin(), matches[0].end(), sort_dict['-']);
+            genPAF(matches[0], '-');
         }
     }
 }
@@ -775,6 +778,10 @@ int main(int argc, char* argv[]) {
 
         // Report end of file loading
         std::cout << "Finsihed loading files\n\n";
+
+        // For fast I/O
+        std::ios_base::sync_with_stdio(false);
+        std::cin.tie(nullptr);
 
         for (auto const& ref : refs)
             mapper::threadMapping(reads, ref, m_conf, a_conf, n_threads);

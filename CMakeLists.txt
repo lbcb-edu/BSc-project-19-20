@@ -27,9 +27,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic")
 
-# External dependencies
-find_package(Threads)
-
 add_subdirectory(vendor/bioparser EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/googletest EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/thread_pool EXCLUDE_FROM_ALL)
