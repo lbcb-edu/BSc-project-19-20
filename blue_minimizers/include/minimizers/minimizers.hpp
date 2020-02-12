@@ -37,12 +37,11 @@ struct KMerInfo {
       : kmer(kmer), pos(pos), rc(rc) {}
 
   friend bool operator<(const KMerInfo& a, const KMerInfo& b) noexcept {
-    return a.kmer < b.kmer || (a.kmer == b.kmer && a.pos < b.pos) ||
-           (a.kmer == b.kmer && a.pos == b.pos && !a.rc && b.rc);
+    return a.kmer < b.kmer;
   }
 
   friend bool operator==(const KMerInfo& a, const KMerInfo& b) noexcept {
-    return a.kmer == b.kmer && a.pos == b.pos && a.rc == b.rc;
+    return a.kmer == b.kmer;
   }
 
   friend void swap(KMerInfo& a, KMerInfo& b) noexcept {
@@ -66,12 +65,7 @@ namespace std {
 template <>
 struct hash<::blue::KMerInfo> {
   ::std::size_t operator()(const ::blue::KMerInfo& ki) const noexcept {
-    ::std::hash<unsigned> uh;
-    ::std::size_t seed{0};
-    seed += uh(ki.kmer) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-    seed += uh(ki.pos) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-    seed += ::std::hash<bool>{}(ki.rc) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-    return seed;
+    return std::hash<decltype(ki.kmer)>{}(ki.kmer);
   }
 };
 

@@ -1,4 +1,8 @@
+#include <getopt.h>
+#include <unistd.h>
+
 #include <alignment/alignment.hpp>
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <thread_pool/thread_pool.hpp>
@@ -13,25 +17,137 @@
 int main(int argc, char** argv, char** env) {
   /*
    *
-   * Argument validation.
+   * Parsing arguments.
    *
    */
 
-  ::std::string arg1;
+  int opt;
+  constexpr ::option options[] = {
+      {"help", no_argument, nullptr, 'h'},
+      {"version", no_argument, nullptr, 'v'},
+      {"alignment", required_argument, nullptr, 'a'},
+      {"kmerlen", required_argument, 0, 'k'},
+      {"windowlen", required_argument, 0, 'w'},
+      {"freqignored", required_argument, 0, 'f'},
+      {"threads", required_argument, 0, 't'},
+      {"cigar", no_argument, 0, 'c'}};
 
-  if (argc == 2 &&
-      ("-v" == (arg1 = ::util::ToLower(argv[1])) || "--version" == arg1))
-    ::std::cerr << ::util::Version() << ::util::Terminator{EXIT_SUCCESS};
-  else if ((argc != 3 && argc < 7) || "-h" == arg1 || "--help" == arg1)
-    ::util::DisplayHelp(::std::cerr) << ::util::Terminator{EXIT_SUCCESS};
+  ::blue::AlignmentType algorithm;
+
+  unsigned k = 15;
+  unsigned w = 5;
+  auto f = 0.001;
+
+  auto c = false;
+  auto t = 1;
+
+  ::std::string src, dest;
+
+  while ((opt = getopt_long(argc, argv, "s:r:hva:k:w:f:t:c", options,
+                            nullptr)) != -1)
+    switch (opt) {
+      case 'h':
+        ::util::DisplayHelp(::std::cerr) << ::util::Terminator{EXIT_SUCCESS};
+
+      case 'v':
+        ::std::cerr << ::util::Version() << ::util::Terminator{EXIT_SUCCESS};
+
+      case 's':
+        src = optarg;
+        break;
+
+      case 'r':
+        dest = optarg;
+        break;
+
+      case 'a': {
+        ::std::string_view av = optarg;
+        algorithm = av == "nw"
+                        ? ::blue::AlignmentType::kNeedlemanWunsch
+                        : av == "sw" ? ::blue::AlignmentType::kSmithWaterman
+                                     : ::blue::AlignmentType::kOverlap;
+        if (algorithm == ::blue::AlignmentType::kOverlap && av != "ov")
+          ::std::cerr << "Invalid alignment algorithm."
+                      << ::util::Terminator{EXIT_FAILURE};
+        break;
+      }
+
+      case 'k':
+        try {
+          k = ::std::stoi(optarg);
+          if (k > sizeof(unsigned) / 2 || k <= 0)
+            ::std::cerr << "KMer length must be in range [1, 16]."
+                        << ::util::Terminator{EXIT_FAILURE};
+        } catch (::std::invalid_argument& exc) {
+          ::std::cerr
+              << "KMer length should be a positive integer less than 17."
+              << ::util::Terminator{EXIT_FAILURE};
+        }
+        break;
+
+      case 'w':
+        try {
+          w = ::std::stoi(optarg);
+        } catch (::std::invalid_argument& exc) {
+          ::std::cerr << "Window length should be a positive integer."
+                      << ::util::Terminator{EXIT_FAILURE};
+        }
+        break;
+
+      case 'f':
+        try {
+          f = ::std::stod(optarg);
+          if (f < 0.0 || f > 1.0)
+            ::std::cerr
+                << "Ignored percentage of most occuring minimizers can not be "
+                   "negative or greater than 1."
+                << ::util::Terminator{EXIT_FAILURE};
+        } catch (::std::invalid_argument& exc) {
+          ::std::cerr << "Ignored percentage of most occuring minimizers must "
+                         "be a real number."
+                      << ::util::Terminator{EXIT_FAILURE};
+        }
+        break;
+
+      case 't':
+        try {
+          t = ::std::stoi(optarg);
+          if (t < 0)
+            ::std::cerr << "Number of threads must be a positive integer."
+                        << ::util::Terminator{EXIT_FAILURE};
+        } catch (::std::invalid_argument& exc) {
+          ::std::cerr << "Number of threads must be a positive integer."
+                      << ::util::Terminator{EXIT_FAILURE};
+        }
+        break;
+
+      case 'c':
+        c = true;
+        break;
+
+      default:
+        ::std::cerr << "Unkown command line option. Use -h to display possible "
+                       "arguments."
+                    << ::util::Terminator{EXIT_FAILURE};
+    }
+
+  /*
+   *
+   * Checking input file format.
+   *
+   */
+
+  if (!src.length() || !dest.length())
+    ::std::cerr << "Fragment/reference genome file missing. See --help."
+                << ::util::Terminator{EXIT_FAILURE};
+
+  ::std::string arg1;
 
   // clang-format off
   const ::std::unordered_set<::std::string>
     fasta_ext{".fasta", ".fasta.gz", ".fa", ".fa.gz"},
     fastq_ext{".fastq", ".fastq.gz", ".fq", ".fq.gz"};
   // clang-format on
-
-  const ::std::string src{argv[1]}, dest{argv[2]};
 
   int using_fasta = -1;
 
@@ -65,25 +181,9 @@ int main(int argc, char** argv, char** env) {
     ::std::cerr << "Destination file should be in FASTA format."
                 << ::util::Terminator{EXIT_FAILURE};
 
-  ::blue::AlignmentType algorithm;
-
-  if (const ::std::string a_type{::util::ToLower(argv[3])}; a_type == "nw")
-    algorithm = ::blue::AlignmentType::kNeedlemanWunsch;
-  else if (a_type == "sw")
-    algorithm = ::blue::AlignmentType::kSmithWaterman;
-  else if (a_type == "ov")
-    algorithm = ::blue::AlignmentType::kOverlap;
-  else
-    ::std::cerr << "Invalid alignment algorithm."
-                << ::util::Terminator{EXIT_FAILURE};
-
-  int match_cost = ::util::ParseInteger(argv[4]),
-      mismatch_cost = ::util::ParseInteger(argv[5]),
-      gap_cost = ::util::ParseInteger(argv[6]);
-
   /*
    *
-   * Sequence loading from input files and statistic output.
+   * Sequence loading from input files.
    *
    */
 
@@ -107,13 +207,6 @@ int main(int argc, char** argv, char** env) {
    * Minimizer indexing.
    *
    */
-
-  unsigned k = argc >= 8 ? ::util::ParseInteger(argv[7]) : 15;
-  unsigned w = argc >= 9 ? ::util::ParseInteger(argv[8]) : 5;
-  auto f = argc >= 10 ? ::util::ParseInteger(argv[9]) : 0.001;
-
-  auto c = argc >= 12 && argv[11][0] == 'c';
-  auto t = ::util::ParseInteger(argv[10]);
 
   ::std::cerr << "Creating minimizer index..."
               << "\n";

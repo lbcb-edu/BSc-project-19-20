@@ -101,9 +101,10 @@ char complement(const char c) noexcept {
 
   auto rc = r.begin.frag.rc != r.begin.ref.rc;
   auto flen = r.end.frag.pos - r.begin.frag.pos + k;
-  auto rlen = ((rc ? -1 : 1) * (static_cast<int>(r.end.ref.pos) -
-                                static_cast<int>(r.begin.ref.pos))) +
-              k;
+  auto rlen = ::std::min(1'000'000u / flen,
+                         ((rc ? -1 : 1) * (static_cast<int>(r.end.ref.pos) -
+                                           static_cast<int>(r.begin.ref.pos))) +
+                             k);
 
   using namespace ::blue;
 
@@ -135,7 +136,6 @@ char complement(const char c) noexcept {
             frag.sequence[frag.sequence.length() - 1 - r.end.frag.pos]);
     }
 
-    rlen = ::std::min(1'000'000u / flen, rlen);
     ret += "\t" + ::std::to_string(PairwiseAlignment(
                       Query{rc ? frag_rc.get()
                                : (frag.sequence.data() + r.begin.frag.pos)},
