@@ -217,40 +217,21 @@ int main(int argc, char** argv, char** env) {
                                       ::std::ref(reference), k, w, f)
                              .get();
 
-  ::std::vector<::std::future<::std::vector<::blue::KMerInfo>>>
-      fragment_indices_f;
-  fragment_indices_f.reserve(fragments.size());
+  ::std::vector<::std::future<::std::string>> pafs_f(fragments.size());
 
-  ::std::vector<::std::future<::matcher::Region>> regions_f;
-  regions_f.reserve(fragments.size());
-
-  ::std::vector<::std::future<::std::string>> pafs_f;
-  pafs_f.reserve(fragments.size());
-
-  for (int i = 0; i < fragments.size(); i += t) {
-    ::std::vector<::std::vector<::blue::KMerInfo>> f_index(t);
-    for (int j = 0; j < t && i + j < fragments.size(); ++j)
-      fragment_indices_f.push_back(pool->submit(
-          ::matcher::CreateFragmentIndex, ::std::ref(fragments[i + j]), k, w));
-
-    for (int j = 0; j < t && i + j < fragments.size(); ++j)
-      regions_f.push_back(pool->submit([&, idx = i + j] {
-        return ::matcher::BestMatch(reference_index,
-                                    fragment_indices_f[idx].get());
-      }));
-
-    for (int j = 0; j < t && i + j < fragments.size(); ++j)
-      pafs_f.push_back(pool->submit([&, idx = i + j] {
-        return ::matcher::Align(*reference, *fragments[idx],
-                                regions_f[idx].get(), c, k, algorithm);
-      }));
-  }
+  for (int i = 0; i < fragments.size(); ++i)
+    pafs_f[i] = pool->submit(
+        [&](auto&& fragment) {
+          return ::matcher::Align(
+              *reference, *fragment,
+              ::matcher::BestMatch(
+                  reference_index,
+                  ::matcher::CreateFragmentIndex(fragment, k, w)),
+              c, k, algorithm);
+        },
+        ::std::move(fragments[i]));
 
   ::std::ios_base::sync_with_stdio(false);
-  ::std::cerr << "Found alignments:"
-              << "\n\n";
-
-  for (auto& f : pafs_f)
-    if (auto str = f.get(); str.length())
-      ::std::cerr << str << "\n";
+  for (auto& pf : pafs_f)
+    ::std::cerr << pf.get() << "\n";
 }
