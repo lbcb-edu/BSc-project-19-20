@@ -541,7 +541,7 @@ auto generatePAF(SequencePtr const& query, SequencePtr const& target,
                  KMerMatches const& matches, char const rel_strand,
                  alignment::AlignConf const& a_conf,
                  minimizers::MinimizerConf const& m_conf) {
-    auto const [query_se, target_se, n_matches] = [&matches]() {
+    auto [query_se, target_se, n_matches] = [&matches]() {
         using StartEnd = std::pair<std::uint32_t, std::uint32_t>;
         using LISResult = std::tuple<StartEnd, StartEnd, std::size_t>;
 
@@ -579,6 +579,9 @@ auto generatePAF(SequencePtr const& query, SequencePtr const& target,
         paf_ss << start_end.first << '\t';
         paf_ss << start_end.second << '\t';
     };
+
+    if (rel_strand == '-')
+        std::swap(query_se.first, query_se.second);
 
     gen_seq_data(query, query_se);
     paf_ss << rel_strand << '\t';
