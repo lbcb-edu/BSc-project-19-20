@@ -18,6 +18,13 @@ namespace std {
 
 namespace pink {
 
+    auto comparator_minimizer = [](std::tuple<unsigned int, unsigned int, bool> &a,
+                                    std::tuple<unsigned int, unsigned int, bool> &b) {
+        if(std::get<0>(a) == std::get<0>(b))
+            return std::get<2>(a) > std::get<2>(b);
+        return std::get<0>(a) < std::get<0>(b);
+    };
+
     int get_nucleotide_value(char nucleotide) {
         switch (nucleotide) {
             case 'C' :
@@ -56,7 +63,7 @@ namespace pink {
     }
 
     unsigned int make_kmer_reverse(unsigned int last_kmer_reverse, char next, unsigned int mask) {
-        unsigned int kmer_reverse = last_kmer_reverse >> 2;
+        unsigned int kmer_reverse = last_kmer_reverse << 2;
         kmer_reverse = kmer_reverse | get_reverse_nucleotide_value(next);
         kmer_reverse = kmer_reverse & mask;
         return kmer_reverse;
@@ -106,39 +113,35 @@ namespace pink {
         unsigned int l = k + window_length - 1;
         std::tuple<unsigned int, unsigned int, bool> k_mer_triplet;
         std::tuple<unsigned int, unsigned int, bool> k_mer_triplet_minimal;
+        std::vector<std::tuple<unsigned int, unsigned int, bool>> window_kmers;
         unsigned int last_kmer, last_kmer_reverse;
         unsigned int mask = (1 << (2 * k)) - 1;
         for(int i = 0, i_reverse = sequence_length - 1; i <= sequence_length - l && i_reverse >= l - 1; i++, i_reverse--) {
-            for(int j = i, j_reverse = i_reverse; j <= i + l - k && j_reverse >= i_reverse - k; j++, j_reverse--){
-                if(i == j) {
-                    k_mer_triplet_minimal = make_kmer_triplet(j, j_reverse, sequence, k, true, last_kmer, last_kmer_reverse, mask);
+            if (i == 0) {
+                for (int j = i, j_reverse = i_reverse; j <= i + l - k && j_reverse >= i_reverse - k; j++, j_reverse--) {
+                    if (j == i) {
+                        k_mer_triplet = make_kmer_triplet(j, j_reverse, sequence, k, true, last_kmer,
+                                                                  last_kmer_reverse, mask);
+                    } else {
+                        k_mer_triplet = make_kmer_triplet(j, j_reverse, sequence, k, false, last_kmer,
+                                                          last_kmer_reverse, mask);
+                    }
+                    window_kmers.emplace_back(k_mer_triplet);
+                    k_mer_triplet_minimal = *std::min_element(window_kmers.begin(), window_kmers.end(), comparator_minimizer);
                 }
+                minimizers.emplace(k_mer_triplet_minimal);
+            } else {
+                window_kmers.erase(window_kmers.begin());
+                int j = i + l - k, j_reverse = i_reverse - l + k;
                 k_mer_triplet = make_kmer_triplet(j, j_reverse, sequence, k, false, last_kmer, last_kmer_reverse, mask);
-                if(std::get<0>(k_mer_triplet) < std::get<0>(k_mer_triplet_minimal))
-                    k_mer_triplet_minimal = k_mer_triplet;
+                window_kmers.emplace_back(k_mer_triplet);
+                k_mer_triplet_minimal = *std::min_element(window_kmers.begin(), window_kmers.end(), comparator_minimizer);
+                minimizers.emplace(k_mer_triplet_minimal);
             }
-            minimizers.emplace(k_mer_triplet_minimal);
         }
     }
 
     void begin_minimizers(const char* sequence, unsigned int sequence_length, unsigned int k, std::unordered_set<std::tuple<unsigned int, unsigned int, bool>>& minimizers) {
-//        for(unsigned int u = 1; u <= sequence_length - k + 1; u++){
-//            std::tuple<unsigned int, unsigned int, bool> k_mer_triplet;
-//            std::tuple<unsigned int, unsigned int, bool> k_mer_triplet_minimal;
-//            std::vector<std::tuple<unsigned int, unsigned int, bool>> k_mers;
-//            std::vector<std::tuple<unsigned int, unsigned int, bool>> k_mers_reverse;
-//            unsigned int last_kmer, last_kmer_reverse;
-//            unsigned int mask = (1 << (2 * k)) - 1;
-//            for(int j = 0, j_reverse = sequence_length - 1; j <= u - 1 && j_reverse >= sequence_length - u; j++, j_reverse--){
-//                if(j == 0)
-//                    k_mer_triplet_minimal = make_kmer_triplet(j, j_reverse, sequence, k, true, last_kmer, last_kmer_reverse, mask);
-//                k_mer_triplet = make_kmer_triplet(j, j_reverse, sequence, k, false, last_kmer, last_kmer_reverse, mask);
-//
-//                if(std::get<0>(k_mer_triplet) < std::get<0>(k_mer_triplet_minimal))
-//                    k_mer_triplet_minimal = k_mer_triplet;
-//            }
-//            minimizers.emplace(k_mer_triplet_minimal);
-//        }
         unsigned int last_kmer, last_kmer_reverse;
         unsigned int mask = (1 << (2 * k)) - 1;
         std::vector<std::tuple<unsigned int, unsigned int, bool>> beg_mers;
@@ -157,27 +160,6 @@ namespace pink {
     }
 
     void end_minimizers(const char* sequence, unsigned int sequence_length, unsigned int k, std::unordered_set<std::tuple<unsigned int, unsigned int, bool>>& minimizers) {
-//        for(unsigned int u = 1; u <= sequence_length - k + 1; u++){
-//            unsigned int l = k + u - 1;
-//            std::tuple<unsigned int, unsigned int, bool> k_mer_triplet;
-//            std::tuple<unsigned int, unsigned int, bool> k_mer_triplet_minimal;
-//            std::vector<std::tuple<unsigned int, unsigned int, bool>> k_mers;
-//            std::vector<std::tuple<unsigned int, unsigned int, bool>> k_mers_reverse;
-//            unsigned int last_kmer, last_kmer_reverse;
-//            unsigned int mask = (1 << (2 * k)) - 1;
-//            for(int j = sequence_length - k, j_reverse = k - 1; j >= sequence_length - k - u + 1 && j_reverse <= u + k - 2; j--, j_reverse++){
-//                if(j == sequence_length - k)
-//                    k_mer_triplet_minimal = make_kmer_triplet(j, j_reverse, sequence, k, true, last_kmer, last_kmer_reverse, mask);
-//
-//                k_mer_triplet = make_kmer_triplet(j, j_reverse, sequence, k, false, last_kmer, last_kmer_reverse, mask);
-//
-//                if(std::get<0>(k_mer_triplet) < std::get<0>(k_mer_triplet_minimal))
-//                    k_mer_triplet_minimal = k_mer_triplet;
-//            }
-//
-//            minimizers.emplace(k_mer_triplet_minimal);
-//        }
-
         unsigned int last_kmer, last_kmer_reverse;
         unsigned int mask = (1 << (2 * k)) - 1;
         std::vector<std::tuple<unsigned int, unsigned int, bool>> beg_mers;
@@ -202,7 +184,6 @@ namespace pink {
         std::vector<std::tuple<unsigned int, unsigned int, bool>> ret;
 
         std::unordered_set<std::tuple<unsigned int, unsigned int, bool>> minimizers_set;
-
 
         begin_minimizers(sequence, sequence_length, k, minimizers_set);
         end_minimizers(sequence, sequence_length, k, minimizers_set);

@@ -444,20 +444,14 @@ int work_with_fragments(std::vector<std::unique_ptr<Fast>> const & fast_objects1
         std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> fragment_minimizer_index;
         create_fragment_minimizer_index(fast_objects1[i], k, w, fragment_minimizer_index);
 
-//        std::cout << i << ":    Fragment minimizer index done!" << std::endl;
-
         std::vector<std::vector<std::tuple<unsigned int, unsigned int, bool>>> match_groups;
         find_matches(fragment_minimizer_index, target_minimizer_index, match_groups);
-
-//        std::cout << i << ":    Matches found!" << std::endl;
 
         if (match_groups.empty()) {
             continue;
         }
 
         std::tuple<unsigned int, unsigned int, unsigned int, unsigned int, bool> candidate = find_region(match_groups);
-
-        std::cout << i << ": Candidate found!" << std::endl;
 
         const char *query = (fast_objects1[i]->sequence).c_str();
         const char *target = (fast_objects2.front()->sequence).c_str();
