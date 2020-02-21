@@ -203,6 +203,11 @@ void create_reference_genome_minimizer_index(std::vector<std::unique_ptr<Fast>> 
     std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> counter;
     std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>>::iterator counter_iterator;
 
+    // TODO: check difference between std::unordered_map and std::map
+    // TODO: counter is not needed anymore, you can store minimizers directly into target_minimizer_index
+    // TODO: return value of the function is the occurence of the last minimizers which is not used
+    // Idea is to not modify the huge index
+
     for (auto minimizer : minimizers) {
         counter_iterator = counter.find(std::get<0>(minimizer));
 
@@ -214,6 +219,11 @@ void create_reference_genome_minimizer_index(std::vector<std::unique_ptr<Fast>> 
             (counter_iterator->second).emplace_back(std::make_pair(std::get<1>(minimizer), std::get<2>(minimizer)));
         }
     }
+
+    // TODO: create a std::vector<uin32_t> of occurences (e.g. v = [1, 100, 2, 1, 1, 1, 5, 4, ...]),
+    // sort the vector and find the occurrence of the last minimizer which will be removed
+    // e.g v_sorted = [1, 1, 1, 1, 1, 1, 2, 2, 4, 6, 90, 100, 500, 600]
+    // v_sorted[-0.01%] = 90
 
     std::vector<std::pair<unsigned int, std::vector<std::pair<unsigned int, bool>>>> pairs(counter.begin(), counter.end());
 
@@ -234,6 +244,8 @@ void create_fragment_minimizer_index(std::unique_ptr<Fast> const& fast_objects_i
 
     std::vector<std::tuple<unsigned int, unsigned int, bool>> minimizers = pink::minimizers(
             (fast_objects_i->sequence).c_str(), (fast_objects_i->sequence).length(), k, w);
+
+    // TODO: create the minimizer index directly into fragmet_minimizer_index
 
     // key is minimizer itself, value is vector of all locations and strands where that minimizer appears
     std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> counter;
@@ -361,6 +373,7 @@ std::tuple<unsigned int, unsigned int, unsigned int, unsigned int, bool> find_re
     for (auto const& vec : match_groups) {
         std::vector<std::tuple<unsigned int, unsigned int, bool>> candidate = longest_increasing_subsequence(vec);
         //jako puno kopiram podatke
+        // TODO: follow above comment, move for loop from bellow here
         candidate_group.emplace_back(candidate);
     }
 
@@ -388,6 +401,8 @@ std::string paf_string(std::string const& query, const char *query_name, unsigne
                        pink::AlignmentType type, int match, int mismatch, int gap, bool include_cigar,
                        std::tuple<unsigned int, unsigned int, unsigned int, unsigned int, bool> const& region) {
 
+    // TODO: fix paf output as described on the paper
+
     std::string ret = std::string(query_name) + '\t' +
                       std::to_string(query_length) + '\t' +
                       std::to_string(std::get<0>(region)) + '\t' +
@@ -414,11 +429,14 @@ std::string paf_string(std::string const& query, const char *query_name, unsigne
         pink::pairwise_alignment(query_substring.c_str(), query_substring_length, target_substring.c_str(),
                                  target_substring_length, type, match, mismatch, gap, cigar, target_begin);
 
+        // TODO: calculate num_of_matches directly from CIGAR by adding up all
+        // the numbers before = sign
         num_of_matches = 0;
         for (char c : cigar) {
             if (c == '=')
                 num_of_matches++;
         }
+        // TODO: block length equals the sum of all numbers in the cigar
         block_length = cigar.size();
     }
 
@@ -426,6 +444,7 @@ std::string paf_string(std::string const& query, const char *query_name, unsigne
            std::to_string(block_length) + '\t' +
            std::to_string(mapping_quality);
 
+    // TODO: remove new line
     if (include_cigar)
         ret += "\tcg:Z:" + cigar + '\n';
     else
@@ -463,6 +482,8 @@ int work_with_fragments(std::vector<std::unique_ptr<Fast>> const & fast_objects1
         std::string paf = paf_string(query, query_name, query_length, target, target_name, target_length, type, match,
                                      mismatch, gap, include_cigar, candidate);
 
+        // TODO: parallel use of stdout/stderr might slow down and the output might be wrong
+        // TODO: function should return the paf string back and the main thread will print it when it finishes
         std::cout << paf << std::endl;
     }
 
@@ -487,12 +508,8 @@ int main(int argc, char *argv[]) {
             case 'h':
                 help();
                 return 0;
-            case 'v':
-                version();
-                return 0;
-            case 'G' :
-                type = pink::global;
-                break;
+            case 'v': version(); return 0;
+            case 'G' : type = pink::global; break;
             case 'S' :
                 type = pink::semi_global;
                 break;
@@ -569,6 +586,8 @@ int main(int argc, char *argv[]) {
 //
 //    int cost = pink::pairwise_alignment(query, query_length, target, target_length, type, match, mismatch, gap);
 //
+//    TODO: from const char* to string use std::string(const char* p, uint32_t len)
+//    TODO: if const char* is null terminated, then use std::string(const char* p)
 //    std::string s = "";
 //    for(int i = 0; i < query_length; i++){
 //        s += query[i];
@@ -588,6 +607,8 @@ int main(int argc, char *argv[]) {
 
     // THIRD
 
+//    TODO: use unordered_map<minimizer, occurence> MAP to store occurences directly from each sequence
+//    TODO: for (each minimizer: current) MAP[minimizer[0]]++
 //    std::vector<std::tuple<unsigned int, unsigned int, bool>> minimizers;
 //
 //    for (int i = 0; i < fast_objects1.size(); i++) {
@@ -659,18 +680,23 @@ int main(int argc, char *argv[]) {
     unsigned int thread_begin = 0;
     unsigned int thread_end = work_for_each_thread + (fast_objects1.size() % t);
 
+    // TODO: 1 task = 1 sequence -> create a new function which operates on one
+    // sequence only
+    // for 0 to sequences.size
     for (int i = 0; i < t; i++) {
         thread_futures.emplace_back(
                 thread_pool->submit(work_with_fragments, std::ref(fast_objects1), std::ref(fast_objects2),
                                     std::ref(target_minimizer_index),
                                     k, w, type, match, mismatch, gap, include_cigar,
                                     thread_begin, thread_end));
+        // submit(work_with_fragment, same_parameters, ID_OF_SEQUENCE = i)
         thread_begin = thread_end;
         thread_end = thread_begin + work_for_each_thread;
     }
 
     for (auto &it: thread_futures) {
         it.wait();
+        // auto paf = it.get(); // get will wait and return
     }
 
     return 0;

@@ -10,6 +10,11 @@ set(PINK_MAPPER_VERSION_MAJOR 0)
 set(PINK_MAPPER_VERSION_MINOR 1)
 set(PINK_MAPPER_VERSION_PATCH 0)
 
+# TODO: change default output paths for binaries/libraries
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
+
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -17,7 +22,7 @@ option(pink_mapper_build_tests "Build pink mapper unit tests" ON)
 
 add_executable(
     pink_mapper
-    ${PROJECT_SOURCE_DIR}/src/pink_mapper.cpp   
+    ${PROJECT_SOURCE_DIR}/src/pink_mapper.cpp
 )
 
 add_subdirectory(
