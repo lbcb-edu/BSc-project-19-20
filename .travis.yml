@@ -3,8 +3,8 @@ dist: bionic
 language: cpp
 
 script:
-   - mkdir build
-   - cd build
-
-   - cmake ..
-   - make
+    - mkdir build
+    - cd build
+    - cmake -DCMAKE_BUILD_TYPE=Release ..
+    - make
+    - ./bin/pink_mapper_test
