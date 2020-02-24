@@ -190,53 +190,39 @@ auto comparator_by_query_position_descending = [](std::tuple<unsigned int, unsig
     return std::get<0>(a) > std::get<0>(b);
 };
 
-void create_reference_genome_minimizer_index(std::vector<std::unique_ptr<Fast>> const& fast_objects,
+uint32_t create_reference_genome_minimizer_index(std::vector<std::unique_ptr<Fast>> const& fast_objects,
                                              unsigned int k, unsigned int w, double f,
                                              std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> &target_minimizer_index) {
 
-    std::cout << "Creating refernce genome minimizer index" << std::endl;
+    std::cerr << "Creating refernce genome minimizer index" << std::endl;
 
     std::vector<std::tuple<unsigned int, unsigned int, bool>> minimizers = pink::minimizers(
             (fast_objects.front()->sequence).c_str(), (fast_objects.front()->sequence).length(), k, w);
 
-    // key is minimizer itself, value is vector of all locations and strands where that minimizer appears
-    std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> counter;
-    std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>>::iterator counter_iterator;
-
-    // TODO: check difference between std::unordered_map and std::map
-    // TODO: counter is not needed anymore, you can store minimizers directly into target_minimizer_index
-    // TODO: return value of the function is the occurence of the last minimizers which is not used
-    // Idea is to not modify the huge index
+    std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>>::iterator index_iterator;
 
     for (auto minimizer : minimizers) {
-        counter_iterator = counter.find(std::get<0>(minimizer));
+        index_iterator = target_minimizer_index.find(std::get<0>(minimizer));
 
-        if (counter_iterator == counter.end()) {
+        if (index_iterator == target_minimizer_index.end()) {
             std::vector<std::pair<unsigned int, bool>> locations_strands;
             locations_strands.emplace_back(std::make_pair(std::get<1>(minimizer), std::get<2>(minimizer)));
-            counter.insert(std::make_pair(std::get<0>(minimizer), locations_strands));
+            target_minimizer_index.insert(std::make_pair(std::get<0>(minimizer), locations_strands));
         } else {
-            (counter_iterator->second).emplace_back(std::make_pair(std::get<1>(minimizer), std::get<2>(minimizer)));
+            (index_iterator->second).emplace_back(std::make_pair(std::get<1>(minimizer), std::get<2>(minimizer)));
         }
     }
 
-    // TODO: create a std::vector<uin32_t> of occurences (e.g. v = [1, 100, 2, 1, 1, 1, 5, 4, ...]),
-    // sort the vector and find the occurrence of the last minimizer which will be removed
-    // e.g v_sorted = [1, 1, 1, 1, 1, 1, 2, 2, 4, 6, 90, 100, 500, 600]
-    // v_sorted[-0.01%] = 90
+    std::cerr << "Reference genome minimizer index done!" << std::endl;
 
-    std::vector<std::pair<unsigned int, std::vector<std::pair<unsigned int, bool>>>> pairs(counter.begin(), counter.end());
-
-    sort(pairs.begin(), pairs.end(), comparator_by_amount);
-    unsigned int ignore = std::round(counter.size() * f);
-    pairs.resize(minimizers.size() - ignore);
-    pairs.shrink_to_fit();
-
-    for (auto current : pairs) {
-        target_minimizer_index.insert(current);
+    std::vector<uint32_t> occurrences;
+    for(auto minimizer : target_minimizer_index) {
+        occurrences.emplace_back(minimizer.second.size());
     }
+    std::sort(occurrences.begin(), occurrences.end());
+    unsigned int ignore = std::round(occurrences.size() * f);
 
-    std::cout << "Reference genome minimizer index done!" << std::endl;
+    return occurrences[occurrences.size() - 1 - ignore];
 }
 
 void create_fragment_minimizer_index(std::unique_ptr<Fast> const& fast_objects_i, unsigned int k, unsigned int w,
@@ -245,30 +231,18 @@ void create_fragment_minimizer_index(std::unique_ptr<Fast> const& fast_objects_i
     std::vector<std::tuple<unsigned int, unsigned int, bool>> minimizers = pink::minimizers(
             (fast_objects_i->sequence).c_str(), (fast_objects_i->sequence).length(), k, w);
 
-    // TODO: create the minimizer index directly into fragmet_minimizer_index
-
-    // key is minimizer itself, value is vector of all locations and strands where that minimizer appears
-    std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> counter;
-    std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>>::iterator counter_iterator;
+    std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>>::iterator index_iterator;
 
     for (auto minimizer : minimizers) {
-        counter_iterator = counter.find(std::get<0>(minimizer));
+        index_iterator = fragment_minimizer_index.find(std::get<0>(minimizer));
 
-        if (counter_iterator == counter.end()) {
+        if (index_iterator == fragment_minimizer_index.end()) {
             std::vector<std::pair<unsigned int, bool>> locations_strands;
             locations_strands.emplace_back(std::make_pair(std::get<1>(minimizer), std::get<2>(minimizer)));
-            counter.insert(std::make_pair(std::get<0>(minimizer), locations_strands));
+            fragment_minimizer_index.insert(std::make_pair(std::get<0>(minimizer), locations_strands));
         } else {
-            (counter_iterator->second).emplace_back(std::make_pair(std::get<1>(minimizer), std::get<2>(minimizer)));
+            (index_iterator->second).emplace_back(std::make_pair(std::get<1>(minimizer), std::get<2>(minimizer)));
         }
-    }
-
-    std::vector<std::pair<unsigned int, std::vector<std::pair<unsigned int, bool>>>> pairs(counter.begin(),
-                                                                                           counter.end());
-
-    sort(pairs.begin(), pairs.end(), comparator_by_amount);
-    for (auto current : pairs) {
-        fragment_minimizer_index.insert(current);
     }
 }
 
@@ -291,14 +265,14 @@ void make_match_groups(std::vector<std::tuple<unsigned int, unsigned int, bool>>
 }
 
 void find_matches(std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> const& fragment_minimizer_index,
-                  std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> const& target_minimizer_index,
+                  std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> const& target_minimizer_index, int ignoring,
                   std::vector<std::vector<std::tuple<unsigned int, unsigned int, bool>>> &match_groups) {
 
     std::vector<std::tuple<unsigned int, unsigned int, bool>> matches;
 
     for (auto minimizer : fragment_minimizer_index) {
         auto it = target_minimizer_index.find(minimizer.first);
-        if (it != target_minimizer_index.end()) {
+        if (it != target_minimizer_index.end() && (it->second).size() <= ignoring) {
             for (auto location_strand_query : minimizer.second) {
                 for (auto location_strand_target : it->second) {
                     matches.emplace_back(std::make_tuple(location_strand_query.first, location_strand_target.first,
@@ -368,31 +342,32 @@ std::vector<std::tuple<unsigned int, unsigned int, bool>> longest_increasing_sub
 }
 
 std::tuple<unsigned int, unsigned int, unsigned int, unsigned int, bool> find_region(std::vector<std::vector<std::tuple<unsigned int, unsigned int, bool>>> const& match_groups) {
-    std::vector<std::vector<std::tuple<unsigned int, unsigned int, bool>>> candidate_group;
 
+    std::vector<std::tuple<unsigned int, unsigned int, bool>> candidate = longest_increasing_subsequence(match_groups.front());
+    int max_length;
+    std::tuple<unsigned int, unsigned int, unsigned int, unsigned int, bool> region;
+
+    int query_beg, query_end, target_beg, target_end;
+    query_beg = std::get<0>(candidate.back()) <= std::get<0>(candidate.front()) ? std::get<0>(candidate.back()) : std::get<0>(candidate.front());
+    query_end = std::get<0>(candidate.back()) > std::get<0>(candidate.front()) ? std::get<0>(candidate.back()) : std::get<0>(candidate.front());
+    target_beg = std::get<1>(candidate.back()) <= std::get<1>(candidate.front()) ? std::get<1>(candidate.back()) : std::get<1>(candidate.front());
+    target_end = std::get<1>(candidate.back()) > std::get<1>(candidate.front()) ? std::get<1>(candidate.back()) : std::get<1>(candidate.front());
+
+    region = std::make_tuple(query_beg, query_end, target_beg, target_end, std::get<2>(candidate.front()));
+    max_length = std::max(std::get<1>(region) - std::get<1>(region), std::get<3>(region) - std::get<2>(region));
+
+    std::tuple<unsigned int, unsigned int, unsigned int, unsigned int, bool> region_help;
     for (auto const& vec : match_groups) {
-        std::vector<std::tuple<unsigned int, unsigned int, bool>> candidate = longest_increasing_subsequence(vec);
-        //jako puno kopiram podatke
-        // TODO: follow above comment, move for loop from bellow here
-        candidate_group.emplace_back(candidate);
+        candidate = longest_increasing_subsequence(vec);
+        query_beg = std::get<0>(candidate.back()) <= std::get<0>(candidate.front()) ? std::get<0>(candidate.back()) : std::get<0>(candidate.front());
+        query_end = std::get<0>(candidate.back()) > std::get<0>(candidate.front()) ? std::get<0>(candidate.back()) : std::get<0>(candidate.front());
+        target_beg = std::get<1>(candidate.back()) <= std::get<1>(candidate.front()) ? std::get<1>(candidate.back()) : std::get<1>(candidate.front());
+        target_end = std::get<1>(candidate.back()) > std::get<1>(candidate.front()) ? std::get<1>(candidate.back()) : std::get<1>(candidate.front());
+
+        region_help = std::make_tuple(query_beg, query_end, target_beg, target_end, std::get<2>(candidate.front()));
+        if(std::max(query_end - query_beg, target_end - target_beg) > max_length)
+            region = region_help;
     }
-
-    int max_length = 0;
-    int index_of_max_length = 0;
-    for (int i = 0; i < candidate_group.size(); i++) {
-        if (candidate_group[i].size() > max_length) {
-            max_length = candidate_group[i].size();
-            index_of_max_length = i;
-        }
-    }
-
-    std::tuple<unsigned int, unsigned int, unsigned int, unsigned int, bool> region = std::make_tuple(
-            std::get<0>(candidate_group[index_of_max_length].back()),
-            std::get<0>(candidate_group[index_of_max_length].front()),
-            std::get<1>(candidate_group[index_of_max_length].back()),
-            std::get<1>(candidate_group[index_of_max_length].front()),
-            std::get<2>(candidate_group[index_of_max_length].front()));
-
     return region;
 }
 
@@ -401,13 +376,11 @@ std::string paf_string(std::string const& query, const char *query_name, unsigne
                        pink::AlignmentType type, int match, int mismatch, int gap, bool include_cigar,
                        std::tuple<unsigned int, unsigned int, unsigned int, unsigned int, bool> const& region) {
 
-    // TODO: fix paf output as described on the paper
-
     std::string ret = std::string(query_name) + '\t' +
                       std::to_string(query_length) + '\t' +
                       std::to_string(std::get<0>(region)) + '\t' +
                       std::to_string(std::get<1>(region)) + '\t' +
-                      std::string(std::get<4>(region) ? "+" : "-") + '\t' +
+                      std::string(std::get<4>(region) ? "-" : "+") + '\t' +
                       std::string(target_name) + '\t' +
                       std::to_string(target_length) + '\t' +
                       std::to_string(std::get<2>(region)) + '\t' +
@@ -419,7 +392,7 @@ std::string paf_string(std::string const& query, const char *query_name, unsigne
     std::string query_substring = query.substr(std::get<0>(region), query_substring_length);
     std::string target_substring = target.substr(std::get<2>(region), target_substring_length);
 
-    unsigned int num_of_matches = std::get<1>(region) - std::get<0>(region);
+    unsigned int num_of_matches = std::max(std::get<1>(region) - std::get<0>(region), std::get<3>(region) - std::get<2>(region));
     unsigned int block_length = num_of_matches;
     int mapping_quality = DEFAULT_QUALITY;
 
@@ -429,65 +402,56 @@ std::string paf_string(std::string const& query, const char *query_name, unsigne
         pink::pairwise_alignment(query_substring.c_str(), query_substring_length, target_substring.c_str(),
                                  target_substring_length, type, match, mismatch, gap, cigar, target_begin);
 
-        // TODO: calculate num_of_matches directly from CIGAR by adding up all
-        // the numbers before = sign
         num_of_matches = 0;
-        for (char c : cigar) {
-            if (c == '=')
-                num_of_matches++;
+        block_length = 0;
+        for (int i = 0; i < cigar.length(); i++) {
+            if (cigar.at(i) == '=')
+                num_of_matches += cigar.at(i - 1) - '0';
+            if(isdigit(cigar.at(i)))
+                block_length += cigar.at(i) - '0';
         }
-        // TODO: block length equals the sum of all numbers in the cigar
-        block_length = cigar.size();
     }
 
     ret += std::to_string(num_of_matches) + '\t' +
            std::to_string(block_length) + '\t' +
            std::to_string(mapping_quality);
 
-    // TODO: remove new line
     if (include_cigar)
-        ret += "\tcg:Z:" + cigar + '\n';
-    else
-        ret += '\n';
+        ret += "\tcg:Z:" + cigar;
 
     return ret;
 }
 
-int work_with_fragments(std::vector<std::unique_ptr<Fast>> const & fast_objects1,
-                        std::vector<std::unique_ptr<Fast>> const& fast_objects2,
-                        std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> const& target_minimizer_index,
-                        unsigned int k, unsigned int w, pink::AlignmentType type, int match, int mismatch, int gap,
-                        bool include_cigar,
-                        int thread_begin, int thread_end) {
-    for (int i = thread_begin; i < thread_end; i++) {
-        std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> fragment_minimizer_index;
-        create_fragment_minimizer_index(fast_objects1[i], k, w, fragment_minimizer_index);
+std::string work_with_fragment(std::vector<std::unique_ptr<Fast>> const & fast_objects1,
+                                std::vector<std::unique_ptr<Fast>> const& fast_objects2,
+                                std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> const& target_minimizer_index, int ignoring,
+                                unsigned int k, unsigned int w, pink::AlignmentType type, int match, int mismatch, int gap,
+                                bool include_cigar,
+                                int &i) {
+    std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> fragment_minimizer_index;
+    create_fragment_minimizer_index(fast_objects1[i], k, w, fragment_minimizer_index);
 
-        std::vector<std::vector<std::tuple<unsigned int, unsigned int, bool>>> match_groups;
-        find_matches(fragment_minimizer_index, target_minimizer_index, match_groups);
+    std::vector<std::vector<std::tuple<unsigned int, unsigned int, bool>>> match_groups;
+    find_matches(fragment_minimizer_index, target_minimizer_index, ignoring, match_groups);
 
-        if (match_groups.empty()) {
-            continue;
-        }
-
-        std::tuple<unsigned int, unsigned int, unsigned int, unsigned int, bool> candidate = find_region(match_groups);
-
-        const char *query = (fast_objects1[i]->sequence).c_str();
-        const char *target = (fast_objects2.front()->sequence).c_str();
-        unsigned int query_length = (fast_objects1[i]->sequence).length();
-        unsigned int target_length = (fast_objects2.front()->sequence).length();
-        const char *query_name = (fast_objects1[i]->name).c_str();
-        const char *target_name = (fast_objects2.front()->name).c_str();
-
-        std::string paf = paf_string(query, query_name, query_length, target, target_name, target_length, type, match,
-                                     mismatch, gap, include_cigar, candidate);
-
-        // TODO: parallel use of stdout/stderr might slow down and the output might be wrong
-        // TODO: function should return the paf string back and the main thread will print it when it finishes
-        std::cout << paf << std::endl;
+    if (match_groups.empty()) {
+        return "";
     }
 
+    // <query_beginning, query_ending, target_beginning, target_ending, true=opposite/false=same strand>
+    std::tuple<unsigned int, unsigned int, unsigned int, unsigned int, bool> candidate = find_region(match_groups);
 
+    const char *query = (fast_objects1[i]->sequence).c_str();
+    const char *target = (fast_objects2.front()->sequence).c_str();
+    unsigned int query_length = (fast_objects1[i]->sequence).length();
+    unsigned int target_length = (fast_objects2.front()->sequence).length();
+    const char *query_name = (fast_objects1[i]->name).c_str();
+    const char *target_name = (fast_objects2.front()->name).c_str();
+
+    std::string paf = paf_string(query, query_name, query_length, target, target_name, target_length, type, match,
+                                 mismatch, gap, include_cigar, candidate);
+
+    return paf;
 }
 
 int main(int argc, char *argv[]) {
@@ -503,45 +467,22 @@ int main(int argc, char *argv[]) {
     double f = F;
     bool include_cigar = CIGAR;
     int t = T;
-    while ((opt = getopt(argc, argv, ":hvt:m:s:g:")) != -1) {
+    while ((opt = getopt(argc, argv, ":hvGSLm:s:g:k:w:f:ct:")) != -1) {
         switch (opt) {
-            case 'h':
-                help();
-                return 0;
-            case 'v': version(); return 0;
+            case 'h' : help(); return 0;
+            case 'v' : version(); return 0;
             case 'G' : type = pink::global; break;
-            case 'S' :
-                type = pink::semi_global;
-                break;
-            case 'L' :
-                type = pink::local;
-                break;
-            case 'm':
-                match = atoi(optarg);
-                break;
-            case 's' :
-                mismatch = atoi(optarg);
-                break;
-            case 'g' :
-                gap = atoi(optarg);
-                break;
-            case 'k' :
-                k = atoi(optarg);
-                break;
-            case 'w' :
-                w = atoi(optarg);
-                break;
-            case 'f' :
-                f = atoi(optarg);
-                break;
-            case 'c' :
-                include_cigar = true;
-                break;
-            case 't' :
-                t = atoi(optarg);
-                break;
-            default:
-                errorMessage();
+            case 'S' : type = pink::semi_global; break;
+            case 'L' : type = pink::local; break;
+            case 'm' : match = atoi(optarg); break;
+            case 's' : mismatch = atoi(optarg); break;
+            case 'g' : gap = atoi(optarg); break;
+            case 'k' : k = atoi(optarg); break;
+            case 'w' : w = atoi(optarg); break;
+            case 'f' : f = atoi(optarg); break;
+            case 'c' : include_cigar = true; break;
+            case 't' : t = atoi(optarg); break;
+            default: errorMessage();
         }
 
     }
@@ -586,18 +527,10 @@ int main(int argc, char *argv[]) {
 //
 //    int cost = pink::pairwise_alignment(query, query_length, target, target_length, type, match, mismatch, gap);
 //
-//    TODO: from const char* to string use std::string(const char* p, uint32_t len)
-//    TODO: if const char* is null terminated, then use std::string(const char* p)
-//    std::string s = "";
-//    for(int i = 0; i < query_length; i++){
-//        s += query[i];
-//    }
-//    std::string t = "";
-//    for(int i = 0; i < target_length; i++){
-//        t += target[i];
-//    }
+//    std::string query_string = std::string(query, query_length);
+//    std::string target_string = std::string(target, target_length);
 //
-//    std::cout << "Cost for pairwise alignment for " << s << " and " << t << " is: " << cost << std::endl;
+//    std::cout << "Cost for pairwise alignment for " << query_string << " and " << target_string << " is: " << cost << std::endl;
 //
 //    std::string cigar;
 //    unsigned int target_begin;
@@ -607,8 +540,6 @@ int main(int argc, char *argv[]) {
 
     // THIRD
 
-//    TODO: use unordered_map<minimizer, occurence> MAP to store occurences directly from each sequence
-//    TODO: for (each minimizer: current) MAP[minimizer[0]]++
 //    std::vector<std::tuple<unsigned int, unsigned int, bool>> minimizers;
 //
 //    for (int i = 0; i < fast_objects1.size(); i++) {
@@ -622,81 +553,66 @@ int main(int argc, char *argv[]) {
 //
 //    }
 //
-//    // key is minimizer itself, value is vector of all locations and strands where that minimizer appears
-//    std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> counter;
-//    std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>>::iterator counter_iterator;
+//    std::map<unsigned int, int> counter;
+//    std::map<unsigned int, int>::iterator counter_iterator;
 //
 //    for (auto minimizer : minimizers) {
 //        counter_iterator = counter.find(std::get<0>(minimizer));
 //
 //        if (counter_iterator == counter.end()) {
-//            std::vector<std::pair<unsigned int, bool>> locations_strands;
-//            locations_strands.emplace_back(std::make_pair(std::get<1>(minimizer), std::get<2>(minimizer)));
-//            counter.insert(std::make_pair(std::get<0>(minimizer), locations_strands));
+//            counter.insert(std::make_pair(std::get<0>(minimizer), 1));
 //        } else {
-//            (counter_iterator->second).emplace_back(std::make_pair(std::get<1>(minimizer), std::get<2>(minimizer)));
+//            counter_iterator->second++;
 //        }
 //    }
-//
-//    std::vector<std::pair<unsigned int, std::vector<std::pair<unsigned int, bool>>>> pairs(counter.begin(),
-//                                                                                           counter.end());
-//
-//    sort(pairs.begin(), pairs.end(), [=](std::pair<unsigned int, std::vector<std::pair<unsigned int, bool>>> &a,
-//                                         std::pair<unsigned int, std::vector<std::pair<unsigned int, bool>>> &b) {
-//             return (a.second).size() < (b.second).size();
-//         }
-//    );
 //
 //    std::cout << "Number of distinct minimizers is "
 //              << counter.size()
 //              << std::endl;
 //
 //    int num_of_singletons = 0;
-//    for (auto p : pairs) {
-//        if ((p.second).size() == 1)
+//    for (auto no_minimizer : counter) {
+//        if (no_minimizer.second == 1)
 //            num_of_singletons++;
-//        else
-//            break;
 //    }
 //
 //    std::cout << "Fraction of singletons: " << (double) num_of_singletons / counter.size() << std::endl;
 //
-//    unsigned int ignore = std::round(counter.size() * f);
+//    std::vector<uint32_t> occurrences;
+//    for(auto minimizer : counter) {
+//        occurrences.emplace_back(minimizer.second);
+//    }
+//    std::sort(occurrences.begin(), occurrences.end());
+//    unsigned int ignore = std::round(occurrences.size() * f);
 //
 //    std::cout << "Number of occurrences of the most frequent minimizer when the top " << f
 //              << " frequent minimizers are not taken in account: "
-//              << pairs[pairs.size() - 1 - ignore].second.size() << std::endl;
+//              << occurrences[occurrences.size() - 1 - ignore] << std::endl;
 
     // FINAL
 
     std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> target_minimizer_index;
-    create_reference_genome_minimizer_index(fast_objects2, k, w, f, target_minimizer_index);
+    uint32_t ignoring = create_reference_genome_minimizer_index(fast_objects2, k, w, f, target_minimizer_index);
 
     std::shared_ptr<thread_pool::ThreadPool> thread_pool = thread_pool::createThreadPool(t);
-    std::vector<std::future<int>> thread_futures;
+    std::vector<std::future<std::string>> thread_futures;
 
     unsigned int work_for_each_thread = fast_objects1.size() / t;
 
     unsigned int thread_begin = 0;
     unsigned int thread_end = work_for_each_thread + (fast_objects1.size() % t);
 
-    // TODO: 1 task = 1 sequence -> create a new function which operates on one
-    // sequence only
-    // for 0 to sequences.size
-    for (int i = 0; i < t; i++) {
+    for (int i = 0; i < fast_objects1.size(); i++) {
         thread_futures.emplace_back(
-                thread_pool->submit(work_with_fragments, std::ref(fast_objects1), std::ref(fast_objects2),
-                                    std::ref(target_minimizer_index),
+                thread_pool->submit(work_with_fragment, std::ref(fast_objects1), std::ref(fast_objects2),
+                                    std::ref(target_minimizer_index), ignoring,
                                     k, w, type, match, mismatch, gap, include_cigar,
-                                    thread_begin, thread_end));
-        // submit(work_with_fragment, same_parameters, ID_OF_SEQUENCE = i)
-        thread_begin = thread_end;
-        thread_end = thread_begin + work_for_each_thread;
+                                    i));
     }
 
     for (auto &it: thread_futures) {
-        it.wait();
-        // auto paf = it.get(); // get will wait and return
+        auto paf = it.get();
+        std::cout << paf << std::endl;
     }
 
     return 0;
