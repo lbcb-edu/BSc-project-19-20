@@ -25,7 +25,7 @@
 namespace orange {
 namespace mapper {
 
-auto constexpr kStrandGapLim = static_cast<std::uint32_t>(500);
+auto constexpr kStrandGapLim = static_cast<std::uint32_t>(10e3);
 
 /**
  * @brief Supported genome file formats
