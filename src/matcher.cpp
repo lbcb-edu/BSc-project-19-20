@@ -119,8 +119,8 @@ char complement(const char c) noexcept {
   ret += "\t" + ::std::to_string(ref.sequence.length());
   ret +=
       "\t" + ::std::to_string(rc ? (r.begin.ref.pos - rlen) : r.begin.ref.pos);
-  ret += "\t" + ::std::to_string(
-                    (rc ? (r.begin.ref.pos) : (r.begin.ref.pos + rlen)) + k);
+  ret += "\t" +
+         ::std::to_string(rc ? (r.begin.ref.pos) : (r.begin.ref.pos + rlen));
 
   ret += "\t" + ::std::to_string(flen);
 
