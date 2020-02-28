@@ -200,7 +200,7 @@ int main(int argc, char** argv, char** env) {
       ::std::move(::mapper::Parse<::bioparser::FastaParser>(dest).front());
 
   ::std::cerr << "Loaded reference."
-              << "\n\n";
+              << "\n";
 
   /*
    *
@@ -208,7 +208,7 @@ int main(int argc, char** argv, char** env) {
    *
    */
 
-  ::std::cerr << "Creating minimizer index..."
+  ::std::cerr << "Creating minimizer indexes and finding matches."
               << "\n";
 
   auto pool = ::thread_pool::createThreadPool(t);
@@ -232,6 +232,10 @@ int main(int argc, char** argv, char** env) {
         ::std::move(fragments[i]));
 
   ::std::ios_base::sync_with_stdio(false);
+
+  ::std::cerr << "Printing matches to stdout."
+              << "\n\n";
+
   for (auto& pf : pafs_f)
-    ::std::cerr << pf.get() << "\n";
+    ::std::cout << pf.get() << "\n";
 }

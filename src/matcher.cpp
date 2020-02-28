@@ -101,7 +101,7 @@ char complement(const char c) noexcept {
 
   auto rc = r.begin.frag.rc != r.begin.ref.rc;
   auto flen = r.end.frag.pos - r.begin.frag.pos + k;
-  auto rlen = ::std::min(1'000'000u / flen,
+  auto rlen = ::std::min(10'000u,
                          ((rc ? -1 : 1) * (static_cast<int>(r.end.ref.pos) -
                                            static_cast<int>(r.begin.ref.pos))) +
                              k);
@@ -117,10 +117,10 @@ char complement(const char c) noexcept {
 
   ret += "\t" + ref.name;
   ret += "\t" + ::std::to_string(ref.sequence.length());
-  ret += "\t" +
-         ::std::to_string(rc ? (rlen - 1 - r.begin.ref.pos) : r.begin.ref.pos);
+  ret +=
+      "\t" + ::std::to_string(rc ? (r.begin.ref.pos - rlen) : r.begin.ref.pos);
   ret += "\t" + ::std::to_string(
-                    (rc ? (rlen - 1 - r.end.ref.pos) : r.end.ref.pos) + k);
+                    (rc ? (r.begin.ref.pos) : (r.begin.ref.pos + rlen)) + k);
 
   ret += "\t" + ::std::to_string(flen);
 
