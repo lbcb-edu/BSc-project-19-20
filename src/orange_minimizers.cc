@@ -54,7 +54,7 @@ KMers generateKMers(char const* sequence, std::uint32_t sequence_length,
     auto comp_kmer = std::uint32_t{0};
     auto mask = (k < 16 ? ((1 << (2 * k)) - 1) : KMerValMax);
 
-    auto shift_add_curr = [&curr_kmer, &mask](char const& base) {
+    auto const shift_add_curr = [&curr_kmer, &mask](char const& base) {
         curr_kmer <<= 2, curr_kmer &= mask;
         curr_kmer |= getMask(base);
     };
@@ -65,7 +65,7 @@ KMers generateKMers(char const* sequence, std::uint32_t sequence_length,
     };
 
     kmers.reserve(sequence_length - k + 1);
-    auto append_kmers = [&kmers, &curr_kmer, &comp_kmer](std::uint32_t pos) {
+    auto const append_kmers = [&kmers, &curr_kmer, &comp_kmer](std::uint32_t pos) {
         if (curr_kmer <= comp_kmer)
             kmers.emplace_back(curr_kmer, pos, false);
         else

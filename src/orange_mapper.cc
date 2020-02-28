@@ -26,6 +26,7 @@ namespace orange {
 namespace mapper {
 
 auto constexpr kStrandGapLim = static_cast<std::uint32_t>(10e3);
+auto constexpr kGrupDiffLim = std::int64_t{500};
 
 /**
  * @brief Supported genome file formats
@@ -86,6 +87,14 @@ public:
         std::advance(begin_, l);
         std::advance(end_, r);
     }
+
+    VectorSlice(VectorSlice const& other, std::size_t l, std::size_t r)
+        : begin_{other.begin()}, end_{other.begin()} {
+        std::advance(begin_, l);
+        std::advance(end_, r);
+    }
+
+    T& operator[](std::size_t pos) { return *(begin_ + pos); }
 
     T const& at(std::size_t pos) const { return *(begin_ + pos); }
 
@@ -537,25 +546,38 @@ auto LISAlgo(MatchSlice const& matches) {
                            lis.size());
 }
 
+/**
+ * @brief Returns absolute difference of two undinged 32 bit ints
+ */
+std::uint32_t unsigned_dif(std::uint32_t const& a, std::uint32_t const& b) {
+    return a > b ? a - b : b - a;
+};
+
+/**
+ * @brief signed difference between query and target position
+ */
+std::int64_t qt_dif(KMerMatch const& a) {
+    return static_cast<std::int64_t>(std::get<0>(a)) - std::get<1>(a);
+};
+
 auto generatePAF(SequencePtr const& query, SequencePtr const& target,
-                 KMerMatches const& matches, char const rel_strand,
+                 MatchSlice const& matches, char const rel_strand,
                  alignment::AlignConf const& a_conf,
                  minimizers::MinimizerConf const& m_conf) {
     auto [query_se, target_se, n_matches] = [&matches]() {
         using StartEnd = std::pair<std::uint32_t, std::uint32_t>;
         using LISResult = std::tuple<StartEnd, StartEnd, std::size_t>;
 
-        auto unsigned_dif = [](std::uint32_t const& a,
-                               std::uint32_t const& b) -> std::uint32_t {
-            return a > b ? a - b : b - a;
+        auto const is_split = [&matches](std::size_t const& curr,
+                                         std::size_t const& prev) -> bool {
+            return unsigned_dif(std::get<0>(matches.at(curr)),
+                                std::get<0>(matches.at(prev))) > kStrandGapLim;
         };
 
         auto prev = 0;
         auto ret = LISResult{{0, 0}, {0, 0}, std::size_t{1}};
-        for (std::size_t curr{1}; curr < matches.size(); ++curr) {
-            if (curr + 1 == matches.size() ||
-                unsigned_dif(std::get<0>(matches[curr]),
-                             std::get<0>(matches[prev])) > kStrandGapLim) {
+        for (std::size_t curr{0}; curr < matches.size(); ++curr) {
+            if (curr + 1 == matches.size() || is_split(curr, prev)) {
                 auto res = LISAlgo(std::move(MatchSlice(matches, prev, curr)));
                 if (std::get<2>(res) > std::get<2>(ret))
                     ret = std::move(res);
@@ -573,7 +595,7 @@ auto generatePAF(SequencePtr const& query, SequencePtr const& target,
 
     std::stringstream paf_ss;
     auto gen_seq_data = [&paf_ss](SequencePtr const& seq,
-                                           auto start_end) -> void {
+                                  auto start_end) -> void {
         paf_ss << seq.get()->name_ << '\t';
         paf_ss << seq.get()->seq_.size() << '\t';
         paf_ss << start_end.first << '\t';
@@ -603,8 +625,9 @@ auto generatePAF(SequencePtr const& query, SequencePtr const& target,
 
         alignment::pairwiseAlignment(
             que.seq_.c_str() + query_start, query_end - query_start + m_conf.k_,
-            tar.seq_.c_str() + target_start, target_end - target_start + m_conf.k_,
-            a_conf.type_, a_conf.match_, a_conf.mismatch_, a_conf.gap_, cigar, target_begin);
+            tar.seq_.c_str() + target_start,
+            target_end - target_start + m_conf.k_, a_conf.type_, a_conf.match_,
+            a_conf.mismatch_, a_conf.gap_, cigar, target_begin);
 
         auto nxt_num_in_cigar = [&cigar](auto& iter) {
             std::string buff{};
@@ -645,11 +668,21 @@ std::unordered_map<char,
         {'+',
          [](KMerMatch const& a, KMerMatch const& b) -> bool { return a < b; }},
 
-        {'-', [](KMerMatch const& a, KMerMatch const& b) -> bool {
+        {'-',
+         [](KMerMatch const& a, KMerMatch const& b) -> bool {
              if (std::get<0>(a) != std::get<0>(b))
                  return std::get<0>(a) > std::get<0>(b);
              return std::get<1>(a) < std::get<1>(b);
-         }}};
+         }},
+
+        // Sort diagonals
+        {'d',
+         [](KMerMatch const& a, KMerMatch const& b) -> bool {
+             return std::get<0>(a) - std::get<1>(a) <
+                    std::get<0>(b) - std::get<1>(b);
+         }}
+
+    };
 
 void mapReads(SliceSeqPtr reads, SequencePtr const& target,
               MinimizerIndex const& target_index,
@@ -674,18 +707,45 @@ void mapReads(SliceSeqPtr reads, SequencePtr const& target,
             }
         }
 
-        auto genPAF = [&read, &target, &a_conf, &m_conf](
-                          KMerMatches const& matches,
-                          char const rel_strand) -> void {
+        auto const genPAF = [&read, &target, &a_conf, &m_conf](
+                                MatchSlice const& matches,
+                                char const rel_strand) -> void {
             generatePAF(read, target, matches, rel_strand, a_conf, m_conf);
         };
 
+        for (auto& match_group : matches)
+            std::sort(match_group.begin(), match_group.end(), sort_dict['d']);
+
+        auto const group_split = [](KMerMatches const& matches,
+                                    std::size_t const& l,
+                                    std::size_t const& r) {
+            // takes the advantege of ascending sorting
+            return qt_dif(matches[r]) - qt_dif(matches[l]) > kGrupDiffLim;
+        };
+
+        auto const group_matches = [&genPAF, &group_split](
+                                       KMerMatches& matches,
+                                       char const rel_strand) {
+            std::size_t group_start{0};
+            for (std::size_t group_end{0}; group_end <= matches.size();
+                 ++group_end) {
+                if (group_end == matches.size() ||
+                    group_split(matches, group_start, group_end)) {
+                    std::sort(matches.begin() + group_start,
+                              matches.begin() + group_end,
+                              sort_dict[rel_strand]);
+
+                    genPAF(MatchSlice(matches, group_start, group_end),
+                           rel_strand);
+                    group_start = group_end;
+                }
+            }
+        };
+
         if (!matches[1].empty())
-            genPAF(matches[1], '+');
-        if (!matches[0].empty()) {
-            std::sort(matches[0].begin(), matches[0].end(), sort_dict['-']);
-            genPAF(matches[0], '-');
-        }
+            group_matches(matches[1], '+');
+        if (!matches[0].empty())
+            group_matches(matches[1], '-');
     }
 }
 
@@ -773,14 +833,14 @@ int main(int argc, char* argv[]) {
         auto refs_type = mapper::parseFileType(path_to_ref);
 
         // Report start of file loading
-        std::cout << "Started loading files\n";
+        // std::cout << "Started loading files\n";
 
         // Load and parse data from files
         auto const reads = mapper::loadFile(path_to_reads, reads_type);
         auto const refs = mapper::loadFile(path_to_ref, refs_type);
 
         // Report end of file loading
-        std::cout << "Finsihed loading files\n\n";
+        // std::cout << "Finsihed loading files\n\n";
 
         // For fast I/O
         std::ios_base::sync_with_stdio(false);
