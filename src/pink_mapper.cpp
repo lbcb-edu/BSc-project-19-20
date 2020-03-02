@@ -405,10 +405,17 @@ std::string paf_string(std::string const& query, const char *query_name, unsigne
         num_of_matches = 0;
         block_length = 0;
         for (int i = 0; i < cigar.length(); i++) {
-            if (cigar.at(i) == '=')
-                num_of_matches += cigar.at(i - 1) - '0';
-            if(isdigit(cigar.at(i)))
-                block_length += cigar.at(i) - '0';
+            if (cigar.at(i) == '=' || cigar.at(i) == 'X' || cigar.at(i) == 'I' || cigar.at(i) == 'D') {
+                int num = 0, pot = 0, pos = i - 1;
+                while(pos >= 0 && isdigit(cigar.at(pos))) {
+                    num += (cigar.at(pos) - '0') * pow(10, pot);
+                    pot++;
+                    pos--;
+                }
+                if(cigar.at(i) == '=')
+                    num_of_matches += num;
+                block_length += num;
+            }
         }
     }
 
