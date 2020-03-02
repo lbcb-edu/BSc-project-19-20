@@ -25,8 +25,20 @@
 namespace orange {
 namespace mapper {
 
+/**
+ * @brief Limits match length based on read KMers
+ */
 auto constexpr kStrandGapLim = static_cast<std::uint32_t>(10e3);
+
+/**
+ * @brief Number of matches forming a digonal group
+ */
 auto constexpr kGrupDiffLim = std::int64_t{500};
+
+/**
+ * @brief Ignores percentage diagionals on the matrix edges
+ */
+auto constexpr kIgnorePer = std::float_t{0.05};
 
 /**
  * @brief Supported genome file formats
@@ -726,10 +738,14 @@ void mapReads(SliceSeqPtr reads, SequencePtr const& target,
         auto const group_matches = [&genPAF, &group_split](
                                        KMerMatches& matches,
                                        char const rel_strand) {
+
+            auto m_begin = static_cast<std::size_t>(matches.size() * kIgnorePer);
+            auto m_end = static_cast<std::size_t>(matches.size() * (1 - kIgnorePer));
+
             std::size_t group_start{0};
-            for (std::size_t group_end{0}; group_end <= matches.size();
+            for (std::size_t group_end{m_begin}; group_end <= m_end;
                  ++group_end) {
-                if (group_end == matches.size() ||
+                if (group_end == m_end ||
                     group_split(matches, group_start, group_end)) {
                     std::sort(matches.begin() + group_start,
                               matches.begin() + group_end,
