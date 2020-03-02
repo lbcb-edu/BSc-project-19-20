@@ -36,11 +36,6 @@ auto constexpr kStrandGapLim = static_cast<std::uint32_t>(10e3);
 auto constexpr kGrupDiffLim = std::int64_t{500};
 
 /**
- * @brief Ignores percentage diagionals on the matrix edges
- */
-auto constexpr kIgnorePer = std::float_t{0.05};
-
-/**
  * @brief Supported genome file formats
  */
 enum FileType { kFasta, kFastq, kUnsupported };
@@ -739,13 +734,10 @@ void mapReads(SliceSeqPtr reads, SequencePtr const& target,
                                        KMerMatches& matches,
                                        char const rel_strand) {
 
-            auto m_begin = static_cast<std::size_t>(matches.size() * kIgnorePer);
-            auto m_end = static_cast<std::size_t>(matches.size() * (1 - kIgnorePer));
-
             std::size_t group_start{0};
-            for (std::size_t group_end{m_begin}; group_end <= m_end;
+            for (std::size_t group_end{0}; group_end <= matches.size();
                  ++group_end) {
-                if (group_end == m_end ||
+                if (group_end == matches.size() ||
                     group_split(matches, group_start, group_end)) {
                     std::sort(matches.begin() + group_start,
                               matches.begin() + group_end,
